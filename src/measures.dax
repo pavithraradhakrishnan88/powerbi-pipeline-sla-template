@@ -1,0 +1,25 @@
+// Pipeline SLA Tracker — DAX Measures
+// Place these in a measure table (e.g. _Measures) in Power BI Desktop
+
+Actual Duration Hrs =
+DIVIDE(
+    DATEDIFF(SELECTEDVALUE(Fact_Pipeline[StartDate]), SELECTEDVALUE(Fact_Pipeline[EndDate]), MINUTE),
+    60
+)
+
+SLA Breach Flag =
+IF([Actual Duration Hrs] > SELECTEDVALUE(Fact_Pipeline[SLA_Target_Hrs]), 1, 0)
+
+Total Pipelines = COUNTROWS(Fact_Pipeline)
+
+Breached Count = SUMX(Fact_Pipeline, [SLA Breach Flag])
+
+SLA Compliance % =
+DIVIDE([Total Pipelines] - [Breached Count], [Total Pipelines])
+
+Avg Duration by Category =
+AVERAGEX(Fact_Pipeline, [Actual Duration Hrs])
+
+// Floating bar measures (for a bar chart using StartDate as the invisible base)
+Bar Base (Start) = SELECTEDVALUE(Fact_Pipeline[StartDate])
+Bar Length (Duration) = [Actual Duration Hrs]
