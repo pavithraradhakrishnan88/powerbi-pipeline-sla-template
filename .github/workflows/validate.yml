@@ -1,16 +1,22 @@
 name: Validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
 jobs:
   validate:
-  runs-on: windows-latest
+    runs-on: windows-latest
 
-  steps:
-  - name: Checkout repository
-  uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: Show PowerShell version
-  shell: pwsh
-  run: $PSVersionTable
+      - name: Show PowerShell version
+        shell: pwsh
+        run: $PSVersionTable
 
-  - name: Run validation
-    shell: pwsh
-    run: ./build/validate.ps1
+      - name: Run validation
+        shell: pwsh
+        run: ./build/validate.ps1
