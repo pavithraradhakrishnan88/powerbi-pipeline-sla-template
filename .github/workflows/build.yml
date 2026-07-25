@@ -12,30 +12,22 @@ on:
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Validate project
-      shell: pwsh
-      run: ./build/validate.ps1
+      - name: Validate project
+        shell: pwsh
+        run: ./build/validate.ps1
 
-    - name: Build project
-      shell: pwsh
-      run: ./build/build.ps1
+      - name: Build project
+        shell: pwsh
+        run: ./build/build.ps1
 
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: PBIP-Build
-        path: artifacts/
-
-  - name: Upload Build Artifacts
-  uses: actions/upload-artifact@v4
-
-  with:
-    name: PBIP-Build
-    path: artifacts/ 
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PBIP-Build
+          path: artifacts/
