@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Pipeline_SLA_Tracker"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "b854abc9-66aa-4baa-bca8-51911812e58b"
+  }
+}

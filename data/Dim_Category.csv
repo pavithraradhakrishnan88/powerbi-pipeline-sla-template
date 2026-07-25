@@ -1,0 +1,4 @@
+CategoryID,CategoryName,SortOrder
+1,Data Ingestion,1
+2,Transformation,2
+3,Load,3
