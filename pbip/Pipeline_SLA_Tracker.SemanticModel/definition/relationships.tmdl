@@ -1,0 +1,14 @@
+relationship 8ea7e483-68ea-44b0-882c-d4d2af1649e2
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Fact_Pipeline_SampleData.StartDate
+	toColumn: LocalDateTable_d581db14-66ed-48da-8bb9-8b742a40232d.Date
+
+relationship 33e66560-d6b2-4516-871a-eba92eb28e3f
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Fact_Pipeline_SampleData.EndDate
+	toColumn: LocalDateTable_63057bfd-b81d-4c42-a78b-5fa6558f4706.Date
+
+relationship AutoDetected_48546b4f-73a6-479d-87b9-7e3136adb7f7
+	fromColumn: Fact_Pipeline_SampleData.Category
+	toColumn: Dim_Category.CategoryName
+

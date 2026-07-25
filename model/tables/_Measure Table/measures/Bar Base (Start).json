@@ -1,0 +1,7 @@
+{
+  "name": "Bar Base (Start)",
+  "expression": "SELECTEDVALUE(Fact_Pipeline_SampleData[StartDate])",
+  "formatString": "General Date",
+  "displayFolder": "Floating Bars",
+  "lineageTag": "f81f7a03-3258-41d1-8f5f-ba261e2789d3"
+}

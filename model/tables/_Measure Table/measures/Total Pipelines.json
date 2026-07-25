@@ -1,0 +1,7 @@
+{
+  "name": "Total Pipelines",
+  "expression": "COUNTROWS(Fact_Pipeline_SampleData)",
+  "formatString": "0",
+  "displayFolder": "KPI",
+  "lineageTag": "f89bf04f-1cdf-483d-a73c-061b2bd645c2"
+}

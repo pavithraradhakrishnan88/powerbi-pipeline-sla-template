@@ -1,0 +1,7 @@
+{
+  "name": "Breached Count",
+  "expression": "SUMX(Fact_Pipeline_SampleData, [SLA Breach Flag])",
+  "formatString": "0",
+  "displayFolder": "SLA",
+  "lineageTag": "346448df-aa30-4cd5-8652-d514bd929af5"
+}

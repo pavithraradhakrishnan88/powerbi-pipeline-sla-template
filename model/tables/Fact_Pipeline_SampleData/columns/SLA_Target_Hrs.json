@@ -1,0 +1,14 @@
+{
+  "name": "SLA_Target_Hrs",
+  "dataType": "int64",
+  "sourceColumn": "SLA_Target_Hrs",
+  "formatString": "0",
+  "lineageTag": "04886805-8041-4aad-b869-1814099f57b5",
+  "summarizeBy": "sum",
+  "annotations": [
+    {
+      "name": "SummarizationSetBy",
+      "value": "Automatic"
+    }
+  ]
+}

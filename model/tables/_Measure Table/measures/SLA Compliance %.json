@@ -1,0 +1,10 @@
+{
+  "name": "SLA Compliance %",
+  "expression": [
+    "",
+    "DIVIDE([Total Pipelines] - [Breached Count], [Total Pipelines])"
+  ],
+  "formatString": "0.00%;-0.00%;0.00%",
+  "displayFolder": "SLA",
+  "lineageTag": "1b187343-5b12-42db-ae8a-84e8beee03a6"
+}

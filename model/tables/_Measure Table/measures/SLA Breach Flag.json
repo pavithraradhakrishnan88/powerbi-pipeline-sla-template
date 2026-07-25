@@ -1,0 +1,10 @@
+{
+  "name": "SLA Breach Flag",
+  "expression": [
+    "",
+    "IF([Actual Duration Hrs] > SELECTEDVALUE(Fact_Pipeline_SampleData[SLA_Target_Hrs]), 1, 0)"
+  ],
+  "formatString": "0",
+  "displayFolder": "SLA",
+  "lineageTag": "bcd5fb4f-c1b8-4e1d-9eac-d05f0b8935fb"
+}

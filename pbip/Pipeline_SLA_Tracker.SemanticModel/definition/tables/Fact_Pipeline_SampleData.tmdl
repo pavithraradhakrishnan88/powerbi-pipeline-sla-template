@@ -1,0 +1,78 @@
+table Fact_Pipeline_SampleData
+	lineageTag: cecdfc6c-b333-441c-9810-6503bbc7b079
+
+	column PipelineID
+		dataType: string
+		lineageTag: b95e861e-9f1b-4ff5-8589-ed86f6e1d0d1
+		summarizeBy: none
+		sourceColumn: PipelineID
+
+		annotation SummarizationSetBy = Automatic
+
+	column StartDate
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: b791da56-3530-4ab3-aea2-1a5c5c8cd6a5
+		summarizeBy: none
+		sourceColumn: StartDate
+
+		variation Variation
+			isDefault
+			relationship: 8ea7e483-68ea-44b0-882c-d4d2af1649e2
+			defaultHierarchy: LocalDateTable_d581db14-66ed-48da-8bb9-8b742a40232d.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column EndDate
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 98d14939-ee6a-45aa-bde8-fc25527b0c77
+		summarizeBy: none
+		sourceColumn: EndDate
+
+		variation Variation
+			isDefault
+			relationship: 33e66560-d6b2-4516-871a-eba92eb28e3f
+			defaultHierarchy: LocalDateTable_63057bfd-b81d-4c42-a78b-5fa6558f4706.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column Category
+		dataType: string
+		lineageTag: 6b2d7b4b-4e4c-4ac6-9e2f-6591c74a3318
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = Automatic
+
+	column SLA_Target_Hrs
+		dataType: int64
+		formatString: 0
+		lineageTag: 04886805-8041-4aad-b869-1814099f57b5
+		summarizeBy: sum
+		sourceColumn: SLA_Target_Hrs
+
+		annotation SummarizationSetBy = Automatic
+
+	column Status
+		dataType: string
+		lineageTag: c26d18e7-67db-446c-95ff-9044cfa21570
+		summarizeBy: none
+		sourceColumn: Status
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Fact_Pipeline_SampleData = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\pavit\Projects\powerbi-pipeline-sla-template\data\Fact_Pipeline_SampleData.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"PipelineID", type text}, {"StartDate", type datetime}, {"EndDate", type datetime}, {"Category", type text}, {"SLA_Target_Hrs", Int64.Type}, {"Status", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

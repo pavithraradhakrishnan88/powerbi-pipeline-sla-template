@@ -1,0 +1,69 @@
+table '_Measure Table'
+	lineageTag: 3abdd919-16cd-4bd0-86ed-2f3eb6b79637
+
+	measure 'Actual Duration Hrs' =
+			
+			DIVIDE(
+			    DATEDIFF(SELECTEDVALUE(Fact_Pipeline_SampleData[StartDate]), SELECTEDVALUE(Fact_Pipeline_SampleData[EndDate]), MINUTE),
+			    60
+			)
+		displayFolder: KPI
+		lineageTag: 9bf66a3c-c651-4c9e-9cbd-09d0f0eb1c67
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'SLA Breach Flag' =
+			
+			IF([Actual Duration Hrs] > SELECTEDVALUE(Fact_Pipeline_SampleData[SLA_Target_Hrs]), 1, 0)
+		formatString: 0
+		displayFolder: SLA
+		lineageTag: bcd5fb4f-c1b8-4e1d-9eac-d05f0b8935fb
+
+	measure 'Total Pipelines' = COUNTROWS(Fact_Pipeline_SampleData)
+		formatString: 0
+		displayFolder: KPI
+		lineageTag: f89bf04f-1cdf-483d-a73c-061b2bd645c2
+
+	measure 'Breached Count' = SUMX(Fact_Pipeline_SampleData, [SLA Breach Flag])
+		formatString: 0
+		displayFolder: SLA
+		lineageTag: 346448df-aa30-4cd5-8652-d514bd929af5
+
+	measure 'SLA Compliance %' =
+			
+			DIVIDE([Total Pipelines] - [Breached Count], [Total Pipelines])
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: SLA
+		lineageTag: 1b187343-5b12-42db-ae8a-84e8beee03a6
+
+	measure 'Avg Duration by Category' =
+			
+			AVERAGEX(Fact_Pipeline_SampleData, [Actual Duration Hrs])
+		displayFolder: KPI
+		lineageTag: b8fd9a75-27ec-4995-aa1f-005ca3f6f83e
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Bar Base (Start)' = SELECTEDVALUE(Fact_Pipeline_SampleData[StartDate])
+		formatString: General Date
+		displayFolder: Floating Bars
+		lineageTag: f81f7a03-3258-41d1-8f5f-ba261e2789d3
+
+	measure 'Bar Length (Duration)' = [Actual Duration Hrs]
+		displayFolder: Floating Bars
+		lineageTag: 83989aad-97ef-4ed0-bf3e-f6e52cd60fbb
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition '_Measure Table' = m
+		mode: import
+		source =
+				let
+				    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Column1 = _t]),
+				    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Column1", type text}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"Column1"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+

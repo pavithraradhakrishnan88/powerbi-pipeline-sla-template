@@ -1,0 +1,15 @@
+{
+  "name": "Avg Duration by Category",
+  "expression": [
+    "",
+    "AVERAGEX(Fact_Pipeline_SampleData, [Actual Duration Hrs])"
+  ],
+  "displayFolder": "KPI",
+  "lineageTag": "b8fd9a75-27ec-4995-aa1f-005ca3f6f83e",
+  "annotations": [
+    {
+      "name": "PBI_FormatHint",
+      "value": "{\"isGeneralNumber\":true}"
+    }
+  ]
+}

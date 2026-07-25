@@ -1,0 +1,8 @@
+{
+  "name": "33e66560-d6b2-4516-871a-eba92eb28e3f",
+  "fromTable": "Fact_Pipeline_SampleData",
+  "fromColumn": "EndDate",
+  "toTable": "LocalDateTable_63057bfd-b81d-4c42-a78b-5fa6558f4706",
+  "toColumn": "Date",
+  "joinOnDateBehavior": "datePartOnly"
+}

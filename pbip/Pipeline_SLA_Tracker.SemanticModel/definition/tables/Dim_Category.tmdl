@@ -1,0 +1,43 @@
+table Dim_Category
+	lineageTag: 7307d8a7-c05e-4620-81fa-059a1630f4f1
+
+	column CategoryID
+		dataType: int64
+		formatString: 0
+		lineageTag: e40b2131-a44d-40c4-9429-d257236aee5b
+		summarizeBy: none
+		sourceColumn: CategoryID
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategoryName
+		dataType: string
+		lineageTag: a5dc0199-4148-478f-95be-1fb2a9b071ca
+		summarizeBy: none
+		sourceColumn: CategoryName
+
+		annotation SummarizationSetBy = Automatic
+
+	column SortOrder
+		dataType: int64
+		formatString: 0
+		lineageTag: 859858f4-9e46-4c65-9082-e7e520dcc65c
+		summarizeBy: none
+		sourceColumn: SortOrder
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Category = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\pavit\Projects\powerbi-pipeline-sla-template\data\Dim_Category.csv"),[Delimiter=",", Columns=3, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"CategoryID", Int64.Type}, {"CategoryName", type text}, {"SortOrder", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,14 @@
+{
+  "name": "Fact_Pipeline_SampleData",
+  "lineageTag": "cecdfc6c-b333-441c-9810-6503bbc7b079",
+  "annotations": [
+    {
+      "name": "PBI_NavigationStepName",
+      "value": "Navigation"
+    },
+    {
+      "name": "PBI_ResultType",
+      "value": "Table"
+    }
+  ]
+}

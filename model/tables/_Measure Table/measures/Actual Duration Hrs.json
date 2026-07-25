@@ -1,0 +1,18 @@
+{
+  "name": "Actual Duration Hrs",
+  "expression": [
+    "",
+    "DIVIDE(",
+    "    DATEDIFF(SELECTEDVALUE(Fact_Pipeline_SampleData[StartDate]), SELECTEDVALUE(Fact_Pipeline_SampleData[EndDate]), MINUTE),",
+    "    60",
+    ")"
+  ],
+  "displayFolder": "KPI",
+  "lineageTag": "9bf66a3c-c651-4c9e-9cbd-09d0f0eb1c67",
+  "annotations": [
+    {
+      "name": "PBI_FormatHint",
+      "value": "{\"isGeneralNumber\":true}"
+    }
+  ]
+}

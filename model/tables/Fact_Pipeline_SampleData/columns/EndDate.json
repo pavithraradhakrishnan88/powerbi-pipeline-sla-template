@@ -1,0 +1,25 @@
+{
+  "name": "EndDate",
+  "dataType": "dateTime",
+  "sourceColumn": "EndDate",
+  "formatString": "General Date",
+  "lineageTag": "98d14939-ee6a-45aa-bde8-fc25527b0c77",
+  "summarizeBy": "none",
+  "variations": [
+    {
+      "name": "Variation",
+      "relationship": "33e66560-d6b2-4516-871a-eba92eb28e3f",
+      "defaultHierarchy": {
+        "table": "LocalDateTable_63057bfd-b81d-4c42-a78b-5fa6558f4706",
+        "hierarchy": "Date Hierarchy"
+      },
+      "isDefault": true
+    }
+  ],
+  "annotations": [
+    {
+      "name": "SummarizationSetBy",
+      "value": "Automatic"
+    }
+  ]
+}

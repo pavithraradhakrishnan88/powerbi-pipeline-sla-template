@@ -1,0 +1,12 @@
+{
+  "name": "Bar Length (Duration)",
+  "expression": "[Actual Duration Hrs]",
+  "displayFolder": "Floating Bars",
+  "lineageTag": "83989aad-97ef-4ed0-bf3e-f6e52cd60fbb",
+  "annotations": [
+    {
+      "name": "PBI_FormatHint",
+      "value": "{\"isGeneralNumber\":true}"
+    }
+  ]
+}

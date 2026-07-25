@@ -1,0 +1,10 @@
+{
+  "name": "_Measure Table",
+  "lineageTag": "3abdd919-16cd-4bd0-86ed-2f3eb6b79637",
+  "annotations": [
+    {
+      "name": "PBI_ResultType",
+      "value": "Table"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Dim_Spacing",
+  "mode": "import",
+  "source": {
+    "type": "calculated",
+    "expression": "GENERATESERIES(0, 200, 1)"
+  }
+}

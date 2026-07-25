@@ -1,0 +1,14 @@
+{
+  "name": "CategoryID",
+  "dataType": "int64",
+  "sourceColumn": "CategoryID",
+  "formatString": "0",
+  "lineageTag": "e40b2131-a44d-40c4-9429-d257236aee5b",
+  "summarizeBy": "none",
+  "annotations": [
+    {
+      "name": "SummarizationSetBy",
+      "value": "Automatic"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "AutoDetected_48546b4f-73a6-479d-87b9-7e3136adb7f7",
+  "fromTable": "Fact_Pipeline_SampleData",
+  "fromColumn": "Category",
+  "toTable": "Dim_Category",
+  "toColumn": "CategoryName"
+}
