@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
-  "name": "063f222ecdba50ec0537",
-  "displayName": "SLA Overview",
+  "name": "bfff4b467da65d526ee4",
+  "displayName": "Home ",
   "displayOption": "FitToPage",
   "height": 720,
   "width": 1280

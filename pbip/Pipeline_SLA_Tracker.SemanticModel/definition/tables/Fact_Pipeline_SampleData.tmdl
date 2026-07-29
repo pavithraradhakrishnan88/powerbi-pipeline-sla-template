@@ -18,8 +18,10 @@ table Fact_Pipeline_SampleData
 
 		variation Variation
 			isDefault
-			relationship: 8ea7e483-68ea-44b0-882c-d4d2af1649e2
-			defaultHierarchy: LocalDateTable_d581db14-66ed-48da-8bb9-8b742a40232d.'Date Hierarchy'
+			relationship: 473261bb-2e52-4950-aff4-63d776c2c369
+			defaultHierarchy: LocalDateTable_6456a979-cf46-4215-a54c-5263f86d576d.'Date Hierarchy'
+
+		changedProperty = DataType
 
 		annotation SummarizationSetBy = Automatic
 

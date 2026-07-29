@@ -44,8 +44,20 @@ table '_Measure Table'
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
-	measure 'Bar Base (Start)' = SELECTEDVALUE(Fact_Pipeline_SampleData[StartDate])
-		formatString: General Date
+	measure 'Bar Base (Start)' =
+			
+			VAR WindowStart =
+			    CALCULATE (
+			        MIN ( Fact_Pipeline_SampleData[StartDate] ),
+			        ALL ( Fact_Pipeline_SampleData )
+			    )
+			RETURN
+			DATEDIFF (
+			    WindowStart,
+			    SELECTEDVALUE ( Fact_Pipeline_SampleData[StartDate] ),
+			    HOUR
+			)
+		formatString: 0
 		displayFolder: Floating Bars
 		lineageTag: f81f7a03-3258-41d1-8f5f-ba261e2789d3
 
@@ -54,6 +66,10 @@ table '_Measure Table'
 		lineageTag: 83989aad-97ef-4ed0-bf3e-f6e52cd60fbb
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Last Refresh' = "Last Refresh : " & UTCNOW()
+		displayFolder: Landing Page
+		lineageTag: 6ef02894-91d5-41a8-8db4-8b0250a92bc4
 
 	partition '_Measure Table' = m
 		mode: import

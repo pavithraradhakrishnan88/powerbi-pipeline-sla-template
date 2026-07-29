@@ -12,13 +12,15 @@ annotation PBI_ProTooling = ["DevMode"]
 
 annotation PBI_QueryOrder = ["Dim_Category","Fact_Pipeline_SampleData","_Measure Table"]
 
+annotation __TEdtr = 1
+
 ref table Dim_Category
 ref table Fact_Pipeline_SampleData
 ref table DateTableTemplate_a777d953-8cb9-4700-bf62-8144e83ed8ed
-ref table LocalDateTable_d581db14-66ed-48da-8bb9-8b742a40232d
 ref table LocalDateTable_63057bfd-b81d-4c42-a78b-5fa6558f4706
 ref table Dim_Spacing
 ref table '_Measure Table'
+ref table LocalDateTable_6456a979-cf46-4215-a54c-5263f86d576d
 
 ref cultureInfo en-US
 

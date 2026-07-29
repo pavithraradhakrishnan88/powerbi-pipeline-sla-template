@@ -4,7 +4,7 @@
     {
       "ordinal": 0,
       "scrollPosition": {
-        "x": 273,
+        "x": 50,
         "y": 0
       },
       "nodes": [
@@ -36,10 +36,11 @@
         },
         {
           "location": {
-            "x": 568,
+            "x": 607,
             "y": 0
           },
           "nodeIndex": "Dim_Spacing",
+          "nodeLineageTag": "e0fd4bca-a06c-4063-b926-7e35c6ec7027",
           "size": {
             "height": 200,
             "width": 234
@@ -48,8 +49,8 @@
         },
         {
           "location": {
-            "x": 802,
-            "y": 73
+            "x": 609,
+            "y": 226
           },
           "nodeIndex": "_Measure Table",
           "nodeLineageTag": "3abdd919-16cd-4bd0-86ed-2f3eb6b79637",
