@@ -1,4 +1,9 @@
-CategoryID,CategoryName,SortOrder
-1,Data Ingestion,1
-2,Transformation,2
-3,Load,3
+CategoryID,CategoryName,Description,Vendor,SortOrder
+1,ADF,Azure Data Factory Pipelines,Microsoft,1
+2,Fabric,Microsoft Fabric Data Pipelines,Microsoft,2
+3,Synapse,Azure Synapse Pipelines,Microsoft,3
+4,Databricks,Databricks Workflows,Databricks,4
+5,SQL,SQL Server Agent Jobs,Microsoft,5
+6,SSIS,SQL Server Integration Services,Microsoft,6
+7,Airflow,Apache Airflow DAGs,Apache,7
+8,Spark,Apache Spark Jobs,Apache,8
