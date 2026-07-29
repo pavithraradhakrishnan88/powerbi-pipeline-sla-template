@@ -21,8 +21,6 @@ table Fact_Pipeline_SampleData
 			relationship: 473261bb-2e52-4950-aff4-63d776c2c369
 			defaultHierarchy: LocalDateTable_6456a979-cf46-4215-a54c-5263f86d576d.'Date Hierarchy'
 
-		changedProperty = DataType
-
 		annotation SummarizationSetBy = Automatic
 
 	column EndDate
@@ -68,7 +66,7 @@ table Fact_Pipeline_SampleData
 		mode: import
 		source =
 				let
-				    Source = Csv.Document(File.Contents("C:\Users\pavit\Projects\powerbi-pipeline-sla-template\data\Fact_Pipeline_SampleData.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Source = Csv.Document(File.Contents("C:\Users\pavit\Projects\powerbi-pipeline-sla-template\data\Pipeline_SLA_SampleData_100Runs.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
 				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
 				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"PipelineID", type text}, {"StartDate", type datetime}, {"EndDate", type datetime}, {"Category", type text}, {"SLA_Target_Hrs", Int64.Type}, {"Status", type text}})
 				in

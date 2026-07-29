@@ -71,6 +71,58 @@ table '_Measure Table'
 		displayFolder: Landing Page
 		lineageTag: 6ef02894-91d5-41a8-8db4-8b0250a92bc4
 
+	measure 'Average Start Offset' =
+			
+			VAR WindowStart =
+			    CALCULATE(
+			        MIN(Fact_Pipeline_SampleData[StartDate]),
+			        ALL(Fact_Pipeline_SampleData)
+			    )
+			RETURN
+			AVERAGEX(
+			    Fact_Pipeline_SampleData,
+			    DATEDIFF(
+			        WindowStart,
+			        Fact_Pipeline_SampleData[StartDate],
+			        MINUTE
+			    ) / 60
+			)
+		displayFolder: KPI
+		lineageTag: 4175fe62-c819-46ec-954e-3a5652c08205
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Timeline Span' =
+			
+			DATEDIFF(
+			    MIN(Fact_Pipeline_SampleData[StartDate]),
+			    MAX(Fact_Pipeline_SampleData[EndDate]),
+			    MINUTE
+			) / 60
+		lineageTag: c97a5402-0d75-48dc-a467-b1be074c708f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Timeline Coverage %' =
+			
+			VAR TotalRuntime =
+			SUMX(
+			    Fact_Pipeline_SampleData,
+			    DATEDIFF(
+			        Fact_Pipeline_SampleData[StartDate],
+			        Fact_Pipeline_SampleData[EndDate],
+			        MINUTE
+			    ) / 60
+			)
+			
+			VAR Span = [Timeline Span]
+			
+			RETURN
+			DIVIDE(TotalRuntime, Span)
+		lineageTag: f3a0bd7e-66dc-4e74-ad39-317e0645f9e1
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
 	partition '_Measure Table' = m
 		mode: import
 		source =

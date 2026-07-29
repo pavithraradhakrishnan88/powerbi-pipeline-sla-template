@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "86b6dfa4aca20bada380",
   "position": {
-    "x": 900.746887966805,
+    "x": 800.66390041493787,
     "y": 558.67219917012449,
     "z": 1008,
     "height": 118.00829875518673,
-    "width": 270.37344398340252,
+    "width": 189.70954356846474,
     "tabOrder": 8
   },
   "visual": {
@@ -23,11 +23,11 @@
                       "Entity": "_Measure Table"
                     }
                   },
-                  "Property": "Breached Count"
+                  "Property": "Timeline Span"
                 }
               },
-              "queryRef": "_Measure Table.Breached Count",
-              "nativeQueryRef": "Breached Count"
+              "queryRef": "_Measure Table.Timeline Span",
+              "nativeQueryRef": "Timeline Span"
             }
           ]
         }
@@ -42,7 +42,7 @@
                     "Entity": "_Measure Table"
                   }
                 },
-                "Property": "Breached Count"
+                "Property": "Timeline Span"
               }
             },
             "direction": "Descending"

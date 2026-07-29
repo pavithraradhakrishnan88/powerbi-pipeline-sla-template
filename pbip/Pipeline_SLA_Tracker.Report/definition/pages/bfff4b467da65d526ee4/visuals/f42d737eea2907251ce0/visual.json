@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
-  "name": "d3f7987300602011509c",
+  "name": "f42d737eea2907251ce0",
   "position": {
-    "x": 276.34854771784234,
+    "x": 1054.6058091286309,
     "y": 558.67219917012449,
-    "z": 1005,
+    "z": 1009,
     "height": 118.00829875518673,
-    "width": 210.62240663900417,
-    "tabOrder": 5
+    "width": 225.56016597510376,
+    "tabOrder": 9
   },
   "visual": {
     "visualType": "cardVisual",
@@ -23,12 +23,12 @@
                       "Entity": "_Measure Table"
                     }
                   },
-                  "Property": "Average Start Offset"
+                  "Property": "Timeline Coverage %"
                 }
               },
-              "queryRef": "_Measure Table.Average Start Offset",
-              "nativeQueryRef": "Average Start Offset",
-              "format": "0.00"
+              "queryRef": "_Measure Table.Timeline Coverage %",
+              "nativeQueryRef": "Timeline Coverage %",
+              "format": "0.00%;-0.00%;0.00%"
             }
           ]
         }
@@ -43,7 +43,7 @@
                     "Entity": "_Measure Table"
                   }
                 },
-                "Property": "Average Start Offset"
+                "Property": "Timeline Coverage %"
               }
             },
             "direction": "Descending"
