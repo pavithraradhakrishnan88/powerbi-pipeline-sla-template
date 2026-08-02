@@ -162,7 +162,7 @@
       "Table": "Fact_Pipeline_SampleData",
       "Folder": "02 SLA",
       "DisplayOrder": 30,
-      "Expression": "DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[SLAStatus]=\"Breached\"),[Active Pipelines])",
+      "Expression": "DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[SLAStatus]=\"Missed\"),[Active Pipelines])",
       "Format": "0.00%",
       "Description": "Percentage of SLA breaches.",
       "Category": "SLA",
@@ -455,6 +455,28 @@
     "StatusExpression": "IF([Success Rate %]>=0.95,1,0)",
     "TrendExpression": "[Success Rate %]"
   }
+},
+{
+  "MeasureID": "M023",
+  "Name": "Last Refresh",
+  "Table": "Fact_Pipeline_SampleData",
+  "Folder": "00 System",
+  "DisplayOrder": 5 ,
+  "Expression": "FORMAT(NOW(),\"dd MMM yyyy hh:mm AM/PM\")",
+  "Format": "",
+  "Description": "Last data refresh timestamp.",
+  "Category": "System",
+  "KPI": false,
+  "Hidden": false,
+  "DataType": "Text",
+  "DependsOn": [],
+  "Template": "Text",
+  "Tags": ["System"],
+  "Synonyms": ["Refresh Time"],
+  "Owner": "BI Team",
+  "Version": "1.0.0",
+  "Status": "Active",
+  "LastUpdated": "2026-08-02"
 }
 
   ]

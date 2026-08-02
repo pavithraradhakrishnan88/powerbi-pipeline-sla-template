@@ -2,7 +2,7 @@
 // GenerateMeasures.csx
 // AUTO GENERATED
 //
-// Generated: 2026-08-02 11:19:34
+// Generated: 2026-08-02 11:57:44
 // Generator: GenerateMetadata.ps1 v1.0.0
 // Source: C:\Users\pavit\Projects\powerbi-pipeline-sla-template\scripts\tools\..\metadata\MeasureDefinitions.json
 // Tabular Editor 2.28
@@ -373,7 +373,7 @@ if(table_M008 != null)
     {
         measure_M008 = table_M008.AddMeasure(
             "SLA Breach %",
-            @"DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[SLAStatus]=""Breached""),[Active Pipelines])"
+            @"DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[SLAStatus]=""Missed""),[Active Pipelines])"
         );
 
         created++;
@@ -383,7 +383,7 @@ if(table_M008 != null)
         updated++;
     }
 
-    measure_M008.Expression = @"DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[SLAStatus]=""Breached""),[Active Pipelines])";
+    measure_M008.Expression = @"DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[SLAStatus]=""Missed""),[Active Pipelines])";
     measure_M008.DisplayFolder = "02 SLA";
     measure_M008.Description = "Percentage of SLA breaches.";
     measure_M008.FormatString = "0.00%";
@@ -954,6 +954,54 @@ if(table_M022 != null)
     measure_M022.SetAnnotation("DependsOn", "Success Rate %");
     measure_M022.SetAnnotation("LastUpdated", "2026-08-01");
     measure_M022.SetAnnotation("KPIConfig", "@{TargetExpression=0.95; StatusExpression=IF([Success Rate %]>=0.95,1,0); TrendExpression=[Success Rate %]}");
+}
+else
+{
+    Console.WriteLine("Table 'Fact_Pipeline_SampleData' not found.");
+}
+// ----------------------------------------------------------
+// Last Refresh
+// ID: M023
+// Category: System
+// ----------------------------------------------------------
+
+var table_M023 = Model.Tables["Fact_Pipeline_SampleData"];
+
+if(table_M023 != null)
+{
+    var measure_M023 = table_M023.Measures.FirstOrDefault(m => m.Name == "Last Refresh");
+
+    if(measure_M023 == null)
+    {
+        measure_M023 = table_M023.AddMeasure(
+            "Last Refresh",
+            @"FORMAT(NOW(),""dd MMM yyyy hh:mm AM/PM"")"
+        );
+
+        created++;
+    }
+    else
+    {
+        updated++;
+    }
+
+    measure_M023.Expression = @"FORMAT(NOW(),""dd MMM yyyy hh:mm AM/PM"")";
+    measure_M023.DisplayFolder = "00 System";
+    measure_M023.Description = "Last data refresh timestamp.";
+    measure_M023.FormatString = "";
+    measure_M023.IsHidden = false;
+
+    measure_M023.SetAnnotation("Owner", "BI Team");
+    measure_M023.SetAnnotation("Category", "System");
+    measure_M023.SetAnnotation("Version", "1.0.0");
+    measure_M023.SetAnnotation("DisplayOrder", "5");
+    measure_M023.SetAnnotation("Template", "Text");
+    measure_M023.SetAnnotation("Status", "Active");
+    measure_M023.SetAnnotation("Tags", "System");
+    measure_M023.SetAnnotation("Synonyms", "Refresh Time");
+    measure_M023.SetAnnotation("KPI", "False");
+    measure_M023.SetAnnotation("DataType", "Text");
+    measure_M023.SetAnnotation("LastUpdated", "2026-08-02");
 }
 else
 {
