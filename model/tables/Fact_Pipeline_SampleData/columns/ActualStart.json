@@ -1,0 +1,8 @@
+{
+  "name": "ActualStart",
+  "dataType": "dateTime",
+  "sourceColumn": "ActualStart",
+  "formatString": "General Date",
+  "lineageTag": "0f1e2d3c-4b5a-6789-0123-abcdefabcdef",
+  "summarizeBy": "none"
+}

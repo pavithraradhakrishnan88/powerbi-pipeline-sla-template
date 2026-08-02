@@ -1,0 +1,8 @@
+{
+  "name": "StartDelayMinutes",
+  "dataType": "double",
+  "sourceColumn": "StartDelayMinutes",
+  "formatString": "0.00",
+  "lineageTag": "11223344-5566-7788-99aa-bbccddeeff00",
+  "summarizeBy": "none"
+}

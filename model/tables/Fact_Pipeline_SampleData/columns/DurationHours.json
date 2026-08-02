@@ -1,0 +1,8 @@
+{
+  "name": "DurationHours",
+  "dataType": "double",
+  "sourceColumn": "DurationHours",
+  "formatString": "0.00",
+  "lineageTag": "a1b2c3d4-e5f6-4789-abcd-0123456789ab",
+  "summarizeBy": "none"
+}

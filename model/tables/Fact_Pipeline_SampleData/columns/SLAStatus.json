@@ -1,0 +1,7 @@
+{
+  "name": "SLAStatus",
+  "dataType": "string",
+  "sourceColumn": "SLAStatus",
+  "lineageTag": "d6f6a1e4-9c3b-4f2a-8f1a-0a1b2c3d4e5f",
+  "summarizeBy": "none"
+}

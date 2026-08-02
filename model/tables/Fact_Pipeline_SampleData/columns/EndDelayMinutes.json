@@ -1,0 +1,8 @@
+{
+  "name": "EndDelayMinutes",
+  "dataType": "double",
+  "sourceColumn": "EndDelayMinutes",
+  "formatString": "0.00",
+  "lineageTag": "00ffeedd-ccbb-aabb-8899-776655443322",
+  "summarizeBy": "none"
+}

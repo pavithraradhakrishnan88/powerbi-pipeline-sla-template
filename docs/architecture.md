@@ -88,3 +88,17 @@ Deployment Steps
 4. Publish report
 5. Configure scheduled refresh
 6. Validate dashboard
+
+## Screenshots
+
+### Dashboard Overview
+
+![Dashboard Overview](screenshots/dashboard-overview.png)
+
+### Data Model
+
+![Data Model](screenshots/data-model.png)
+
+### Relationships
+
+![Relationships](screenshots/relationships.png)

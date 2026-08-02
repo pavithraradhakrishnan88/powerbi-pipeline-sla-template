@@ -1,251 +1,251 @@
-RunID,PipelineName,Category,Environment,ScheduledStart,ActualStart,ScheduledEnd,ActualEnd,DurationMinutes,StartDelayMinutes,EndDelayMinutes,Status,SLAStatus,TriggerType,Owner,RetryCount,Priority,ExecutionDate
-RUN000001,HR Sync,Sales,Prod,2026-07-11 03:00,2026-07-11 03:04,2026-07-11 03:55,2026-07-11 03:58,54,4,3,Succeeded,Met,Manual,Data Engineering,0,High,2026-07-11
-RUN000002,Logs,HR,Test,2026-07-04 07:00,2026-07-04 07:19,2026-07-04 07:45,2026-07-04 08:16,57,19,31,Succeeded,Breached,Event,Platform,0,High,2026-07-04
-RUN000003,Billing,Sales,Dev,2026-07-12 13:30,2026-07-12 13:31,2026-07-12 14:25,2026-07-12 14:24,53,1,-1,Failed,Breached,Manual,Data Engineering,1,Medium,2026-07-12
-RUN000004,Forecast,Sales,Prod,2026-07-10 08:00,2026-07-10 08:14,2026-07-10 09:18,2026-07-10 09:27,73,14,9,Failed,Breached,Manual,Platform,2,High,2026-07-10
-RUN000005,ML Features,Sales,Test,2026-07-12 02:00,2026-07-12 02:21,2026-07-12 02:49,2026-07-12 03:11,50,21,22,Cancelled,Breached,Manual,Analytics,2,Medium,2026-07-12
-RUN000006,Finance GL,Finance,Prod,2026-07-03 11:30,2026-07-03 11:48,2026-07-03 12:16,2026-07-03 12:34,46,18,18,Succeeded,Breached,Event,BI Team,0,Medium,2026-07-03
-RUN000007,ML Features,ETL,Test,2026-07-07 08:15,2026-07-07 08:38,2026-07-07 09:16,2026-07-07 09:55,77,23,39,Succeeded,Breached,Manual,Platform,0,High,2026-07-07
-RUN000008,IoT,Finance,Test,2026-07-10 22:30,2026-07-10 22:47,2026-07-10 23:17,2026-07-10 23:41,54,17,24,Succeeded,Breached,Schedule,BI Team,2,Low,2026-07-10
-RUN000009,Marketing Import,Operations,Dev,2026-07-09 08:45,2026-07-09 08:53,2026-07-09 09:56,2026-07-09 10:03,70,8,7,Cancelled,Breached,Schedule,Data Engineering,0,Low,2026-07-09
-RUN000010,IoT,Marketing,Prod,2026-07-03 21:45,2026-07-03 21:54,2026-07-03 22:13,2026-07-03 22:26,32,9,13,Succeeded,Breached,Schedule,Data Engineering,2,Low,2026-07-03
-RUN000011,Customer ETL,Marketing,Prod,2026-07-13 08:30,2026-07-13 08:36,2026-07-13 09:04,2026-07-13 09:15,39,6,11,Succeeded,Breached,Schedule,Data Engineering,2,Medium,2026-07-13
-RUN000012,Support,ETL,Prod,2026-07-14 20:15,2026-07-14 20:23,2026-07-14 20:54,2026-07-14 21:18,55,8,24,Succeeded,Breached,Manual,Analytics,0,High,2026-07-14
-RUN000013,Finance GL,Operations,Dev,2026-07-06 09:15,2026-07-06 09:19,2026-07-06 09:42,2026-07-06 09:56,37,4,14,Failed,Breached,Event,BI Team,0,Low,2026-07-06
-RUN000014,Orders,HR,Prod,2026-07-08 17:15,2026-07-08 17:28,2026-07-08 18:08,2026-07-08 18:32,64,13,24,Succeeded,Breached,Manual,Analytics,2,Low,2026-07-08
-RUN000015,Customer ETL,HR,Prod,2026-07-06 14:45,2026-07-06 14:49,2026-07-06 15:20,2026-07-06 15:23,34,4,3,Succeeded,Met,Schedule,Data Engineering,0,Low,2026-07-06
-RUN000016,Finance GL,HR,Test,2026-07-11 01:15,2026-07-11 01:40,2026-07-11 01:43,2026-07-11 02:01,21,25,18,Succeeded,Breached,Event,Analytics,0,Low,2026-07-11
-RUN000017,Orders,Sales,Dev,2026-07-03 23:45,2026-07-04 00:07,2026-07-04 00:36,2026-07-04 01:05,58,22,29,Succeeded,Breached,Event,Analytics,1,Medium,2026-07-03
-RUN000018,HR Sync,HR,Dev,2026-07-07 14:00,2026-07-07 13:58,2026-07-07 14:32,2026-07-07 14:34,36,-2,2,Succeeded,Met,Schedule,Analytics,0,Medium,2026-07-07
-RUN000019,Products,Sales,Dev,2026-07-03 08:45,2026-07-03 09:09,2026-07-03 09:36,2026-07-03 09:54,45,24,18,Succeeded,Breached,Event,Data Engineering,0,High,2026-07-03
-RUN000020,Inventory,ML,Dev,2026-07-03 13:45,2026-07-03 13:48,2026-07-03 15:06,2026-07-03 15:13,85,3,7,Succeeded,Met,Manual,Platform,1,Medium,2026-07-03
-RUN000021,Sales Load,ETL,Prod,2026-07-07 22:45,2026-07-07 22:48,2026-07-07 23:24,2026-07-07 23:28,40,3,4,Succeeded,Met,Manual,Data Engineering,0,Low,2026-07-07
-RUN000022,Finance GL,Sales,Prod,2026-07-08 16:15,2026-07-08 16:28,2026-07-08 16:42,2026-07-08 16:49,21,13,7,Succeeded,Breached,Schedule,Analytics,0,Low,2026-07-08
-RUN000023,Support,Warehouse,Test,2026-07-04 18:00,2026-07-04 18:10,2026-07-04 18:30,2026-07-04 18:53,43,10,23,Succeeded,Breached,Schedule,Platform,0,Medium,2026-07-04
-RUN000024,Customer ETL,Operations,Prod,2026-07-07 04:30,2026-07-07 04:37,2026-07-07 05:48,2026-07-07 06:11,94,7,23,Failed,Breached,Event,Data Engineering,0,Low,2026-07-07
-RUN000025,Payments,Marketing,Dev,2026-07-04 16:30,2026-07-04 16:38,2026-07-04 17:06,2026-07-04 17:08,30,8,2,Succeeded,Met,Manual,Platform,2,Low,2026-07-04
-RUN000026,HR Sync,Finance,Test,2026-07-09 00:30,2026-07-09 00:55,2026-07-09 01:03,2026-07-09 01:24,29,25,21,Succeeded,Breached,Manual,BI Team,2,Medium,2026-07-09
-RUN000027,Sales Load,Sales,Prod,2026-07-04 21:30,2026-07-04 21:42,2026-07-04 22:54,2026-07-04 23:06,84,12,12,Succeeded,Breached,Manual,Platform,0,High,2026-07-04
-RUN000028,Logs,ETL,Dev,2026-07-06 04:30,2026-07-06 04:50,2026-07-06 05:10,2026-07-06 05:36,46,20,26,Succeeded,Breached,Schedule,BI Team,2,High,2026-07-06
-RUN000029,Sales Load,Warehouse,Dev,2026-07-14 11:15,2026-07-14 11:16,2026-07-14 12:30,2026-07-14 12:24,68,1,-6,Succeeded,Met,Event,BI Team,2,High,2026-07-14
-RUN000030,Inventory,ML,Dev,2026-07-06 17:45,2026-07-06 17:49,2026-07-06 18:24,2026-07-06 18:25,36,4,1,Failed,Breached,Schedule,Platform,1,Low,2026-07-06
-RUN000031,Forecast,ETL,Test,2026-07-14 23:15,2026-07-14 23:17,2026-07-15 00:09,2026-07-15 00:28,71,2,19,Succeeded,Breached,Schedule,BI Team,1,Medium,2026-07-14
-RUN000032,DW Refresh,Sales,Test,2026-07-05 07:15,2026-07-05 07:33,2026-07-05 07:38,2026-07-05 07:54,21,18,16,Succeeded,Breached,Manual,Analytics,2,Low,2026-07-05
-RUN000033,DW Refresh,ETL,Dev,2026-07-06 00:00,2026-07-06 00:02,2026-07-06 00:53,2026-07-06 01:05,63,2,12,Failed,Breached,Event,Analytics,1,Low,2026-07-06
-RUN000034,Orders,Marketing,Dev,2026-07-13 10:45,2026-07-13 10:45,2026-07-13 12:10,2026-07-13 12:14,89,0,4,Succeeded,Met,Event,Analytics,0,Low,2026-07-13
-RUN000035,Billing,Warehouse,Prod,2026-07-13 17:15,2026-07-13 17:25,2026-07-13 18:21,2026-07-13 18:25,60,10,4,Failed,Breached,Schedule,Platform,2,Medium,2026-07-13
-RUN000036,Orders,ML,Prod,2026-07-11 13:30,2026-07-11 13:49,2026-07-11 14:41,2026-07-11 15:01,72,19,20,Succeeded,Breached,Manual,BI Team,2,Low,2026-07-11
-RUN000037,Pricing,Warehouse,Test,2026-07-05 12:00,2026-07-05 12:06,2026-07-05 12:58,2026-07-05 13:02,56,6,4,Succeeded,Met,Manual,Analytics,2,High,2026-07-05
-RUN000038,Analytics,Warehouse,Dev,2026-07-09 15:15,2026-07-09 15:21,2026-07-09 15:45,2026-07-09 15:59,38,6,14,Succeeded,Breached,Schedule,Platform,0,High,2026-07-09
-RUN000039,Finance GL,Operations,Test,2026-07-03 00:00,2026-07-03 00:12,2026-07-03 00:51,2026-07-03 01:14,62,12,23,Succeeded,Breached,Event,BI Team,2,Low,2026-07-03
-RUN000040,HR Sync,ML,Dev,2026-07-07 15:45,2026-07-07 15:46,2026-07-07 16:36,2026-07-07 16:49,63,1,13,Succeeded,Breached,Schedule,Analytics,0,Low,2026-07-07
-RUN000041,Products,Warehouse,Test,2026-07-04 03:45,2026-07-04 04:07,2026-07-04 04:22,2026-07-04 04:50,43,22,28,Succeeded,Breached,Event,Analytics,2,Medium,2026-07-04
-RUN000042,DW Refresh,Operations,Prod,2026-07-03 23:45,2026-07-03 23:50,2026-07-04 01:02,2026-07-04 01:23,93,5,21,Succeeded,Breached,Schedule,Platform,1,High,2026-07-03
-RUN000043,Finance GL,Finance,Dev,2026-07-12 09:15,2026-07-12 09:22,2026-07-12 10:09,2026-07-12 10:18,56,7,9,Succeeded,Met,Schedule,Analytics,2,High,2026-07-12
-RUN000044,Logs,ETL,Dev,2026-07-12 06:00,2026-07-12 06:10,2026-07-12 07:13,2026-07-12 07:25,75,10,12,Succeeded,Breached,Manual,Analytics,2,Low,2026-07-12
-RUN000045,Forecast,ML,Prod,2026-07-01 18:45,2026-07-01 18:42,2026-07-01 20:06,2026-07-01 20:06,84,-3,0,Succeeded,Met,Event,BI Team,1,High,2026-07-01
-RUN000046,Forecast,Finance,Test,2026-07-05 13:45,2026-07-05 13:54,2026-07-05 14:08,2026-07-05 14:19,25,9,11,Succeeded,Breached,Schedule,Data Engineering,1,Low,2026-07-05
-RUN000047,IoT,Finance,Dev,2026-07-10 21:00,2026-07-10 21:17,2026-07-10 21:30,2026-07-10 21:52,35,17,22,Succeeded,Breached,Manual,Analytics,1,High,2026-07-10
-RUN000048,Logs,Marketing,Dev,2026-07-08 10:30,2026-07-08 10:35,2026-07-08 11:38,2026-07-08 11:59,84,5,21,Failed,Breached,Manual,Data Engineering,2,Low,2026-07-08
-RUN000049,Customer ETL,HR,Dev,2026-07-01 11:15,2026-07-01 11:36,2026-07-01 11:43,2026-07-01 12:16,40,21,33,Succeeded,Breached,Schedule,BI Team,0,High,2026-07-01
-RUN000050,Payments,Finance,Prod,2026-07-08 21:00,2026-07-08 21:11,2026-07-08 21:47,2026-07-08 22:12,61,11,25,Succeeded,Breached,Event,Data Engineering,0,Medium,2026-07-08
-RUN000051,Forecast,ML,Prod,2026-07-02 18:00,2026-07-02 18:15,2026-07-02 18:59,2026-07-02 19:27,72,15,28,Succeeded,Breached,Schedule,Data Engineering,2,Low,2026-07-02
-RUN000052,Analytics,Sales,Prod,2026-07-14 20:15,2026-07-14 20:34,2026-07-14 20:48,2026-07-14 21:23,49,19,35,Succeeded,Breached,Schedule,Platform,2,Medium,2026-07-14
-RUN000053,Logs,Operations,Dev,2026-07-11 11:00,2026-07-11 11:17,2026-07-11 12:24,2026-07-11 12:43,86,17,19,Succeeded,Breached,Manual,Platform,2,Medium,2026-07-11
-RUN000054,DW Refresh,Operations,Test,2026-07-12 04:45,2026-07-12 05:05,2026-07-12 05:27,2026-07-12 05:55,50,20,28,Failed,Breached,Manual,Platform,1,High,2026-07-12
-RUN000055,Analytics,ML,Test,2026-07-14 02:30,2026-07-14 02:34,2026-07-14 03:47,2026-07-14 04:07,93,4,20,Succeeded,Breached,Schedule,Analytics,1,High,2026-07-14
-RUN000056,DW Refresh,ETL,Prod,2026-07-08 06:30,2026-07-08 06:37,2026-07-08 07:23,2026-07-08 07:30,53,7,7,Succeeded,Met,Schedule,Data Engineering,0,Low,2026-07-08
-RUN000057,Customer ETL,Sales,Test,2026-07-07 15:15,2026-07-07 15:32,2026-07-07 16:35,2026-07-07 17:06,94,17,31,Succeeded,Breached,Schedule,Analytics,2,High,2026-07-07
-RUN000058,Products,Warehouse,Test,2026-07-05 21:30,2026-07-05 21:44,2026-07-05 22:50,2026-07-05 23:12,88,14,22,Succeeded,Breached,Event,Analytics,1,Medium,2026-07-05
-RUN000059,Inventory,HR,Dev,2026-07-05 07:00,2026-07-05 07:07,2026-07-05 07:44,2026-07-05 07:46,39,7,2,Succeeded,Met,Event,Analytics,1,Low,2026-07-05
-RUN000060,Payments,Finance,Test,2026-07-10 16:30,2026-07-10 16:53,2026-07-10 17:02,2026-07-10 17:23,30,23,21,Succeeded,Breached,Schedule,BI Team,1,High,2026-07-10
-RUN000061,Customer ETL,Marketing,Test,2026-07-01 17:30,2026-07-01 17:47,2026-07-01 18:06,2026-07-01 18:39,52,17,33,Succeeded,Breached,Manual,Analytics,1,High,2026-07-01
-RUN000062,Finance GL,ETL,Dev,2026-07-01 08:45,2026-07-01 09:08,2026-07-01 09:19,2026-07-01 09:36,28,23,17,Succeeded,Breached,Schedule,Platform,0,High,2026-07-01
-RUN000063,IoT,Marketing,Prod,2026-07-02 17:45,2026-07-02 18:06,2026-07-02 18:33,2026-07-02 19:02,56,21,29,Succeeded,Breached,Manual,Platform,2,Low,2026-07-02
-RUN000064,Finance GL,Finance,Dev,2026-07-01 19:00,2026-07-01 19:17,2026-07-01 19:46,2026-07-01 20:01,44,17,15,Succeeded,Breached,Schedule,Data Engineering,0,High,2026-07-01
-RUN000065,CRM Sync,Operations,Dev,2026-07-07 14:45,2026-07-07 14:43,2026-07-07 15:42,2026-07-07 15:39,56,-2,-3,Succeeded,Met,Event,BI Team,1,Low,2026-07-07
-RUN000066,Marketing Import,Marketing,Dev,2026-07-10 21:15,2026-07-10 21:15,2026-07-10 22:29,2026-07-10 22:38,83,0,9,Succeeded,Met,Schedule,Data Engineering,0,Medium,2026-07-10
-RUN000067,Forecast,Marketing,Prod,2026-07-10 23:30,2026-07-10 23:30,2026-07-11 00:46,2026-07-11 00:52,82,0,6,Succeeded,Met,Event,Analytics,1,High,2026-07-10
-RUN000068,ML Features,ETL,Prod,2026-07-10 01:45,2026-07-10 02:01,2026-07-10 02:46,2026-07-10 03:02,61,16,16,Succeeded,Breached,Manual,Data Engineering,0,Medium,2026-07-10
-RUN000069,ERP,Sales,Test,2026-07-09 20:45,2026-07-09 20:47,2026-07-09 21:40,2026-07-09 21:52,65,2,12,Succeeded,Breached,Manual,Analytics,1,Medium,2026-07-09
-RUN000070,Forecast,ETL,Test,2026-07-11 03:15,2026-07-11 03:25,2026-07-11 04:17,2026-07-11 04:41,76,10,24,Succeeded,Breached,Schedule,Platform,1,Medium,2026-07-11
-RUN000071,Support,Warehouse,Prod,2026-07-02 12:00,2026-07-02 12:11,2026-07-02 13:29,2026-07-02 13:45,94,11,16,Succeeded,Breached,Manual,Analytics,0,High,2026-07-02
-RUN000072,Customer ETL,HR,Prod,2026-07-05 17:15,2026-07-05 17:26,2026-07-05 18:11,2026-07-05 18:36,70,11,25,Succeeded,Breached,Schedule,Platform,2,High,2026-07-05
-RUN000073,HR Sync,Finance,Test,2026-07-09 13:00,2026-07-09 13:23,2026-07-09 13:48,2026-07-09 14:06,43,23,18,Succeeded,Breached,Event,Platform,2,Low,2026-07-09
-RUN000074,Forecast,HR,Prod,2026-07-05 13:45,2026-07-05 13:49,2026-07-05 15:05,2026-07-05 15:15,86,4,10,Succeeded,Met,Event,BI Team,0,Medium,2026-07-05
-RUN000075,CRM Sync,Operations,Dev,2026-07-13 13:30,2026-07-13 13:35,2026-07-13 14:54,2026-07-13 15:17,102,5,23,Succeeded,Breached,Manual,Analytics,1,Medium,2026-07-13
-RUN000076,ML Features,ML,Dev,2026-07-09 17:45,2026-07-09 17:52,2026-07-09 19:03,2026-07-09 19:08,76,7,5,Cancelled,Breached,Manual,Data Engineering,1,Low,2026-07-09
-RUN000077,Marketing Import,Operations,Dev,2026-07-08 22:45,2026-07-08 23:03,2026-07-08 23:54,2026-07-09 00:29,86,18,35,Succeeded,Breached,Schedule,Platform,0,Medium,2026-07-08
-RUN000078,Marketing Import,Sales,Test,2026-07-02 16:45,2026-07-02 17:05,2026-07-02 17:06,2026-07-02 17:22,17,20,16,Succeeded,Breached,Manual,Platform,2,Low,2026-07-02
-RUN000079,Forecast,Warehouse,Prod,2026-07-07 20:00,2026-07-07 20:24,2026-07-07 21:02,2026-07-07 21:39,75,24,37,Succeeded,Breached,Event,Analytics,2,High,2026-07-07
-RUN000080,HR Sync,Sales,Test,2026-07-10 02:15,2026-07-10 02:19,2026-07-10 03:11,2026-07-10 03:30,71,4,19,Succeeded,Breached,Schedule,Platform,0,High,2026-07-10
-RUN000081,Support,ML,Prod,2026-07-06 01:30,2026-07-06 01:38,2026-07-06 02:35,2026-07-06 02:48,70,8,13,Succeeded,Breached,Event,BI Team,0,High,2026-07-06
-RUN000082,IoT,Marketing,Test,2026-07-02 19:45,2026-07-02 19:57,2026-07-02 20:35,2026-07-02 20:57,60,12,22,Succeeded,Breached,Manual,Data Engineering,1,Medium,2026-07-02
-RUN000083,CRM Sync,ML,Prod,2026-07-11 17:15,2026-07-11 17:26,2026-07-11 17:44,2026-07-11 17:58,32,11,14,Cancelled,Breached,Manual,Analytics,1,High,2026-07-11
-RUN000084,CRM Sync,Marketing,Dev,2026-07-07 15:00,2026-07-07 15:09,2026-07-07 15:50,2026-07-07 16:09,60,9,19,Succeeded,Breached,Event,Analytics,1,High,2026-07-07
-RUN000085,ML Features,Warehouse,Dev,2026-07-10 21:00,2026-07-10 21:23,2026-07-10 22:23,2026-07-10 22:47,84,23,24,Succeeded,Breached,Event,BI Team,2,Medium,2026-07-10
-RUN000086,CRM Sync,Operations,Dev,2026-07-11 23:15,2026-07-11 23:40,2026-07-11 23:47,2026-07-12 00:24,44,25,37,Succeeded,Breached,Event,Platform,2,High,2026-07-11
-RUN000087,Products,Warehouse,Prod,2026-07-02 09:30,2026-07-02 09:32,2026-07-02 10:43,2026-07-02 10:43,71,2,0,Succeeded,Met,Event,Platform,0,Medium,2026-07-02
-RUN000088,Finance GL,Finance,Dev,2026-07-14 15:30,2026-07-14 15:52,2026-07-14 16:33,2026-07-14 16:50,58,22,17,Succeeded,Breached,Event,Analytics,2,Medium,2026-07-14
-RUN000089,DW Refresh,ML,Prod,2026-07-02 12:00,2026-07-02 12:14,2026-07-02 12:53,2026-07-02 13:02,48,14,9,Succeeded,Breached,Manual,Data Engineering,2,High,2026-07-02
-RUN000090,IoT,Marketing,Prod,2026-07-08 00:30,2026-07-08 00:47,2026-07-08 01:18,2026-07-08 01:29,42,17,11,Succeeded,Breached,Manual,Data Engineering,0,High,2026-07-08
-RUN000091,Marketing Import,ML,Test,2026-07-01 09:45,2026-07-01 09:45,2026-07-01 10:19,2026-07-01 10:18,33,0,-1,Succeeded,Met,Manual,Analytics,2,Low,2026-07-01
-RUN000092,DW Refresh,ETL,Prod,2026-07-12 04:45,2026-07-12 05:08,2026-07-12 05:17,2026-07-12 05:47,39,23,30,Succeeded,Breached,Manual,BI Team,1,Medium,2026-07-12
-RUN000093,Forecast,Marketing,Dev,2026-07-04 11:00,2026-07-04 11:14,2026-07-04 12:07,2026-07-04 12:33,79,14,26,Succeeded,Breached,Schedule,Analytics,0,Low,2026-07-04
-RUN000094,Marketing Import,HR,Dev,2026-07-04 20:00,2026-07-04 20:22,2026-07-04 20:26,2026-07-04 20:50,28,22,24,Succeeded,Breached,Event,BI Team,2,High,2026-07-04
-RUN000095,Marketing Import,Finance,Prod,2026-07-14 07:30,2026-07-14 07:52,2026-07-14 08:08,2026-07-14 08:41,49,22,33,Succeeded,Breached,Manual,BI Team,0,Low,2026-07-14
-RUN000096,Pricing,Warehouse,Dev,2026-07-14 00:15,2026-07-14 00:23,2026-07-14 00:36,2026-07-14 01:01,38,8,25,Succeeded,Breached,Schedule,Platform,0,High,2026-07-14
-RUN000097,Support,Sales,Test,2026-07-12 13:00,2026-07-12 13:12,2026-07-12 13:28,2026-07-12 13:46,34,12,18,Succeeded,Breached,Event,BI Team,2,High,2026-07-12
-RUN000098,ERP,ML,Test,2026-07-12 21:30,2026-07-12 21:47,2026-07-12 22:48,2026-07-12 22:57,70,17,9,Succeeded,Breached,Event,Data Engineering,1,Low,2026-07-12
-RUN000099,DW Refresh,Warehouse,Test,2026-07-08 02:00,2026-07-08 02:16,2026-07-08 03:01,2026-07-08 03:13,57,16,12,Succeeded,Breached,Event,Platform,1,Low,2026-07-08
-RUN000100,Products,HR,Test,2026-07-10 13:00,2026-07-10 13:24,2026-07-10 13:34,2026-07-10 14:10,46,24,36,Succeeded,Breached,Manual,BI Team,1,Medium,2026-07-10
-RUN000101,Billing,Marketing,Test,2026-07-14 14:45,2026-07-14 15:05,2026-07-14 15:58,2026-07-14 16:13,68,20,15,Succeeded,Breached,Schedule,Analytics,0,High,2026-07-14
-RUN000102,Marketing Import,ETL,Prod,2026-07-14 02:00,2026-07-14 02:00,2026-07-14 03:15,2026-07-14 03:30,90,0,15,Succeeded,Breached,Event,Platform,2,High,2026-07-14
-RUN000103,HR Sync,HR,Dev,2026-07-07 11:45,2026-07-07 11:51,2026-07-07 12:11,2026-07-07 12:28,37,6,17,Succeeded,Breached,Event,Analytics,0,High,2026-07-07
-RUN000104,Logs,ETL,Prod,2026-07-06 17:30,2026-07-06 17:51,2026-07-06 18:04,2026-07-06 18:25,34,21,21,Succeeded,Breached,Event,Platform,0,High,2026-07-06
-RUN000105,Marketing Import,ML,Dev,2026-07-05 22:30,2026-07-05 22:38,2026-07-05 23:33,2026-07-05 23:33,55,8,0,Succeeded,Met,Schedule,Data Engineering,0,Low,2026-07-05
-RUN000106,CRM Sync,Warehouse,Prod,2026-07-09 06:45,2026-07-09 06:56,2026-07-09 07:58,2026-07-09 08:11,75,11,13,Succeeded,Breached,Event,Data Engineering,0,High,2026-07-09
-RUN000107,ERP,Operations,Test,2026-07-03 19:00,2026-07-03 19:05,2026-07-03 19:30,2026-07-03 19:41,36,5,11,Succeeded,Breached,Manual,BI Team,2,High,2026-07-03
-RUN000108,Support,Marketing,Dev,2026-07-06 13:00,2026-07-06 13:18,2026-07-06 13:56,2026-07-06 14:27,69,18,31,Succeeded,Breached,Schedule,Analytics,2,High,2026-07-06
-RUN000109,CRM Sync,Warehouse,Dev,2026-07-01 06:30,2026-07-01 06:51,2026-07-01 07:17,2026-07-01 07:34,43,21,17,Succeeded,Breached,Schedule,Analytics,2,Medium,2026-07-01
-RUN000110,Payments,Sales,Test,2026-07-03 04:45,2026-07-03 05:04,2026-07-03 06:13,2026-07-03 06:31,87,19,18,Succeeded,Breached,Event,Data Engineering,1,High,2026-07-03
-RUN000111,Logs,Marketing,Dev,2026-07-08 02:30,2026-07-08 02:45,2026-07-08 03:44,2026-07-08 04:03,78,15,19,Succeeded,Breached,Manual,Data Engineering,1,High,2026-07-08
-RUN000112,ML Features,ML,Prod,2026-07-13 19:45,2026-07-13 19:44,2026-07-13 20:51,2026-07-13 20:55,71,-1,4,Succeeded,Met,Manual,Data Engineering,1,Medium,2026-07-13
-RUN000113,HR Sync,HR,Test,2026-07-12 10:15,2026-07-12 10:36,2026-07-12 11:17,2026-07-12 11:35,59,21,18,Succeeded,Breached,Manual,BI Team,0,High,2026-07-12
-RUN000114,Finance GL,Finance,Prod,2026-07-03 08:15,2026-07-03 08:31,2026-07-03 08:57,2026-07-03 09:09,38,16,12,Succeeded,Breached,Manual,Analytics,2,Low,2026-07-03
-RUN000115,IoT,Marketing,Test,2026-07-08 21:30,2026-07-08 21:31,2026-07-08 22:30,2026-07-08 22:37,66,1,7,Succeeded,Met,Event,Data Engineering,1,Low,2026-07-08
-RUN000116,CRM Sync,Sales,Prod,2026-07-02 09:45,2026-07-02 09:43,2026-07-02 11:02,2026-07-02 10:53,70,-2,-9,Succeeded,Met,Schedule,Analytics,1,Low,2026-07-02
-RUN000117,Billing,Operations,Prod,2026-07-09 23:00,2026-07-09 23:22,2026-07-10 00:17,2026-07-10 00:49,87,22,32,Succeeded,Breached,Schedule,Data Engineering,1,High,2026-07-09
-RUN000118,IoT,Operations,Prod,2026-07-13 10:00,2026-07-13 10:17,2026-07-13 11:24,2026-07-13 11:38,81,17,14,Succeeded,Breached,Event,BI Team,1,Medium,2026-07-13
-RUN000119,Billing,Sales,Test,2026-07-05 12:45,2026-07-05 13:03,2026-07-05 13:48,2026-07-05 14:17,74,18,29,Succeeded,Breached,Schedule,Analytics,1,Medium,2026-07-05
-RUN000120,Payments,Marketing,Prod,2026-07-12 21:15,2026-07-12 21:14,2026-07-12 22:17,2026-07-12 22:26,72,-1,9,Succeeded,Met,Event,Analytics,0,Low,2026-07-12
-RUN000121,Marketing Import,Sales,Prod,2026-07-12 02:30,2026-07-12 02:47,2026-07-12 03:38,2026-07-12 04:12,85,17,34,Succeeded,Breached,Event,Analytics,2,Medium,2026-07-12
-RUN000122,ERP,HR,Dev,2026-07-01 11:30,2026-07-01 11:33,2026-07-01 12:13,2026-07-01 12:18,45,3,5,Failed,Breached,Schedule,BI Team,0,Medium,2026-07-01
-RUN000123,Analytics,ML,Dev,2026-07-14 03:00,2026-07-14 03:25,2026-07-14 04:03,2026-07-14 04:44,79,25,41,Succeeded,Breached,Schedule,BI Team,2,Low,2026-07-14
-RUN000124,ML Features,Operations,Prod,2026-07-13 05:45,2026-07-13 05:55,2026-07-13 06:10,2026-07-13 06:23,28,10,13,Succeeded,Breached,Manual,Analytics,0,Low,2026-07-13
-RUN000125,IoT,Operations,Test,2026-07-04 09:45,2026-07-04 09:53,2026-07-04 10:29,2026-07-04 10:50,57,8,21,Failed,Breached,Manual,Analytics,0,High,2026-07-04
-RUN000126,Payments,Sales,Prod,2026-07-13 19:15,2026-07-13 19:13,2026-07-13 20:07,2026-07-13 20:17,64,-2,10,Succeeded,Met,Event,Data Engineering,1,High,2026-07-13
-RUN000127,Logs,Sales,Dev,2026-07-13 05:30,2026-07-13 05:55,2026-07-13 06:47,2026-07-13 07:20,85,25,33,Succeeded,Breached,Manual,Platform,0,Medium,2026-07-13
-RUN000128,Customer ETL,Warehouse,Dev,2026-07-01 12:30,2026-07-01 12:39,2026-07-01 13:20,2026-07-01 13:23,44,9,3,Succeeded,Met,Event,Platform,0,High,2026-07-01
-RUN000129,Analytics,ETL,Dev,2026-07-01 09:45,2026-07-01 10:06,2026-07-01 10:22,2026-07-01 10:57,51,21,35,Succeeded,Breached,Schedule,Platform,0,High,2026-07-01
-RUN000130,HR Sync,ETL,Dev,2026-07-09 23:45,2026-07-10 00:06,2026-07-10 00:19,2026-07-10 00:41,35,21,22,Succeeded,Breached,Manual,Analytics,0,High,2026-07-09
-RUN000131,CRM Sync,ML,Dev,2026-07-14 15:00,2026-07-14 15:15,2026-07-14 16:25,2026-07-14 16:39,84,15,14,Succeeded,Breached,Event,Platform,0,Low,2026-07-14
-RUN000132,Products,ETL,Test,2026-07-07 05:00,2026-07-07 05:08,2026-07-07 06:27,2026-07-07 06:29,81,8,2,Failed,Breached,Manual,Data Engineering,2,Medium,2026-07-07
-RUN000133,HR Sync,Warehouse,Dev,2026-07-06 08:00,2026-07-06 08:22,2026-07-06 09:05,2026-07-06 09:21,59,22,16,Succeeded,Breached,Schedule,Platform,2,Medium,2026-07-06
-RUN000134,Marketing Import,Sales,Prod,2026-07-14 20:15,2026-07-14 20:34,2026-07-14 21:34,2026-07-14 22:00,86,19,26,Succeeded,Breached,Manual,Data Engineering,1,High,2026-07-14
-RUN000135,Products,Operations,Test,2026-07-01 06:00,2026-07-01 06:06,2026-07-01 07:00,2026-07-01 07:14,68,6,14,Succeeded,Breached,Schedule,BI Team,1,Medium,2026-07-01
-RUN000136,Forecast,Operations,Test,2026-07-14 01:30,2026-07-14 01:30,2026-07-14 02:24,2026-07-14 02:41,71,0,17,Succeeded,Breached,Manual,BI Team,1,Low,2026-07-14
-RUN000137,Analytics,Finance,Prod,2026-07-08 11:30,2026-07-08 11:50,2026-07-08 12:00,2026-07-08 12:25,35,20,25,Succeeded,Breached,Manual,Platform,0,High,2026-07-08
-RUN000138,Inventory,Operations,Test,2026-07-06 21:30,2026-07-06 21:41,2026-07-06 22:29,2026-07-06 22:51,70,11,22,Succeeded,Breached,Manual,Data Engineering,2,Medium,2026-07-06
-RUN000139,Payments,Finance,Dev,2026-07-10 13:30,2026-07-10 13:29,2026-07-10 13:57,2026-07-10 14:09,40,-1,12,Succeeded,Breached,Schedule,Analytics,0,High,2026-07-10
-RUN000140,Marketing Import,Operations,Test,2026-07-02 07:30,2026-07-02 07:39,2026-07-02 08:36,2026-07-02 08:55,76,9,19,Succeeded,Breached,Manual,Analytics,0,Low,2026-07-02
-RUN000141,HR Sync,ETL,Prod,2026-07-03 16:30,2026-07-03 16:37,2026-07-03 17:40,2026-07-03 17:59,82,7,19,Succeeded,Breached,Schedule,Analytics,2,Medium,2026-07-03
-RUN000142,Analytics,Marketing,Prod,2026-07-09 03:30,2026-07-09 03:49,2026-07-09 04:23,2026-07-09 04:48,59,19,25,Succeeded,Breached,Manual,BI Team,0,High,2026-07-09
-RUN000143,Finance GL,Warehouse,Prod,2026-07-14 02:45,2026-07-14 03:10,2026-07-14 03:27,2026-07-14 04:06,56,25,39,Succeeded,Breached,Manual,Data Engineering,2,Low,2026-07-14
-RUN000144,HR Sync,HR,Dev,2026-07-05 09:15,2026-07-05 09:37,2026-07-05 09:57,2026-07-05 10:22,45,22,25,Succeeded,Breached,Schedule,Analytics,0,Medium,2026-07-05
-RUN000145,Finance GL,Sales,Test,2026-07-09 18:30,2026-07-09 18:52,2026-07-09 19:49,2026-07-09 20:20,88,22,31,Succeeded,Breached,Manual,Analytics,2,Medium,2026-07-09
-RUN000146,IoT,Warehouse,Dev,2026-07-13 13:00,2026-07-13 13:07,2026-07-13 13:36,2026-07-13 13:55,48,7,19,Succeeded,Breached,Event,BI Team,0,Medium,2026-07-13
-RUN000147,Billing,HR,Test,2026-07-09 01:00,2026-07-09 01:01,2026-07-09 02:26,2026-07-09 02:28,87,1,2,Succeeded,Met,Event,Platform,0,Medium,2026-07-09
-RUN000148,Finance GL,Finance,Prod,2026-07-04 20:30,2026-07-04 20:47,2026-07-04 21:06,2026-07-04 21:24,37,17,18,Succeeded,Breached,Event,BI Team,0,Low,2026-07-04
-RUN000149,Pricing,Marketing,Prod,2026-07-10 23:30,2026-07-10 23:53,2026-07-10 23:55,2026-07-11 00:10,17,23,15,Succeeded,Breached,Schedule,Analytics,2,Low,2026-07-10
-RUN000150,Forecast,Marketing,Test,2026-07-01 15:30,2026-07-01 15:42,2026-07-01 16:28,2026-07-01 16:39,57,12,11,Succeeded,Breached,Schedule,Data Engineering,0,Medium,2026-07-01
-RUN000151,Billing,Warehouse,Test,2026-07-07 15:45,2026-07-07 15:52,2026-07-07 16:31,2026-07-07 16:49,57,7,18,Succeeded,Breached,Schedule,Platform,2,Low,2026-07-07
-RUN000152,Marketing Import,Sales,Dev,2026-07-02 10:15,2026-07-02 10:15,2026-07-02 11:34,2026-07-02 11:34,79,0,0,Succeeded,Met,Manual,Analytics,2,Medium,2026-07-02
-RUN000153,Support,Operations,Test,2026-07-04 05:30,2026-07-04 05:33,2026-07-04 06:30,2026-07-04 06:49,76,3,19,Succeeded,Breached,Manual,Analytics,0,High,2026-07-04
-RUN000154,Sales Load,Marketing,Test,2026-07-07 16:45,2026-07-07 16:48,2026-07-07 17:35,2026-07-07 17:48,60,3,13,Succeeded,Breached,Event,Analytics,1,Low,2026-07-07
-RUN000155,Forecast,Warehouse,Dev,2026-07-01 03:45,2026-07-01 04:10,2026-07-01 04:22,2026-07-01 04:47,37,25,25,Succeeded,Breached,Manual,Data Engineering,2,Low,2026-07-01
-RUN000156,Products,Marketing,Prod,2026-07-04 11:30,2026-07-04 11:39,2026-07-04 11:59,2026-07-04 12:16,37,9,17,Succeeded,Breached,Event,Data Engineering,0,High,2026-07-04
-RUN000157,Support,ML,Prod,2026-07-07 11:30,2026-07-07 11:51,2026-07-07 12:36,2026-07-07 12:53,62,21,17,Succeeded,Breached,Schedule,Data Engineering,0,High,2026-07-07
-RUN000158,Support,Finance,Test,2026-07-12 10:45,2026-07-12 10:56,2026-07-12 12:11,2026-07-12 12:18,82,11,7,Succeeded,Breached,Event,Platform,0,Medium,2026-07-12
-RUN000159,ERP,Marketing,Test,2026-07-10 23:30,2026-07-10 23:43,2026-07-11 00:33,2026-07-11 01:04,81,13,31,Succeeded,Breached,Schedule,Platform,1,Low,2026-07-10
-RUN000160,Pricing,HR,Prod,2026-07-02 13:30,2026-07-02 13:46,2026-07-02 13:53,2026-07-02 14:16,30,16,23,Succeeded,Breached,Schedule,Analytics,0,Low,2026-07-02
-RUN000161,Pricing,Sales,Dev,2026-07-11 23:45,2026-07-12 00:08,2026-07-12 00:23,2026-07-12 00:59,51,23,36,Succeeded,Breached,Schedule,Analytics,1,Medium,2026-07-11
-RUN000162,ERP,ETL,Prod,2026-07-03 13:15,2026-07-03 13:28,2026-07-03 14:27,2026-07-03 14:56,88,13,29,Succeeded,Breached,Schedule,BI Team,2,Medium,2026-07-03
-RUN000163,Billing,Warehouse,Prod,2026-07-11 15:45,2026-07-11 15:47,2026-07-11 16:45,2026-07-11 16:53,66,2,8,Failed,Breached,Event,Platform,2,Medium,2026-07-11
-RUN000164,Orders,Operations,Test,2026-07-04 07:30,2026-07-04 07:34,2026-07-04 08:28,2026-07-04 08:33,59,4,5,Succeeded,Met,Manual,Platform,2,Low,2026-07-04
-RUN000165,Marketing Import,Marketing,Dev,2026-07-05 09:00,2026-07-05 09:09,2026-07-05 10:29,2026-07-05 10:42,93,9,13,Succeeded,Breached,Manual,Data Engineering,1,Medium,2026-07-05
-RUN000166,Products,Marketing,Dev,2026-07-11 08:45,2026-07-11 08:48,2026-07-11 09:32,2026-07-11 09:53,65,3,21,Succeeded,Breached,Schedule,BI Team,0,High,2026-07-11
-RUN000167,ERP,Sales,Prod,2026-07-11 16:15,2026-07-11 16:13,2026-07-11 17:04,2026-07-11 16:57,44,-2,-7,Succeeded,Met,Schedule,Data Engineering,2,High,2026-07-11
-RUN000168,CRM Sync,Warehouse,Test,2026-07-07 20:45,2026-07-07 21:02,2026-07-07 22:06,2026-07-07 22:21,79,17,15,Succeeded,Breached,Event,Data Engineering,0,Low,2026-07-07
-RUN000169,Sales Load,ML,Test,2026-07-10 07:00,2026-07-10 07:10,2026-07-10 07:42,2026-07-10 08:10,60,10,28,Succeeded,Breached,Schedule,Platform,0,High,2026-07-10
-RUN000170,Products,Operations,Dev,2026-07-05 18:00,2026-07-05 18:06,2026-07-05 19:02,2026-07-05 19:14,68,6,12,Cancelled,Breached,Event,Analytics,1,High,2026-07-05
-RUN000171,Inventory,ETL,Prod,2026-07-13 03:30,2026-07-13 03:50,2026-07-13 04:10,2026-07-13 04:36,46,20,26,Succeeded,Breached,Manual,Platform,2,Low,2026-07-13
-RUN000172,Finance GL,ML,Prod,2026-07-13 06:15,2026-07-13 06:38,2026-07-13 07:26,2026-07-13 07:54,76,23,28,Succeeded,Breached,Schedule,BI Team,0,Medium,2026-07-13
-RUN000173,DW Refresh,Warehouse,Test,2026-07-06 07:00,2026-07-06 07:09,2026-07-06 07:53,2026-07-06 08:01,52,9,8,Succeeded,Met,Event,Data Engineering,1,Low,2026-07-06
-RUN000174,Inventory,ML,Prod,2026-07-06 22:15,2026-07-06 22:33,2026-07-06 22:42,2026-07-06 22:55,22,18,13,Succeeded,Breached,Event,Platform,2,High,2026-07-06
-RUN000175,IoT,Warehouse,Test,2026-07-11 09:30,2026-07-11 09:34,2026-07-11 10:18,2026-07-11 10:18,44,4,0,Succeeded,Met,Event,Analytics,2,Low,2026-07-11
-RUN000176,Payments,Sales,Prod,2026-07-14 06:15,2026-07-14 06:28,2026-07-14 06:45,2026-07-14 07:04,36,13,19,Succeeded,Breached,Schedule,Data Engineering,2,Low,2026-07-14
-RUN000177,Orders,Operations,Dev,2026-07-04 18:15,2026-07-04 18:22,2026-07-04 18:56,2026-07-04 19:11,49,7,15,Succeeded,Breached,Event,Analytics,0,Medium,2026-07-04
-RUN000178,CRM Sync,ETL,Test,2026-07-03 16:45,2026-07-03 17:00,2026-07-03 18:03,2026-07-03 18:11,71,15,8,Succeeded,Breached,Manual,Data Engineering,2,High,2026-07-03
-RUN000179,Sales Load,Sales,Test,2026-07-10 02:00,2026-07-10 02:08,2026-07-10 03:14,2026-07-10 03:36,88,8,22,Succeeded,Breached,Schedule,Platform,1,High,2026-07-10
-RUN000180,Forecast,ML,Dev,2026-07-13 04:45,2026-07-13 05:10,2026-07-13 05:52,2026-07-13 06:21,71,25,29,Succeeded,Breached,Event,BI Team,2,Medium,2026-07-13
-RUN000181,Customer ETL,ETL,Test,2026-07-02 05:45,2026-07-02 05:46,2026-07-02 07:12,2026-07-02 07:28,102,1,16,Failed,Breached,Manual,Analytics,2,Medium,2026-07-02
-RUN000182,HR Sync,ETL,Prod,2026-07-14 07:15,2026-07-14 07:23,2026-07-14 08:33,2026-07-14 08:37,74,8,4,Succeeded,Met,Manual,Data Engineering,0,High,2026-07-14
-RUN000183,Sales Load,HR,Prod,2026-07-02 03:00,2026-07-02 03:16,2026-07-02 04:17,2026-07-02 04:46,90,16,29,Succeeded,Breached,Schedule,Analytics,1,High,2026-07-02
-RUN000184,Pricing,Warehouse,Prod,2026-07-09 06:00,2026-07-09 06:13,2026-07-09 06:37,2026-07-09 06:51,38,13,14,Succeeded,Breached,Event,Platform,0,Medium,2026-07-09
-RUN000185,Pricing,Finance,Prod,2026-07-03 21:15,2026-07-03 21:21,2026-07-03 22:27,2026-07-03 22:33,72,6,6,Succeeded,Met,Event,Analytics,2,Medium,2026-07-03
-RUN000186,Marketing Import,Marketing,Test,2026-07-01 11:45,2026-07-01 11:52,2026-07-01 13:12,2026-07-01 13:33,101,7,21,Succeeded,Breached,Schedule,Analytics,0,High,2026-07-01
-RUN000187,Logs,Finance,Test,2026-07-05 22:15,2026-07-05 22:13,2026-07-05 23:34,2026-07-05 23:41,88,-2,7,Succeeded,Met,Schedule,Platform,0,Medium,2026-07-05
-RUN000188,Orders,ETL,Test,2026-07-11 02:45,2026-07-11 02:44,2026-07-11 03:52,2026-07-11 04:00,76,-1,8,Succeeded,Met,Manual,Data Engineering,0,High,2026-07-11
-RUN000189,Customer ETL,HR,Dev,2026-07-13 18:15,2026-07-13 18:18,2026-07-13 19:36,2026-07-13 19:41,83,3,5,Succeeded,Met,Event,Data Engineering,2,Medium,2026-07-13
-RUN000190,CRM Sync,ML,Test,2026-07-04 22:15,2026-07-04 22:19,2026-07-04 23:25,2026-07-04 23:38,79,4,13,Succeeded,Breached,Event,Platform,1,Medium,2026-07-04
-RUN000191,ERP,Warehouse,Dev,2026-07-06 16:45,2026-07-06 16:45,2026-07-06 18:04,2026-07-06 18:21,96,0,17,Cancelled,Breached,Manual,Platform,1,High,2026-07-06
-RUN000192,Pricing,ML,Test,2026-07-10 07:15,2026-07-10 07:20,2026-07-10 07:37,2026-07-10 07:51,31,5,14,Failed,Breached,Schedule,BI Team,1,High,2026-07-10
-RUN000193,Billing,Marketing,Test,2026-07-07 18:15,2026-07-07 18:29,2026-07-07 19:38,2026-07-07 20:04,95,14,26,Failed,Breached,Event,Analytics,1,High,2026-07-07
-RUN000194,Products,ETL,Prod,2026-07-12 11:15,2026-07-12 11:35,2026-07-12 11:52,2026-07-12 12:21,46,20,29,Succeeded,Breached,Schedule,Data Engineering,2,High,2026-07-12
-RUN000195,Marketing Import,ETL,Dev,2026-07-13 00:45,2026-07-13 01:08,2026-07-13 01:22,2026-07-13 01:57,49,23,35,Succeeded,Breached,Event,Analytics,1,High,2026-07-13
-RUN000196,Logs,ETL,Dev,2026-07-10 20:45,2026-07-10 20:42,2026-07-10 22:07,2026-07-10 21:56,74,-3,-11,Succeeded,Met,Event,Platform,2,Medium,2026-07-10
-RUN000197,ML Features,HR,Prod,2026-07-01 16:45,2026-07-01 16:45,2026-07-01 17:27,2026-07-01 17:22,37,0,-5,Succeeded,Met,Event,Platform,1,Medium,2026-07-01
-RUN000198,ML Features,Marketing,Prod,2026-07-13 12:00,2026-07-13 12:09,2026-07-13 13:07,2026-07-13 13:22,73,9,15,Succeeded,Breached,Schedule,Data Engineering,0,Medium,2026-07-13
-RUN000199,Finance GL,Operations,Test,2026-07-07 12:45,2026-07-07 13:02,2026-07-07 13:12,2026-07-07 13:21,19,17,9,Succeeded,Breached,Event,Platform,2,High,2026-07-07
-RUN000200,ERP,Marketing,Dev,2026-07-09 01:15,2026-07-09 01:40,2026-07-09 02:02,2026-07-09 02:41,61,25,39,Succeeded,Breached,Schedule,Platform,2,Low,2026-07-09
-RUN000201,Forecast,Sales,Test,2026-07-11 01:15,2026-07-11 01:12,2026-07-11 02:15,2026-07-11 02:10,58,-3,-5,Succeeded,Met,Schedule,BI Team,2,Medium,2026-07-11
-RUN000202,Finance GL,Warehouse,Dev,2026-07-11 17:30,2026-07-11 17:51,2026-07-11 18:39,2026-07-11 19:15,84,21,36,Succeeded,Breached,Schedule,Analytics,0,High,2026-07-11
-RUN000203,IoT,Operations,Dev,2026-07-06 19:45,2026-07-06 19:42,2026-07-06 20:46,2026-07-06 20:55,73,-3,9,Succeeded,Met,Manual,Analytics,1,High,2026-07-06
-RUN000204,ML Features,Sales,Dev,2026-07-11 18:45,2026-07-11 19:06,2026-07-11 19:15,2026-07-11 19:47,41,21,32,Succeeded,Breached,Manual,BI Team,1,Low,2026-07-11
-RUN000205,Customer ETL,Marketing,Test,2026-07-13 20:15,2026-07-13 20:22,2026-07-13 21:24,2026-07-13 21:34,72,7,10,Succeeded,Met,Manual,Platform,0,High,2026-07-13
-RUN000206,HR Sync,ETL,Dev,2026-07-02 05:45,2026-07-02 05:59,2026-07-02 07:02,2026-07-02 07:25,86,14,23,Succeeded,Breached,Manual,Data Engineering,2,Low,2026-07-02
-RUN000207,Finance GL,HR,Prod,2026-07-13 10:45,2026-07-13 10:51,2026-07-13 11:06,2026-07-13 11:17,26,6,11,Succeeded,Breached,Event,BI Team,2,Medium,2026-07-13
-RUN000208,Inventory,ML,Test,2026-07-03 04:30,2026-07-03 04:35,2026-07-03 05:28,2026-07-03 05:40,65,5,12,Succeeded,Breached,Manual,Platform,1,High,2026-07-03
-RUN000209,HR Sync,Finance,Test,2026-07-06 08:15,2026-07-06 08:31,2026-07-06 09:38,2026-07-06 10:05,94,16,27,Succeeded,Breached,Schedule,Analytics,1,Low,2026-07-06
-RUN000210,Analytics,Finance,Test,2026-07-07 10:45,2026-07-07 10:55,2026-07-07 11:47,2026-07-07 12:15,80,10,28,Succeeded,Breached,Manual,BI Team,1,Medium,2026-07-07
-RUN000211,Pricing,HR,Test,2026-07-03 12:30,2026-07-03 12:50,2026-07-03 13:27,2026-07-03 14:01,71,20,34,Succeeded,Breached,Manual,Platform,1,Medium,2026-07-03
-RUN000212,Customer ETL,Operations,Prod,2026-07-02 18:15,2026-07-02 18:17,2026-07-02 19:44,2026-07-02 19:59,102,2,15,Succeeded,Breached,Schedule,Analytics,1,Low,2026-07-02
-RUN000213,Marketing Import,ML,Test,2026-07-02 13:45,2026-07-02 14:02,2026-07-02 14:22,2026-07-02 14:40,38,17,18,Succeeded,Breached,Schedule,Analytics,2,Medium,2026-07-02
-RUN000214,Products,Sales,Dev,2026-07-10 12:45,2026-07-10 12:43,2026-07-10 14:14,2026-07-10 14:29,106,-2,15,Failed,Breached,Schedule,Platform,0,Low,2026-07-10
-RUN000215,HR Sync,Marketing,Dev,2026-07-10 01:45,2026-07-10 02:07,2026-07-10 02:47,2026-07-10 03:14,67,22,27,Succeeded,Breached,Event,BI Team,1,Medium,2026-07-10
-RUN000216,Logs,Sales,Dev,2026-07-07 14:15,2026-07-07 14:12,2026-07-07 15:19,2026-07-07 15:23,71,-3,4,Succeeded,Met,Event,BI Team,1,Medium,2026-07-07
-RUN000217,IoT,Operations,Test,2026-07-06 14:15,2026-07-06 14:27,2026-07-06 15:41,2026-07-06 15:56,89,12,15,Succeeded,Breached,Schedule,Platform,0,Low,2026-07-06
-RUN000218,ML Features,Finance,Prod,2026-07-02 00:30,2026-07-02 00:48,2026-07-02 01:03,2026-07-02 01:38,50,18,35,Succeeded,Breached,Schedule,Platform,2,Medium,2026-07-02
-RUN000219,Forecast,ETL,Prod,2026-07-08 07:45,2026-07-08 07:47,2026-07-08 08:28,2026-07-08 08:42,55,2,14,Succeeded,Breached,Event,BI Team,1,Low,2026-07-08
-RUN000220,Finance GL,Sales,Prod,2026-07-07 12:00,2026-07-07 12:03,2026-07-07 12:47,2026-07-07 12:50,47,3,3,Succeeded,Met,Schedule,Platform,1,High,2026-07-07
-RUN000221,Forecast,ML,Prod,2026-07-08 03:30,2026-07-08 03:43,2026-07-08 04:52,2026-07-08 05:17,94,13,25,Succeeded,Breached,Schedule,Platform,1,Medium,2026-07-08
-RUN000222,ML Features,Marketing,Dev,2026-07-10 05:30,2026-07-10 05:48,2026-07-10 06:00,2026-07-10 06:14,26,18,14,Succeeded,Breached,Schedule,Platform,2,High,2026-07-10
-RUN000223,ERP,Finance,Prod,2026-07-09 12:45,2026-07-09 13:00,2026-07-09 13:22,2026-07-09 13:41,41,15,19,Succeeded,Breached,Schedule,Analytics,1,High,2026-07-09
-RUN000224,ERP,Finance,Dev,2026-07-03 10:45,2026-07-03 11:09,2026-07-03 11:11,2026-07-03 11:38,29,24,27,Failed,Breached,Manual,Analytics,1,Low,2026-07-03
-RUN000225,ML Features,Marketing,Dev,2026-07-08 13:45,2026-07-08 13:47,2026-07-08 15:07,2026-07-08 15:03,76,2,-4,Succeeded,Met,Manual,BI Team,2,Medium,2026-07-08
-RUN000226,DW Refresh,Warehouse,Prod,2026-07-03 14:45,2026-07-03 14:58,2026-07-03 16:15,2026-07-03 16:23,85,13,8,Succeeded,Breached,Schedule,Analytics,2,High,2026-07-03
-RUN000227,Payments,Sales,Test,2026-07-07 03:15,2026-07-07 03:39,2026-07-07 04:13,2026-07-07 04:30,51,24,17,Succeeded,Breached,Schedule,BI Team,0,Low,2026-07-07
-RUN000228,Orders,HR,Dev,2026-07-10 22:30,2026-07-10 22:32,2026-07-10 23:44,2026-07-10 23:57,85,2,13,Succeeded,Breached,Event,Platform,2,Medium,2026-07-10
-RUN000229,DW Refresh,Sales,Dev,2026-07-10 17:15,2026-07-10 17:34,2026-07-10 18:16,2026-07-10 18:36,62,19,20,Succeeded,Breached,Manual,Data Engineering,1,Low,2026-07-10
-RUN000230,ML Features,ML,Test,2026-07-03 22:15,2026-07-03 22:16,2026-07-03 23:06,2026-07-03 23:21,65,1,15,Succeeded,Breached,Schedule,Platform,2,Medium,2026-07-03
-RUN000231,Payments,Operations,Test,2026-07-07 14:00,2026-07-07 14:09,2026-07-07 14:31,2026-07-07 14:48,39,9,17,Succeeded,Breached,Manual,Data Engineering,2,High,2026-07-07
-RUN000232,Logs,HR,Test,2026-07-12 14:30,2026-07-12 14:52,2026-07-12 14:58,2026-07-12 15:29,37,22,31,Succeeded,Breached,Manual,Platform,1,Medium,2026-07-12
-RUN000233,Sales Load,ETL,Dev,2026-07-09 18:15,2026-07-09 18:37,2026-07-09 19:37,2026-07-09 20:01,84,22,24,Succeeded,Breached,Event,Analytics,0,High,2026-07-09
-RUN000234,Marketing Import,Marketing,Dev,2026-07-14 05:45,2026-07-14 05:42,2026-07-14 07:03,2026-07-14 07:05,83,-3,2,Succeeded,Met,Manual,Data Engineering,2,Medium,2026-07-14
-RUN000235,ML Features,ML,Prod,2026-07-05 02:30,2026-07-05 02:28,2026-07-05 03:11,2026-07-05 03:13,45,-2,2,Succeeded,Met,Schedule,Data Engineering,0,High,2026-07-05
-RUN000236,Customer ETL,Warehouse,Dev,2026-07-08 02:15,2026-07-08 02:28,2026-07-08 03:03,2026-07-08 03:29,61,13,26,Succeeded,Breached,Manual,BI Team,1,High,2026-07-08
-RUN000237,CRM Sync,Finance,Test,2026-07-04 12:00,2026-07-04 12:00,2026-07-04 12:33,2026-07-04 12:35,35,0,2,Succeeded,Met,Schedule,BI Team,0,Low,2026-07-04
-RUN000238,Marketing Import,ML,Prod,2026-07-10 00:15,2026-07-10 00:23,2026-07-10 01:31,2026-07-10 01:54,91,8,23,Succeeded,Breached,Event,Analytics,0,High,2026-07-10
-RUN000239,Marketing Import,HR,Test,2026-07-02 04:00,2026-07-02 04:08,2026-07-02 05:09,2026-07-02 05:22,74,8,13,Succeeded,Breached,Event,Data Engineering,0,Low,2026-07-02
-RUN000240,Orders,HR,Prod,2026-07-10 19:30,2026-07-10 19:54,2026-07-10 19:53,2026-07-10 20:30,36,24,37,Succeeded,Breached,Manual,Platform,2,High,2026-07-10
-RUN000241,Analytics,Sales,Prod,2026-07-13 07:45,2026-07-13 07:45,2026-07-13 08:54,2026-07-13 08:53,68,0,-1,Succeeded,Met,Schedule,Platform,1,High,2026-07-13
-RUN000242,ERP,Sales,Dev,2026-07-07 18:45,2026-07-07 18:59,2026-07-07 19:51,2026-07-07 20:18,79,14,27,Succeeded,Breached,Event,Data Engineering,0,Medium,2026-07-07
-RUN000243,Support,ML,Test,2026-07-04 01:00,2026-07-04 01:13,2026-07-04 02:10,2026-07-04 02:24,71,13,14,Succeeded,Breached,Event,Analytics,0,Low,2026-07-04
-RUN000244,Orders,Finance,Prod,2026-07-09 17:15,2026-07-09 17:14,2026-07-09 18:10,2026-07-09 18:10,56,-1,0,Succeeded,Met,Manual,Analytics,2,Low,2026-07-09
-RUN000245,ML Features,ETL,Dev,2026-07-13 20:00,2026-07-13 20:19,2026-07-13 20:59,2026-07-13 21:23,64,19,24,Succeeded,Breached,Schedule,Analytics,0,Medium,2026-07-13
-RUN000246,Inventory,Sales,Dev,2026-07-10 19:00,2026-07-10 19:18,2026-07-10 19:59,2026-07-10 20:32,74,18,33,Succeeded,Breached,Event,BI Team,2,High,2026-07-10
-RUN000247,DW Refresh,Finance,Test,2026-07-03 15:30,2026-07-03 15:43,2026-07-03 16:56,2026-07-03 17:26,103,13,30,Succeeded,Breached,Schedule,Platform,2,High,2026-07-03
-RUN000248,Pricing,Sales,Test,2026-07-13 00:30,2026-07-13 00:35,2026-07-13 01:44,2026-07-13 01:57,82,5,13,Succeeded,Breached,Manual,Platform,0,Medium,2026-07-13
-RUN000249,Pricing,Sales,Dev,2026-07-14 18:15,2026-07-14 18:17,2026-07-14 19:22,2026-07-14 19:24,67,2,2,Succeeded,Met,Event,Data Engineering,0,High,2026-07-14
-RUN000250,Sales Load,ML,Dev,2026-07-04 01:45,2026-07-04 01:54,2026-07-04 02:51,2026-07-04 02:56,62,9,5,Succeeded,Met,Manual,BI Team,1,Low,2026-07-04
+PipelineID,PipelineName,Category,Status,ScheduledStart,ActualStart,ScheduledEnd,ActualEnd,SLAHours,DurationHours,StartDelayMinutes,EndDelayMinutes,SLAStatus,Environment,Owner,Region,RetryCount
+1001,Finance_ETL,Reporting,Success,2026-07-11 03:00:00,2026-07-11 03:07:00,2026-07-11 04:17:00,2026-07-11 04:21:00,1.28,1.23,7,4,Missed,Dev,Analytics,East US,0
+1002,Support,ML,Success,2026-07-02 06:15:00,2026-07-02 06:37:00,2026-07-02 09:04:00,2026-07-02 09:16:00,2.82,2.65,22,12,Missed,Dev,Analytics,Southeast Asia,1
+1003,Billing,Ingestion,Success,2026-07-13 00:15:00,2026-07-13 00:32:00,2026-07-13 01:57:00,2026-07-13 02:12:00,1.7,1.67,17,15,Missed,Dev,Analytics,East US,1
+1004,Marketing,Ingestion,Success,2026-07-14 11:30:00,2026-07-14 11:22:00,2026-07-14 14:51:00,2026-07-14 14:47:00,3.35,3.42,-8,-4,Met,Prod,Platform,Southeast Asia,2
+1005,IoT_Ingest,Ingestion,Success,2026-07-14 11:15:00,2026-07-14 11:09:00,2026-07-14 11:41:00,2026-07-14 11:46:00,0.43,0.62,-6,5,Missed,Dev,Data Eng A,West Europe,1
+1006,Reporting,Ingestion,Success,2026-07-08 20:30:00,2026-07-08 20:30:00,2026-07-08 22:19:00,2026-07-08 22:20:00,1.82,1.83,0,1,Missed,Prod,Data Eng B,Southeast Asia,2
+1007,Support,ETL,Success,2026-07-04 05:45:00,2026-07-04 05:59:00,2026-07-04 07:09:00,2026-07-04 07:42:00,1.4,1.72,14,33,Missed,Prod,Platform,East US,0
+1008,Billing,ETL,Success,2026-07-14 01:30:00,2026-07-14 01:45:00,2026-07-14 02:53:00,2026-07-14 03:00:00,1.38,1.25,15,7,Missed,Prod,Analytics,West Europe,2
+1009,Reporting,Reporting,Success,2026-07-08 04:30:00,2026-07-08 04:28:00,2026-07-08 05:48:00,2026-07-08 05:59:00,1.3,1.52,-2,11,Missed,Test,Analytics,West Europe,0
+1010,HR_Load,ETL,Success,2026-07-03 16:45:00,2026-07-03 16:40:00,2026-07-03 20:13:00,2026-07-03 19:59:00,3.47,3.32,-5,-14,Met,Prod,Analytics,Southeast Asia,0
+1011,Customer_ETL,Ingestion,Success,2026-07-07 12:45:00,2026-07-07 13:08:00,2026-07-07 14:04:00,2026-07-07 14:34:00,1.32,1.43,23,30,Missed,Prod,Platform,Southeast Asia,1
+1012,Reporting,Reporting,Failed,2026-07-02 09:45:00,2026-07-02 09:45:00,2026-07-02 11:56:00,2026-07-02 11:46:00,2.18,2.02,0,-10,Met,Dev,Data Eng A,Southeast Asia,2
+1013,Payments,Ingestion,Success,2026-07-14 20:15:00,2026-07-14 20:14:00,2026-07-14 22:05:00,2026-07-14 22:18:00,1.83,2.07,-1,13,Missed,Prod,Platform,West Europe,0
+1014,Inventory_ETL,Ingestion,Success,2026-07-02 11:30:00,2026-07-02 11:35:00,2026-07-02 11:59:00,2026-07-02 12:01:00,0.48,0.43,5,2,Missed,Prod,Analytics,East US,2
+1015,Warehouse,ETL,Success,2026-07-13 04:15:00,2026-07-13 04:35:00,2026-07-13 06:50:00,2026-07-13 07:05:00,2.58,2.5,20,15,Missed,Prod,Data Eng B,Southeast Asia,1
+1016,ML_Scoring,Ingestion,Success,2026-07-07 21:30:00,2026-07-07 21:48:00,2026-07-07 23:57:00,2026-07-08 00:19:00,2.45,2.52,18,22,Missed,Test,Data Eng A,Southeast Asia,2
+1017,ML_Scoring,Ingestion,Success,2026-07-04 18:15:00,2026-07-04 18:05:00,2026-07-04 18:48:00,2026-07-04 18:50:00,0.55,0.75,-10,2,Missed,Dev,Platform,East US,2
+1018,Forecast,ETL,Success,2026-07-04 08:45:00,2026-07-04 08:48:00,2026-07-04 11:18:00,2026-07-04 11:15:00,2.55,2.45,3,-3,Met,Test,Analytics,East US,0
+1019,Sales_Load,Ingestion,Success,2026-07-02 21:45:00,2026-07-02 21:57:00,2026-07-02 23:48:00,2026-07-03 00:03:00,2.05,2.1,12,15,Missed,Dev,Analytics,Southeast Asia,1
+1020,Warehouse,ETL,Success,2026-07-13 03:15:00,2026-07-13 03:17:00,2026-07-13 04:18:00,2026-07-13 04:27:00,1.05,1.17,2,9,Missed,Test,Analytics,East US,0
+1021,Inventory_ETL,ETL,Success,2026-07-08 17:00:00,2026-07-08 16:53:00,2026-07-08 20:01:00,2026-07-08 20:01:00,3.02,3.13,-7,0,Met,Dev,Analytics,West Europe,1
+1022,Reporting,ML,Running,2026-07-04 12:00:00,2026-07-04 12:00:00,2026-07-04 13:52:00,2026-07-04 13:42:00,1.87,1.7,0,-10,Met,Test,Analytics,Southeast Asia,3
+1023,Sales_Load,Streaming,Success,2026-07-03 06:30:00,2026-07-03 06:33:00,2026-07-03 06:59:00,2026-07-03 07:10:00,0.48,0.62,3,11,Missed,Dev,Data Eng A,Southeast Asia,1
+1024,Inventory_ETL,Reporting,Success,2026-07-09 16:15:00,2026-07-09 16:08:00,2026-07-09 18:40:00,2026-07-09 18:25:00,2.42,2.28,-7,-15,Met,Dev,Data Eng B,West Europe,0
+1025,Payments,Streaming,Success,2026-07-10 07:00:00,2026-07-10 06:55:00,2026-07-10 09:02:00,2026-07-10 09:08:00,2.03,2.22,-5,6,Missed,Test,Data Eng B,Southeast Asia,2
+1026,Audit,Streaming,Success,2026-07-06 07:30:00,2026-07-06 07:45:00,2026-07-06 08:18:00,2026-07-06 08:44:00,0.8,0.98,15,26,Missed,Dev,Data Eng A,West Europe,2
+1027,Products,Ingestion,Success,2026-07-10 03:00:00,2026-07-10 03:24:00,2026-07-10 04:09:00,2026-07-10 04:39:00,1.15,1.25,24,30,Missed,Dev,Platform,West Europe,0
+1028,IoT_Ingest,Ingestion,Success,2026-07-08 17:30:00,2026-07-08 17:53:00,2026-07-08 17:47:00,2026-07-08 18:21:00,0.28,0.47,23,34,Missed,Dev,Platform,East US,0
+1029,Billing,ETL,Success,2026-07-12 17:15:00,2026-07-12 17:22:00,2026-07-12 18:42:00,2026-07-12 18:58:00,1.45,1.6,7,16,Missed,Prod,Platform,Southeast Asia,1
+1030,Billing,ETL,Success,2026-07-05 01:00:00,2026-07-05 01:17:00,2026-07-05 04:47:00,2026-07-05 05:02:00,3.78,3.75,17,15,Missed,Prod,Platform,East US,2
+1031,HR_Load,Reporting,Success,2026-07-08 17:45:00,2026-07-08 18:10:00,2026-07-08 18:02:00,2026-07-08 18:20:00,0.28,0.17,25,18,Missed,Dev,Platform,Southeast Asia,2
+1032,Sales_Load,Streaming,Failed,2026-07-03 13:15:00,2026-07-03 13:07:00,2026-07-03 14:48:00,2026-07-03 14:41:00,1.55,1.57,-8,-7,Met,Dev,Data Eng B,Southeast Asia,0
+1033,CRM_Sync,ML,Success,2026-07-06 17:45:00,2026-07-06 17:44:00,2026-07-06 19:00:00,2026-07-06 19:16:00,1.25,1.53,-1,16,Missed,Dev,Data Eng B,Southeast Asia,1
+1034,Marketing,Ingestion,Success,2026-07-13 13:15:00,2026-07-13 13:22:00,2026-07-13 14:10:00,2026-07-13 14:32:00,0.92,1.17,7,22,Missed,Test,Data Eng B,East US,1
+1035,Billing,Streaming,Success,2026-07-06 09:15:00,2026-07-06 09:19:00,2026-07-06 09:36:00,2026-07-06 09:51:00,0.35,0.53,4,15,Missed,Dev,Platform,West Europe,2
+1036,CRM_Sync,Reporting,Failed,2026-07-09 12:30:00,2026-07-09 12:21:00,2026-07-09 13:14:00,2026-07-09 13:23:00,0.73,1.03,-9,9,Missed,Test,Data Eng A,East US,3
+1037,Orders_Stream,Streaming,Success,2026-07-06 23:30:00,2026-07-06 23:47:00,2026-07-07 02:20:00,2026-07-07 02:43:00,2.83,2.93,17,23,Missed,Dev,Analytics,East US,2
+1038,Billing,Reporting,Failed,2026-07-13 17:15:00,2026-07-13 17:28:00,2026-07-13 19:20:00,2026-07-13 19:25:00,2.08,1.95,13,5,Missed,Test,Data Eng A,Southeast Asia,2
+1039,HR_Load,ETL,Success,2026-07-09 09:45:00,2026-07-09 09:55:00,2026-07-09 11:43:00,2026-07-09 12:05:00,1.97,2.17,10,22,Missed,Test,Analytics,Southeast Asia,2
+1040,IoT_Ingest,ETL,Success,2026-07-03 19:30:00,2026-07-03 19:45:00,2026-07-03 22:05:00,2026-07-03 22:36:00,2.58,2.85,15,31,Missed,Test,Platform,West Europe,1
+1041,CRM_Sync,Ingestion,Failed,2026-07-08 21:15:00,2026-07-08 21:37:00,2026-07-08 23:31:00,2026-07-09 00:08:00,2.27,2.52,22,37,Missed,Test,Platform,East US,1
+1042,Forecast,Reporting,Success,2026-07-11 09:15:00,2026-07-11 09:17:00,2026-07-11 10:07:00,2026-07-11 09:59:00,0.87,0.7,2,-8,Met,Dev,Analytics,West Europe,2
+1043,Customer_ETL,Ingestion,Success,2026-07-10 06:45:00,2026-07-10 07:06:00,2026-07-10 08:42:00,2026-07-10 09:00:00,1.95,1.9,21,18,Missed,Test,Data Eng B,East US,2
+1044,Audit,ETL,Success,2026-07-09 14:00:00,2026-07-09 14:25:00,2026-07-09 15:18:00,2026-07-09 16:02:00,1.3,1.62,25,44,Missed,Test,Platform,West Europe,2
+1045,Forecast,ML,Success,2026-07-14 23:45:00,2026-07-15 00:10:00,2026-07-15 01:54:00,2026-07-15 02:37:00,2.15,2.45,25,43,Missed,Test,Data Eng B,Southeast Asia,1
+1046,IoT_Ingest,ETL,Success,2026-07-13 16:45:00,2026-07-13 16:50:00,2026-07-13 18:10:00,2026-07-13 18:19:00,1.42,1.48,5,9,Missed,Test,Platform,West Europe,2
+1047,Orders_Stream,Ingestion,Success,2026-07-02 04:15:00,2026-07-02 04:19:00,2026-07-02 06:08:00,2026-07-02 06:24:00,1.88,2.08,4,16,Missed,Test,Analytics,West Europe,2
+1048,Customer_ETL,Reporting,Success,2026-07-08 13:00:00,2026-07-08 13:03:00,2026-07-08 16:48:00,2026-07-08 16:54:00,3.8,3.85,3,6,Missed,Test,Analytics,East US,1
+1049,ML_Scoring,ML,Success,2026-07-05 12:45:00,2026-07-05 13:09:00,2026-07-05 16:11:00,2026-07-05 16:48:00,3.43,3.65,24,37,Missed,Dev,Platform,West Europe,1
+1050,HR_Load,Reporting,Success,2026-07-01 12:30:00,2026-07-01 12:45:00,2026-07-01 15:50:00,2026-07-01 16:00:00,3.33,3.25,15,10,Missed,Prod,Data Eng A,West Europe,2
+1051,Audit,ETL,Success,2026-07-10 21:00:00,2026-07-10 20:55:00,2026-07-10 23:59:00,2026-07-10 23:57:00,2.98,3.03,-5,-2,Met,Dev,Platform,West Europe,1
+1052,Warehouse,Streaming,Success,2026-07-04 14:30:00,2026-07-04 14:41:00,2026-07-04 17:59:00,2026-07-04 18:28:00,3.48,3.78,11,29,Missed,Dev,Analytics,East US,2
+1053,Sales_Load,Ingestion,Success,2026-07-09 01:30:00,2026-07-09 01:34:00,2026-07-09 04:31:00,2026-07-09 04:27:00,3.02,2.88,4,-4,Met,Dev,Data Eng B,East US,2
+1054,Orders_Stream,ML,Success,2026-07-03 07:15:00,2026-07-03 07:35:00,2026-07-03 10:21:00,2026-07-03 10:34:00,3.1,2.98,20,13,Missed,Prod,Platform,West Europe,0
+1055,IoT_Ingest,Reporting,Success,2026-07-10 19:00:00,2026-07-10 19:00:00,2026-07-10 20:34:00,2026-07-10 20:27:00,1.57,1.45,0,-7,Met,Prod,Analytics,West Europe,2
+1056,Finance_ETL,Reporting,Success,2026-07-04 02:15:00,2026-07-04 02:11:00,2026-07-04 05:28:00,2026-07-04 05:38:00,3.22,3.45,-4,10,Missed,Dev,Platform,Southeast Asia,1
+1057,Warehouse,ML,Success,2026-07-11 11:00:00,2026-07-11 11:22:00,2026-07-11 14:00:00,2026-07-11 14:22:00,3.0,3.0,22,22,Missed,Dev,Analytics,West Europe,2
+1058,Reporting,Reporting,Success,2026-07-14 14:15:00,2026-07-14 14:32:00,2026-07-14 15:15:00,2026-07-14 15:45:00,1.0,1.22,17,30,Missed,Prod,Analytics,West Europe,1
+1059,Inventory_ETL,Streaming,Success,2026-07-14 23:30:00,2026-07-14 23:40:00,2026-07-15 03:23:00,2026-07-15 03:30:00,3.88,3.83,10,7,Missed,Test,Data Eng B,West Europe,2
+1060,CRM_Sync,ML,Success,2026-07-10 21:45:00,2026-07-10 21:56:00,2026-07-10 22:07:00,2026-07-10 22:23:00,0.37,0.45,11,16,Missed,Dev,Platform,West Europe,1
+1061,Inventory_ETL,ETL,Failed,2026-07-05 19:30:00,2026-07-05 19:55:00,2026-07-05 19:47:00,2026-07-05 20:18:00,0.28,0.38,25,31,Missed,Prod,Analytics,West Europe,1
+1062,ML_Scoring,ML,Success,2026-07-12 15:45:00,2026-07-12 16:03:00,2026-07-12 19:22:00,2026-07-12 19:30:00,3.62,3.45,18,8,Missed,Prod,Data Eng B,West Europe,2
+1063,Support,Streaming,Success,2026-07-10 11:45:00,2026-07-10 12:10:00,2026-07-10 14:15:00,2026-07-10 14:41:00,2.5,2.52,25,26,Missed,Test,Analytics,West Europe,1
+1064,CRM_Sync,ETL,Success,2026-07-05 07:00:00,2026-07-05 07:02:00,2026-07-05 08:35:00,2026-07-05 08:30:00,1.58,1.47,2,-5,Met,Dev,Analytics,West Europe,2
+1065,Products,ETL,Success,2026-07-10 16:30:00,2026-07-10 16:26:00,2026-07-10 20:18:00,2026-07-10 20:10:00,3.8,3.73,-4,-8,Met,Test,Data Eng A,Southeast Asia,2
+1066,HR_Load,ML,Success,2026-07-03 08:00:00,2026-07-03 07:53:00,2026-07-03 10:36:00,2026-07-03 10:28:00,2.6,2.58,-7,-8,Met,Dev,Data Eng A,Southeast Asia,1
+1067,Forecast,Ingestion,Success,2026-07-08 15:45:00,2026-07-08 15:56:00,2026-07-08 16:47:00,2026-07-08 17:18:00,1.03,1.37,11,31,Missed,Dev,Analytics,West Europe,0
+1068,IoT_Ingest,Ingestion,Success,2026-07-10 20:00:00,2026-07-10 19:59:00,2026-07-10 20:53:00,2026-07-10 21:07:00,0.88,1.13,-1,14,Missed,Dev,Data Eng A,Southeast Asia,1
+1069,IoT_Ingest,Reporting,Failed,2026-07-10 19:15:00,2026-07-10 19:38:00,2026-07-10 21:07:00,2026-07-10 21:34:00,1.87,1.93,23,27,Missed,Test,Platform,Southeast Asia,0
+1070,Inventory_ETL,ETL,Success,2026-07-10 23:00:00,2026-07-10 23:03:00,2026-07-11 01:55:00,2026-07-11 01:54:00,2.92,2.85,3,-1,Met,Dev,Data Eng B,Southeast Asia,0
+1071,Sales_Load,ETL,Success,2026-07-03 00:45:00,2026-07-03 01:03:00,2026-07-03 03:56:00,2026-07-03 04:23:00,3.18,3.33,18,27,Missed,Test,Platform,Southeast Asia,1
+1072,Orders_Stream,ML,Success,2026-07-02 21:15:00,2026-07-02 21:21:00,2026-07-03 00:51:00,2026-07-03 01:12:00,3.6,3.85,6,21,Missed,Dev,Data Eng B,Southeast Asia,0
+1073,IoT_Ingest,ML,Success,2026-07-05 04:00:00,2026-07-05 03:53:00,2026-07-05 04:57:00,2026-07-05 05:05:00,0.95,1.2,-7,8,Missed,Dev,Analytics,Southeast Asia,1
+1074,Sales_Load,ML,Success,2026-07-12 12:30:00,2026-07-12 12:52:00,2026-07-12 15:03:00,2026-07-12 15:30:00,2.55,2.63,22,27,Missed,Prod,Platform,Southeast Asia,1
+1075,Sales_Load,ETL,Success,2026-07-01 02:15:00,2026-07-01 02:06:00,2026-07-01 05:45:00,2026-07-01 05:47:00,3.5,3.68,-9,2,Missed,Test,Analytics,West Europe,0
+1076,Billing,Ingestion,Success,2026-07-10 13:45:00,2026-07-10 13:40:00,2026-07-10 16:00:00,2026-07-10 15:56:00,2.25,2.27,-5,-4,Met,Dev,Platform,West Europe,2
+1077,Reporting,Streaming,Success,2026-07-08 09:45:00,2026-07-08 10:10:00,2026-07-08 10:09:00,2026-07-08 10:38:00,0.4,0.47,25,29,Missed,Dev,Analytics,Southeast Asia,0
+1078,Forecast,ML,Success,2026-07-11 17:45:00,2026-07-11 18:01:00,2026-07-11 18:13:00,2026-07-11 18:25:00,0.47,0.4,16,12,Missed,Dev,Data Eng B,West Europe,2
+1079,ML_Scoring,ETL,Failed,2026-07-03 09:45:00,2026-07-03 10:06:00,2026-07-03 10:31:00,2026-07-03 10:42:00,0.77,0.6,21,11,Missed,Test,Data Eng A,Southeast Asia,3
+1080,Forecast,Streaming,Success,2026-07-02 07:00:00,2026-07-02 07:19:00,2026-07-02 07:45:00,2026-07-02 08:14:00,0.75,0.92,19,29,Missed,Prod,Platform,West Europe,1
+1081,Payments,ETL,Success,2026-07-08 07:45:00,2026-07-08 08:10:00,2026-07-08 08:37:00,2026-07-08 09:04:00,0.87,0.9,25,27,Missed,Dev,Platform,West Europe,1
+1082,Forecast,ETL,Success,2026-07-13 16:30:00,2026-07-13 16:20:00,2026-07-13 17:57:00,2026-07-13 18:00:00,1.45,1.67,-10,3,Missed,Test,Analytics,West Europe,1
+1083,ML_Scoring,Reporting,Success,2026-07-09 17:45:00,2026-07-09 18:04:00,2026-07-09 19:22:00,2026-07-09 19:58:00,1.62,1.9,19,36,Missed,Test,Data Eng B,West Europe,0
+1084,HR_Load,ML,Success,2026-07-06 23:45:00,2026-07-06 23:59:00,2026-07-07 01:38:00,2026-07-07 02:03:00,1.88,2.07,14,25,Missed,Dev,Data Eng B,Southeast Asia,2
+1085,HR_Load,ML,Success,2026-07-06 03:45:00,2026-07-06 03:41:00,2026-07-06 06:14:00,2026-07-06 06:29:00,2.48,2.8,-4,15,Missed,Prod,Data Eng B,East US,1
+1086,Support,ML,Success,2026-07-13 08:30:00,2026-07-13 08:45:00,2026-07-13 11:31:00,2026-07-13 11:38:00,3.02,2.88,15,7,Missed,Test,Analytics,Southeast Asia,0
+1087,Finance_ETL,Ingestion,Success,2026-07-10 02:15:00,2026-07-10 02:23:00,2026-07-10 03:28:00,2026-07-10 03:49:00,1.22,1.43,8,21,Missed,Test,Data Eng B,Southeast Asia,1
+1088,HR_Load,ETL,Success,2026-07-01 01:30:00,2026-07-01 01:23:00,2026-07-01 03:00:00,2026-07-01 02:54:00,1.5,1.52,-7,-6,Met,Prod,Analytics,Southeast Asia,2
+1089,ML_Scoring,ML,Success,2026-07-13 05:15:00,2026-07-13 05:16:00,2026-07-13 05:50:00,2026-07-13 06:00:00,0.58,0.73,1,10,Missed,Prod,Data Eng B,East US,1
+1090,Audit,Streaming,Failed,2026-07-11 08:45:00,2026-07-11 08:51:00,2026-07-11 11:50:00,2026-07-11 11:46:00,3.08,2.92,6,-4,Met,Prod,Data Eng B,East US,3
+1091,IoT_Ingest,ETL,Success,2026-07-06 18:30:00,2026-07-06 18:47:00,2026-07-06 21:41:00,2026-07-06 21:56:00,3.18,3.15,17,15,Missed,Test,Analytics,East US,0
+1092,Marketing,Streaming,Success,2026-07-07 18:30:00,2026-07-07 18:38:00,2026-07-07 21:44:00,2026-07-07 21:51:00,3.23,3.22,8,7,Missed,Dev,Data Eng A,Southeast Asia,2
+1093,Reporting,ETL,Success,2026-07-08 09:15:00,2026-07-08 09:27:00,2026-07-08 10:26:00,2026-07-08 10:48:00,1.18,1.35,12,22,Missed,Prod,Data Eng A,Southeast Asia,2
+1094,Inventory_ETL,Streaming,Success,2026-07-01 09:45:00,2026-07-01 09:37:00,2026-07-01 12:28:00,2026-07-01 12:21:00,2.72,2.73,-8,-7,Met,Test,Analytics,East US,0
+1095,CRM_Sync,Streaming,Success,2026-07-03 17:30:00,2026-07-03 17:53:00,2026-07-03 19:53:00,2026-07-03 20:35:00,2.38,2.7,23,42,Missed,Test,Platform,Southeast Asia,1
+1096,Marketing,Reporting,Failed,2026-07-13 03:45:00,2026-07-13 03:39:00,2026-07-13 04:36:00,2026-07-13 04:44:00,0.85,1.08,-6,8,Missed,Test,Data Eng A,West Europe,0
+1097,Reporting,Reporting,Success,2026-07-05 17:00:00,2026-07-05 17:19:00,2026-07-05 18:49:00,2026-07-05 19:19:00,1.82,2.0,19,30,Missed,Test,Platform,East US,2
+1098,Inventory_ETL,ML,Success,2026-07-04 15:00:00,2026-07-04 15:25:00,2026-07-04 16:38:00,2026-07-04 17:22:00,1.63,1.95,25,44,Missed,Prod,Platform,Southeast Asia,1
+1099,ML_Scoring,Reporting,Success,2026-07-02 04:00:00,2026-07-02 03:52:00,2026-07-02 05:32:00,2026-07-02 05:29:00,1.53,1.62,-8,-3,Met,Dev,Analytics,West Europe,1
+1100,Forecast,Reporting,Success,2026-07-11 23:45:00,2026-07-11 23:44:00,2026-07-12 01:46:00,2026-07-12 01:55:00,2.02,2.18,-1,9,Missed,Test,Platform,East US,2
+1101,Products,Reporting,Success,2026-07-06 06:45:00,2026-07-06 07:03:00,2026-07-06 08:00:00,2026-07-06 08:35:00,1.25,1.53,18,35,Missed,Prod,Platform,East US,1
+1102,Customer_ETL,Ingestion,Success,2026-07-05 06:00:00,2026-07-05 06:19:00,2026-07-05 06:38:00,2026-07-05 07:08:00,0.63,0.82,19,30,Missed,Test,Data Eng B,East US,2
+1103,HR_Load,Reporting,Success,2026-07-04 02:15:00,2026-07-04 02:18:00,2026-07-04 05:58:00,2026-07-04 06:18:00,3.72,4.0,3,20,Missed,Dev,Platform,East US,0
+1104,Customer_ETL,Streaming,Success,2026-07-09 08:15:00,2026-07-09 08:12:00,2026-07-09 11:19:00,2026-07-09 11:33:00,3.07,3.35,-3,14,Missed,Dev,Platform,East US,0
+1105,Forecast,ML,Success,2026-07-05 01:15:00,2026-07-05 01:31:00,2026-07-05 03:44:00,2026-07-05 03:53:00,2.48,2.37,16,9,Missed,Test,Data Eng A,West Europe,2
+1106,Customer_ETL,Ingestion,Success,2026-07-04 19:00:00,2026-07-04 19:23:00,2026-07-04 20:32:00,2026-07-04 20:59:00,1.53,1.6,23,27,Missed,Test,Analytics,West Europe,2
+1107,Inventory_ETL,ETL,Success,2026-07-02 15:45:00,2026-07-02 15:39:00,2026-07-02 16:20:00,2026-07-02 16:14:00,0.58,0.58,-6,-6,Met,Test,Platform,West Europe,2
+1108,Finance_ETL,Reporting,Success,2026-07-09 09:45:00,2026-07-09 10:07:00,2026-07-09 12:34:00,2026-07-09 12:59:00,2.82,2.87,22,25,Missed,Prod,Data Eng B,West Europe,1
+1109,Billing,ML,Success,2026-07-04 13:30:00,2026-07-04 13:49:00,2026-07-04 15:27:00,2026-07-04 15:49:00,1.95,2.0,19,22,Missed,Test,Platform,West Europe,0
+1110,Finance_ETL,Streaming,Success,2026-07-11 15:00:00,2026-07-11 14:55:00,2026-07-11 18:47:00,2026-07-11 18:34:00,3.78,3.65,-5,-13,Met,Dev,Data Eng A,Southeast Asia,2
+1111,Warehouse,Ingestion,Success,2026-07-09 10:00:00,2026-07-09 10:16:00,2026-07-09 11:45:00,2026-07-09 12:18:00,1.75,2.03,16,33,Missed,Test,Platform,West Europe,0
+1112,Finance_ETL,Streaming,Success,2026-07-10 16:15:00,2026-07-10 16:14:00,2026-07-10 19:18:00,2026-07-10 19:22:00,3.05,3.13,-1,4,Missed,Prod,Platform,East US,1
+1113,Support,Ingestion,Success,2026-07-10 07:45:00,2026-07-10 08:10:00,2026-07-10 11:16:00,2026-07-10 11:57:00,3.52,3.78,25,41,Missed,Prod,Platform,East US,0
+1114,HR_Load,Reporting,Success,2026-07-05 22:30:00,2026-07-05 22:41:00,2026-07-06 00:14:00,2026-07-06 00:15:00,1.73,1.57,11,1,Missed,Prod,Analytics,East US,0
+1115,Warehouse,ML,Success,2026-07-12 20:00:00,2026-07-12 19:55:00,2026-07-12 23:26:00,2026-07-12 23:27:00,3.43,3.53,-5,1,Missed,Test,Data Eng B,West Europe,1
+1116,Sales_Load,Ingestion,Success,2026-07-12 10:00:00,2026-07-12 09:53:00,2026-07-12 10:54:00,2026-07-12 10:42:00,0.9,0.82,-7,-12,Met,Test,Analytics,Southeast Asia,1
+1117,Finance_ETL,Streaming,Success,2026-07-08 19:45:00,2026-07-08 20:01:00,2026-07-08 21:09:00,2026-07-08 21:21:00,1.4,1.33,16,12,Missed,Test,Data Eng A,West Europe,2
+1118,Marketing,Reporting,Success,2026-07-11 18:45:00,2026-07-11 19:08:00,2026-07-11 21:50:00,2026-07-11 22:12:00,3.08,3.07,23,22,Missed,Dev,Data Eng A,East US,1
+1119,Warehouse,ETL,Success,2026-07-04 04:30:00,2026-07-04 04:38:00,2026-07-04 06:08:00,2026-07-04 06:09:00,1.63,1.52,8,1,Missed,Dev,Analytics,Southeast Asia,2
+1120,Warehouse,Ingestion,Success,2026-07-04 16:30:00,2026-07-04 16:24:00,2026-07-04 18:26:00,2026-07-04 18:37:00,1.93,2.22,-6,11,Missed,Test,Data Eng A,West Europe,2
+1121,Billing,ETL,Success,2026-07-07 18:45:00,2026-07-07 19:01:00,2026-07-07 20:14:00,2026-07-07 20:23:00,1.48,1.37,16,9,Missed,Prod,Analytics,Southeast Asia,1
+1122,Inventory_ETL,ML,Success,2026-07-02 13:00:00,2026-07-02 13:05:00,2026-07-02 15:06:00,2026-07-02 15:19:00,2.1,2.23,5,13,Missed,Test,Platform,East US,1
+1123,Orders_Stream,Streaming,Success,2026-07-13 05:00:00,2026-07-13 05:22:00,2026-07-13 07:57:00,2026-07-13 08:12:00,2.95,2.83,22,15,Missed,Test,Data Eng B,East US,0
+1124,Inventory_ETL,ETL,Success,2026-07-03 08:15:00,2026-07-03 08:16:00,2026-07-03 11:04:00,2026-07-03 10:59:00,2.82,2.72,1,-5,Met,Prod,Analytics,West Europe,2
+1125,Audit,Ingestion,Success,2026-07-13 18:45:00,2026-07-13 18:55:00,2026-07-13 22:41:00,2026-07-13 23:01:00,3.93,4.1,10,20,Missed,Test,Analytics,Southeast Asia,1
+1126,Audit,Ingestion,Success,2026-07-13 08:00:00,2026-07-13 08:12:00,2026-07-13 10:24:00,2026-07-13 10:28:00,2.4,2.27,12,4,Missed,Dev,Platform,West Europe,0
+1127,Sales_Load,ML,Failed,2026-07-11 02:45:00,2026-07-11 03:04:00,2026-07-11 05:28:00,2026-07-11 05:54:00,2.72,2.83,19,26,Missed,Prod,Data Eng B,West Europe,3
+1128,Billing,Ingestion,Failed,2026-07-09 04:00:00,2026-07-09 04:18:00,2026-07-09 04:41:00,2026-07-09 05:14:00,0.68,0.93,18,33,Missed,Prod,Data Eng B,East US,1
+1129,Products,Streaming,Success,2026-07-12 14:45:00,2026-07-12 15:08:00,2026-07-12 17:13:00,2026-07-12 17:45:00,2.47,2.62,23,32,Missed,Test,Analytics,West Europe,2
+1130,Marketing,Streaming,Success,2026-07-10 01:30:00,2026-07-10 01:24:00,2026-07-10 03:09:00,2026-07-10 02:56:00,1.65,1.53,-6,-13,Met,Test,Data Eng B,West Europe,0
+1131,Marketing,ETL,Success,2026-07-10 21:15:00,2026-07-10 21:27:00,2026-07-10 22:49:00,2026-07-10 23:21:00,1.57,1.9,12,32,Missed,Prod,Data Eng A,West Europe,2
+1132,Payments,Ingestion,Success,2026-07-07 20:30:00,2026-07-07 20:28:00,2026-07-07 23:36:00,2026-07-07 23:46:00,3.1,3.3,-2,10,Missed,Prod,Analytics,Southeast Asia,1
+1133,Forecast,ETL,Failed,2026-07-01 11:30:00,2026-07-01 11:31:00,2026-07-01 12:39:00,2026-07-01 12:40:00,1.15,1.15,1,1,Missed,Dev,Data Eng B,East US,0
+1134,Marketing,ETL,Success,2026-07-05 03:00:00,2026-07-05 03:11:00,2026-07-05 06:59:00,2026-07-05 07:24:00,3.98,4.22,11,25,Missed,Dev,Data Eng B,Southeast Asia,2
+1135,ML_Scoring,ML,Success,2026-07-13 05:45:00,2026-07-13 05:37:00,2026-07-13 07:45:00,2026-07-13 07:38:00,2.0,2.02,-8,-7,Met,Prod,Platform,Southeast Asia,1
+1136,Orders_Stream,Streaming,Success,2026-07-04 17:15:00,2026-07-04 17:24:00,2026-07-04 20:57:00,2026-07-04 21:21:00,3.7,3.95,9,24,Missed,Prod,Analytics,West Europe,1
+1137,HR_Load,Streaming,Success,2026-07-13 12:45:00,2026-07-13 12:45:00,2026-07-13 16:29:00,2026-07-13 16:25:00,3.73,3.67,0,-4,Met,Dev,Analytics,West Europe,2
+1138,Audit,Reporting,Success,2026-07-02 22:00:00,2026-07-02 22:08:00,2026-07-02 22:36:00,2026-07-02 22:58:00,0.6,0.83,8,22,Missed,Dev,Analytics,East US,0
+1139,Products,ETL,Success,2026-07-14 14:30:00,2026-07-14 14:21:00,2026-07-14 16:31:00,2026-07-14 16:13:00,2.02,1.87,-9,-18,Met,Test,Data Eng A,West Europe,0
+1140,IoT_Ingest,ML,Success,2026-07-01 10:00:00,2026-07-01 10:11:00,2026-07-01 13:37:00,2026-07-01 13:42:00,3.62,3.52,11,5,Missed,Prod,Data Eng B,Southeast Asia,1
+1141,HR_Load,Reporting,Success,2026-07-08 19:00:00,2026-07-08 18:55:00,2026-07-08 19:19:00,2026-07-08 19:12:00,0.32,0.28,-5,-7,Met,Prod,Analytics,East US,1
+1142,Audit,Ingestion,Success,2026-07-04 09:00:00,2026-07-04 08:53:00,2026-07-04 10:16:00,2026-07-04 10:12:00,1.27,1.32,-7,-4,Met,Dev,Analytics,Southeast Asia,2
+1143,Products,ETL,Success,2026-07-01 20:15:00,2026-07-01 20:14:00,2026-07-01 21:44:00,2026-07-01 21:46:00,1.48,1.53,-1,2,Missed,Prod,Analytics,East US,2
+1144,Payments,Reporting,Success,2026-07-11 02:30:00,2026-07-11 02:24:00,2026-07-11 04:59:00,2026-07-11 05:00:00,2.48,2.6,-6,1,Missed,Dev,Analytics,West Europe,0
+1145,Inventory_ETL,Streaming,Success,2026-07-11 12:30:00,2026-07-11 12:36:00,2026-07-11 15:56:00,2026-07-11 15:52:00,3.43,3.27,6,-4,Met,Dev,Data Eng A,Southeast Asia,2
+1146,CRM_Sync,ML,Success,2026-07-13 10:15:00,2026-07-13 10:07:00,2026-07-13 12:00:00,2026-07-13 11:59:00,1.75,1.87,-8,-1,Met,Prod,Analytics,Southeast Asia,0
+1147,Orders_Stream,Ingestion,Success,2026-07-13 04:00:00,2026-07-13 04:19:00,2026-07-13 04:24:00,2026-07-13 04:42:00,0.4,0.38,19,18,Missed,Test,Platform,Southeast Asia,1
+1148,IoT_Ingest,Streaming,Success,2026-07-14 17:45:00,2026-07-14 17:51:00,2026-07-14 18:09:00,2026-07-14 18:29:00,0.4,0.63,6,20,Missed,Dev,Platform,West Europe,0
+1149,Marketing,Streaming,Failed,2026-07-13 11:45:00,2026-07-13 12:00:00,2026-07-13 15:10:00,2026-07-13 15:29:00,3.42,3.48,15,19,Missed,Dev,Analytics,Southeast Asia,3
+1150,CRM_Sync,Reporting,Success,2026-07-06 16:30:00,2026-07-06 16:25:00,2026-07-06 19:51:00,2026-07-06 19:49:00,3.35,3.4,-5,-2,Met,Test,Platform,East US,0
+1151,CRM_Sync,ML,Success,2026-07-06 21:30:00,2026-07-06 21:39:00,2026-07-06 23:39:00,2026-07-06 23:57:00,2.15,2.3,9,18,Missed,Test,Analytics,East US,2
+1152,Inventory_ETL,ML,Failed,2026-07-14 11:45:00,2026-07-14 11:52:00,2026-07-14 14:43:00,2026-07-14 15:05:00,2.97,3.22,7,22,Missed,Test,Data Eng B,East US,1
+1153,Products,Streaming,Success,2026-07-14 19:45:00,2026-07-14 19:37:00,2026-07-14 20:32:00,2026-07-14 20:16:00,0.78,0.65,-8,-16,Met,Test,Data Eng A,Southeast Asia,0
+1154,HR_Load,Reporting,Success,2026-07-11 14:30:00,2026-07-11 14:43:00,2026-07-11 16:38:00,2026-07-11 17:05:00,2.13,2.37,13,27,Missed,Test,Analytics,West Europe,2
+1155,Marketing,Reporting,Success,2026-07-05 07:00:00,2026-07-05 06:51:00,2026-07-05 10:23:00,2026-07-05 10:09:00,3.38,3.3,-9,-14,Met,Dev,Platform,West Europe,2
+1156,Inventory_ETL,ML,Success,2026-07-08 06:30:00,2026-07-08 06:51:00,2026-07-08 07:36:00,2026-07-08 07:50:00,1.1,0.98,21,14,Missed,Dev,Analytics,East US,2
+1157,IoT_Ingest,ETL,Success,2026-07-14 10:30:00,2026-07-14 10:24:00,2026-07-14 13:05:00,2026-07-14 13:06:00,2.58,2.7,-6,1,Missed,Prod,Data Eng B,West Europe,2
+1158,Products,Reporting,Success,2026-07-04 03:15:00,2026-07-04 03:13:00,2026-07-04 04:30:00,2026-07-04 04:43:00,1.25,1.5,-2,13,Missed,Prod,Platform,West Europe,2
+1159,Forecast,Reporting,Running,2026-07-03 19:00:00,2026-07-03 18:54:00,2026-07-03 20:34:00,2026-07-03 20:30:00,1.57,1.6,-6,-4,Met,Test,Analytics,Southeast Asia,0
+1160,HR_Load,Reporting,Success,2026-07-03 10:00:00,2026-07-03 10:18:00,2026-07-03 12:14:00,2026-07-03 12:43:00,2.23,2.42,18,29,Missed,Prod,Data Eng B,East US,1
+1161,Billing,ETL,Success,2026-07-09 01:00:00,2026-07-09 01:23:00,2026-07-09 01:54:00,2026-07-09 02:16:00,0.9,0.88,23,22,Missed,Test,Platform,East US,1
+1162,Inventory_ETL,Reporting,Success,2026-07-04 20:30:00,2026-07-04 20:28:00,2026-07-04 23:25:00,2026-07-04 23:22:00,2.92,2.9,-2,-3,Met,Prod,Data Eng B,Southeast Asia,2
+1163,Sales_Load,Reporting,Success,2026-07-03 05:30:00,2026-07-03 05:22:00,2026-07-03 09:16:00,2026-07-03 09:25:00,3.77,4.05,-8,9,Missed,Test,Data Eng B,Southeast Asia,1
+1164,IoT_Ingest,ML,Success,2026-07-10 20:00:00,2026-07-10 20:21:00,2026-07-10 22:55:00,2026-07-10 23:23:00,2.92,3.03,21,28,Missed,Dev,Analytics,West Europe,1
+1165,Orders_Stream,Streaming,Success,2026-07-02 22:00:00,2026-07-02 22:00:00,2026-07-03 00:07:00,2026-07-03 00:10:00,2.12,2.17,0,3,Missed,Prod,Data Eng B,West Europe,2
+1166,Support,Ingestion,Success,2026-07-06 23:30:00,2026-07-06 23:45:00,2026-07-07 00:18:00,2026-07-07 00:47:00,0.8,1.03,15,29,Missed,Test,Data Eng B,West Europe,0
+1167,Marketing,Reporting,Success,2026-07-05 14:15:00,2026-07-05 14:14:00,2026-07-05 14:54:00,2026-07-05 14:44:00,0.65,0.5,-1,-10,Met,Test,Data Eng B,East US,1
+1168,Payments,ML,Success,2026-07-10 23:30:00,2026-07-10 23:32:00,2026-07-11 03:00:00,2026-07-11 02:57:00,3.5,3.42,2,-3,Met,Test,Platform,West Europe,0
+1169,Sales_Load,Streaming,Success,2026-07-02 12:45:00,2026-07-02 12:50:00,2026-07-02 13:55:00,2026-07-02 14:08:00,1.17,1.3,5,13,Missed,Test,Analytics,West Europe,2
+1170,Marketing,Streaming,Success,2026-07-01 03:45:00,2026-07-01 03:43:00,2026-07-01 07:45:00,2026-07-01 07:41:00,4.0,3.97,-2,-4,Met,Dev,Analytics,East US,2
+1171,Audit,Reporting,Success,2026-07-09 06:30:00,2026-07-09 06:55:00,2026-07-09 07:58:00,2026-07-09 08:15:00,1.47,1.33,25,17,Missed,Test,Data Eng A,East US,0
+1172,Payments,ML,Success,2026-07-07 11:30:00,2026-07-07 11:55:00,2026-07-07 13:18:00,2026-07-07 13:57:00,1.8,2.03,25,39,Missed,Prod,Data Eng A,East US,0
+1173,Payments,ETL,Success,2026-07-03 22:30:00,2026-07-03 22:50:00,2026-07-04 00:57:00,2026-07-04 01:21:00,2.45,2.52,20,24,Missed,Test,Platform,East US,1
+1174,Forecast,Reporting,Success,2026-07-10 23:30:00,2026-07-10 23:41:00,2026-07-11 01:54:00,2026-07-11 02:21:00,2.4,2.67,11,27,Missed,Test,Analytics,East US,1
+1175,Customer_ETL,Reporting,Success,2026-07-06 21:00:00,2026-07-06 21:16:00,2026-07-06 23:44:00,2026-07-06 23:59:00,2.73,2.72,16,15,Missed,Test,Platform,Southeast Asia,2
+1176,Marketing,ETL,Success,2026-07-10 07:00:00,2026-07-10 07:20:00,2026-07-10 07:58:00,2026-07-10 08:24:00,0.97,1.07,20,26,Missed,Prod,Data Eng B,East US,2
+1177,Warehouse,ETL,Success,2026-07-12 03:15:00,2026-07-12 03:06:00,2026-07-12 05:22:00,2026-07-12 05:13:00,2.12,2.12,-9,-9,Met,Test,Analytics,Southeast Asia,2
+1178,Forecast,Reporting,Success,2026-07-01 22:15:00,2026-07-01 22:38:00,2026-07-01 23:23:00,2026-07-01 23:53:00,1.13,1.25,23,30,Missed,Test,Platform,East US,1
+1179,ML_Scoring,Streaming,Success,2026-07-09 10:30:00,2026-07-09 10:36:00,2026-07-09 13:21:00,2026-07-09 13:32:00,2.85,2.93,6,11,Missed,Prod,Platform,East US,1
+1180,Reporting,Streaming,Success,2026-07-13 09:15:00,2026-07-13 09:36:00,2026-07-13 10:51:00,2026-07-13 11:17:00,1.6,1.68,21,26,Missed,Dev,Analytics,West Europe,1
+1181,Products,ML,Success,2026-07-13 04:30:00,2026-07-13 04:22:00,2026-07-13 05:58:00,2026-07-13 06:10:00,1.47,1.8,-8,12,Missed,Prod,Platform,Southeast Asia,1
+1182,ML_Scoring,ETL,Success,2026-07-04 06:30:00,2026-07-04 06:55:00,2026-07-04 09:43:00,2026-07-04 10:06:00,3.22,3.18,25,23,Missed,Dev,Data Eng B,Southeast Asia,0
+1183,HR_Load,Ingestion,Success,2026-07-01 03:45:00,2026-07-01 03:56:00,2026-07-01 07:03:00,2026-07-01 07:19:00,3.3,3.38,11,16,Missed,Prod,Data Eng B,West Europe,2
+1184,Inventory_ETL,Reporting,Success,2026-07-08 15:15:00,2026-07-08 15:23:00,2026-07-08 16:52:00,2026-07-08 16:59:00,1.62,1.6,8,7,Missed,Dev,Data Eng A,East US,1
+1185,IoT_Ingest,Ingestion,Success,2026-07-14 05:00:00,2026-07-14 05:15:00,2026-07-14 08:36:00,2026-07-14 08:56:00,3.6,3.68,15,20,Missed,Dev,Platform,Southeast Asia,2
+1186,HR_Load,Reporting,Success,2026-07-02 10:30:00,2026-07-02 10:49:00,2026-07-02 13:29:00,2026-07-02 13:55:00,2.98,3.1,19,26,Missed,Test,Platform,East US,0
+1187,Billing,Streaming,Success,2026-07-06 05:45:00,2026-07-06 05:51:00,2026-07-06 09:03:00,2026-07-06 09:04:00,3.3,3.22,6,1,Missed,Prod,Data Eng B,East US,2
+1188,Finance_ETL,ETL,Success,2026-07-14 20:45:00,2026-07-14 21:02:00,2026-07-14 23:11:00,2026-07-14 23:28:00,2.43,2.43,17,17,Missed,Dev,Analytics,West Europe,0
+1189,Billing,Streaming,Success,2026-07-01 08:45:00,2026-07-01 08:50:00,2026-07-01 10:54:00,2026-07-01 11:13:00,2.15,2.38,5,19,Missed,Prod,Data Eng A,West Europe,2
+1190,CRM_Sync,ML,Success,2026-07-06 22:15:00,2026-07-06 22:08:00,2026-07-07 01:20:00,2026-07-07 01:06:00,3.08,2.97,-7,-14,Met,Prod,Platform,Southeast Asia,0
+1191,HR_Load,ML,Success,2026-07-11 09:30:00,2026-07-11 09:34:00,2026-07-11 10:41:00,2026-07-11 11:05:00,1.18,1.52,4,24,Missed,Prod,Platform,West Europe,2
+1192,Inventory_ETL,Reporting,Success,2026-07-09 15:15:00,2026-07-09 15:20:00,2026-07-09 18:24:00,2026-07-09 18:43:00,3.15,3.38,5,19,Missed,Test,Platform,East US,2
+1193,Payments,ML,Success,2026-07-02 01:15:00,2026-07-02 01:39:00,2026-07-02 02:08:00,2026-07-02 02:27:00,0.88,0.8,24,19,Missed,Dev,Data Eng B,Southeast Asia,2
+1194,Audit,Reporting,Success,2026-07-08 02:45:00,2026-07-08 02:38:00,2026-07-08 04:56:00,2026-07-08 04:43:00,2.18,2.08,-7,-13,Met,Dev,Analytics,Southeast Asia,1
+1195,Inventory_ETL,Ingestion,Success,2026-07-12 00:45:00,2026-07-12 00:51:00,2026-07-12 04:29:00,2026-07-12 04:25:00,3.73,3.57,6,-4,Met,Test,Platform,Southeast Asia,0
+1196,HR_Load,ML,Success,2026-07-09 01:00:00,2026-07-09 01:20:00,2026-07-09 01:23:00,2026-07-09 01:42:00,0.38,0.37,20,19,Missed,Test,Analytics,West Europe,1
+1197,Marketing,Reporting,Running,2026-07-07 02:15:00,2026-07-07 02:27:00,2026-07-07 03:00:00,2026-07-07 03:07:00,0.75,0.67,12,7,Missed,Dev,Data Eng B,East US,0
+1198,Audit,Streaming,Success,2026-07-05 14:45:00,2026-07-05 15:09:00,2026-07-05 16:37:00,2026-07-05 17:17:00,1.87,2.13,24,40,Missed,Dev,Platform,East US,2
+1199,Customer_ETL,ETL,Failed,2026-07-13 03:00:00,2026-07-13 03:16:00,2026-07-13 05:52:00,2026-07-13 06:22:00,2.87,3.1,16,30,Missed,Dev,Data Eng A,East US,0
+1200,ML_Scoring,Reporting,Success,2026-07-08 19:00:00,2026-07-08 19:05:00,2026-07-08 22:24:00,2026-07-08 22:20:00,3.4,3.25,5,-4,Met,Dev,Data Eng A,East US,2
+1201,Payments,ETL,Success,2026-07-05 07:30:00,2026-07-05 07:40:00,2026-07-05 08:45:00,2026-07-05 08:54:00,1.25,1.23,10,9,Missed,Test,Platform,West Europe,0
+1202,Products,ML,Success,2026-07-09 18:15:00,2026-07-09 18:32:00,2026-07-09 20:52:00,2026-07-09 21:14:00,2.62,2.7,17,22,Missed,Prod,Platform,Southeast Asia,1
+1203,ML_Scoring,ETL,Success,2026-07-07 04:30:00,2026-07-07 04:44:00,2026-07-07 05:32:00,2026-07-07 06:00:00,1.03,1.27,14,28,Missed,Test,Data Eng B,West Europe,0
+1204,Reporting,ETL,Success,2026-07-09 13:45:00,2026-07-09 14:10:00,2026-07-09 16:15:00,2026-07-09 16:34:00,2.5,2.4,25,19,Missed,Test,Data Eng A,West Europe,1
+1205,Sales_Load,Ingestion,Success,2026-07-02 17:15:00,2026-07-02 17:08:00,2026-07-02 18:38:00,2026-07-02 18:33:00,1.38,1.42,-7,-5,Met,Dev,Data Eng B,West Europe,0
+1206,Finance_ETL,ML,Success,2026-07-14 10:30:00,2026-07-14 10:20:00,2026-07-14 11:39:00,2026-07-14 11:48:00,1.15,1.47,-10,9,Missed,Dev,Data Eng B,West Europe,0
+1207,IoT_Ingest,Streaming,Success,2026-07-09 10:30:00,2026-07-09 10:44:00,2026-07-09 12:44:00,2026-07-09 13:05:00,2.23,2.35,14,21,Missed,Test,Analytics,West Europe,0
+1208,Sales_Load,Reporting,Success,2026-07-13 23:45:00,2026-07-13 23:55:00,2026-07-14 00:52:00,2026-07-14 01:03:00,1.12,1.13,10,11,Missed,Dev,Data Eng B,East US,1
+1209,Marketing,Reporting,Success,2026-07-09 18:45:00,2026-07-09 18:53:00,2026-07-09 19:39:00,2026-07-09 19:43:00,0.9,0.83,8,4,Missed,Dev,Analytics,Southeast Asia,2
+1210,Audit,ETL,Success,2026-07-11 10:30:00,2026-07-11 10:51:00,2026-07-11 13:50:00,2026-07-11 14:21:00,3.33,3.5,21,31,Missed,Prod,Platform,East US,0
+1211,Payments,Ingestion,Failed,2026-07-12 17:45:00,2026-07-12 17:46:00,2026-07-12 20:18:00,2026-07-12 20:29:00,2.55,2.72,1,11,Missed,Dev,Data Eng A,East US,3
+1212,Payments,ML,Success,2026-07-03 20:15:00,2026-07-03 20:09:00,2026-07-03 23:31:00,2026-07-03 23:19:00,3.27,3.17,-6,-12,Met,Test,Data Eng A,Southeast Asia,2
+1213,Warehouse,Ingestion,Success,2026-07-11 19:45:00,2026-07-11 20:06:00,2026-07-11 20:04:00,2026-07-11 20:15:00,0.32,0.15,21,11,Missed,Dev,Platform,Southeast Asia,1
+1214,HR_Load,ETL,Success,2026-07-01 16:45:00,2026-07-01 16:46:00,2026-07-01 17:27:00,2026-07-01 17:47:00,0.7,1.02,1,20,Missed,Dev,Platform,West Europe,1
+1215,ML_Scoring,Streaming,Success,2026-07-13 12:00:00,2026-07-13 12:13:00,2026-07-13 13:58:00,2026-07-13 14:15:00,1.97,2.03,13,17,Missed,Prod,Data Eng A,Southeast Asia,2
+1216,Sales_Load,Ingestion,Success,2026-07-13 01:00:00,2026-07-13 01:15:00,2026-07-13 02:52:00,2026-07-13 03:09:00,1.87,1.9,15,17,Missed,Prod,Data Eng B,East US,1
+1217,Orders_Stream,Reporting,Success,2026-07-14 13:30:00,2026-07-14 13:26:00,2026-07-14 16:00:00,2026-07-14 16:15:00,2.5,2.82,-4,15,Missed,Test,Platform,East US,0
+1218,Orders_Stream,Reporting,Success,2026-07-11 08:00:00,2026-07-11 08:01:00,2026-07-11 11:52:00,2026-07-11 11:53:00,3.87,3.87,1,1,Missed,Dev,Analytics,East US,1
+1219,Marketing,ETL,Success,2026-07-03 18:15:00,2026-07-03 18:29:00,2026-07-03 21:23:00,2026-07-03 21:55:00,3.13,3.43,14,32,Missed,Prod,Data Eng A,Southeast Asia,2
+1220,Marketing,Streaming,Success,2026-07-06 01:00:00,2026-07-06 01:17:00,2026-07-06 02:14:00,2026-07-06 02:47:00,1.23,1.5,17,33,Missed,Dev,Platform,West Europe,1
+1221,Marketing,Ingestion,Success,2026-07-04 11:45:00,2026-07-04 12:02:00,2026-07-04 12:47:00,2026-07-04 13:15:00,1.03,1.22,17,28,Missed,Prod,Platform,East US,2
+1222,HR_Load,ML,Success,2026-07-02 02:30:00,2026-07-02 02:29:00,2026-07-02 04:22:00,2026-07-02 04:33:00,1.87,2.07,-1,11,Missed,Test,Platform,East US,0
+1223,Inventory_ETL,ETL,Success,2026-07-01 09:45:00,2026-07-01 09:58:00,2026-07-01 13:14:00,2026-07-01 13:25:00,3.48,3.45,13,11,Missed,Test,Analytics,Southeast Asia,2
+1224,Billing,ML,Success,2026-07-09 13:00:00,2026-07-09 12:51:00,2026-07-09 13:37:00,2026-07-09 13:29:00,0.62,0.63,-9,-8,Met,Dev,Platform,West Europe,1
+1225,HR_Load,Streaming,Success,2026-07-13 02:15:00,2026-07-13 02:38:00,2026-07-13 03:13:00,2026-07-13 03:47:00,0.97,1.15,23,34,Missed,Test,Platform,West Europe,0
+1226,Inventory_ETL,Streaming,Success,2026-07-02 05:45:00,2026-07-02 05:52:00,2026-07-02 07:47:00,2026-07-02 07:53:00,2.03,2.02,7,6,Missed,Test,Data Eng B,Southeast Asia,2
+1227,Marketing,Streaming,Success,2026-07-08 19:15:00,2026-07-08 19:34:00,2026-07-08 19:57:00,2026-07-08 20:10:00,0.7,0.6,19,13,Missed,Prod,Analytics,West Europe,1
+1228,Orders_Stream,ML,Failed,2026-07-06 13:15:00,2026-07-06 13:24:00,2026-07-06 14:52:00,2026-07-06 15:10:00,1.62,1.77,9,18,Missed,Test,Data Eng B,West Europe,2
+1229,Marketing,Streaming,Success,2026-07-05 23:45:00,2026-07-05 23:50:00,2026-07-06 01:23:00,2026-07-06 01:30:00,1.63,1.67,5,7,Missed,Dev,Data Eng B,Southeast Asia,2
+1230,IoT_Ingest,Ingestion,Success,2026-07-03 21:00:00,2026-07-03 21:19:00,2026-07-04 00:16:00,2026-07-04 00:31:00,3.27,3.2,19,15,Missed,Test,Analytics,East US,2
+1231,Inventory_ETL,ML,Success,2026-07-05 07:30:00,2026-07-05 07:29:00,2026-07-05 10:48:00,2026-07-05 10:50:00,3.3,3.35,-1,2,Missed,Prod,Analytics,Southeast Asia,1
+1232,Support,Reporting,Failed,2026-07-09 16:45:00,2026-07-09 17:09:00,2026-07-09 17:09:00,2026-07-09 17:48:00,0.4,0.65,24,39,Missed,Prod,Data Eng A,East US,1
+1233,Marketing,Streaming,Success,2026-07-11 21:30:00,2026-07-11 21:30:00,2026-07-12 00:30:00,2026-07-12 00:39:00,3.0,3.15,0,9,Missed,Test,Data Eng A,East US,0
+1234,Payments,ETL,Success,2026-07-05 07:15:00,2026-07-05 07:33:00,2026-07-05 09:05:00,2026-07-05 09:25:00,1.83,1.87,18,20,Missed,Test,Data Eng A,West Europe,0
+1235,Products,Streaming,Success,2026-07-05 13:00:00,2026-07-05 12:57:00,2026-07-05 16:47:00,2026-07-05 17:04:00,3.78,4.12,-3,17,Missed,Test,Analytics,East US,2
+1236,Billing,Ingestion,Success,2026-07-08 11:45:00,2026-07-08 11:41:00,2026-07-08 13:52:00,2026-07-08 14:01:00,2.12,2.33,-4,9,Missed,Test,Data Eng A,Southeast Asia,0
+1237,Support,ETL,Success,2026-07-01 10:00:00,2026-07-01 10:00:00,2026-07-01 13:24:00,2026-07-01 13:21:00,3.4,3.35,0,-3,Met,Test,Analytics,West Europe,0
+1238,Customer_ETL,Reporting,Success,2026-07-13 12:15:00,2026-07-13 12:16:00,2026-07-13 15:13:00,2026-07-13 15:25:00,2.97,3.15,1,12,Missed,Dev,Analytics,Southeast Asia,1
+1239,Inventory_ETL,Reporting,Success,2026-07-07 00:15:00,2026-07-07 00:18:00,2026-07-07 01:41:00,2026-07-07 01:58:00,1.43,1.67,3,17,Missed,Dev,Data Eng B,West Europe,1
+1240,Billing,Reporting,Success,2026-07-04 14:00:00,2026-07-04 14:06:00,2026-07-04 17:06:00,2026-07-04 17:29:00,3.1,3.38,6,23,Missed,Test,Analytics,Southeast Asia,0
+1241,IoT_Ingest,Reporting,Success,2026-07-06 11:45:00,2026-07-06 11:46:00,2026-07-06 15:28:00,2026-07-06 15:40:00,3.72,3.9,1,12,Missed,Prod,Data Eng A,Southeast Asia,0
+1242,HR_Load,Reporting,Success,2026-07-06 03:15:00,2026-07-06 03:24:00,2026-07-06 03:59:00,2026-07-06 04:03:00,0.73,0.65,9,4,Missed,Test,Analytics,Southeast Asia,0
+1243,CRM_Sync,Reporting,Success,2026-07-10 12:45:00,2026-07-10 12:46:00,2026-07-10 15:04:00,2026-07-10 15:15:00,2.32,2.48,1,11,Missed,Dev,Analytics,West Europe,0
+1244,Forecast,ETL,Failed,2026-07-03 10:45:00,2026-07-03 10:38:00,2026-07-03 14:41:00,2026-07-03 14:35:00,3.93,3.95,-7,-6,Met,Dev,Analytics,Southeast Asia,3
+1245,CRM_Sync,Ingestion,Success,2026-07-07 21:45:00,2026-07-07 22:01:00,2026-07-08 01:01:00,2026-07-08 01:33:00,3.27,3.53,16,32,Missed,Prod,Data Eng A,East US,1
+1246,Forecast,Reporting,Success,2026-07-01 08:15:00,2026-07-01 08:39:00,2026-07-01 09:43:00,2026-07-01 10:02:00,1.47,1.38,24,19,Missed,Prod,Data Eng A,Southeast Asia,0
+1247,Audit,Reporting,Success,2026-07-05 17:30:00,2026-07-05 17:54:00,2026-07-05 21:15:00,2026-07-05 21:53:00,3.75,3.98,24,38,Missed,Dev,Analytics,East US,2
+1248,Products,Ingestion,Success,2026-07-14 20:15:00,2026-07-14 20:24:00,2026-07-15 00:13:00,2026-07-15 00:13:00,3.97,3.82,9,0,Met,Test,Data Eng A,East US,0
+1249,Orders_Stream,ETL,Success,2026-07-13 23:30:00,2026-07-13 23:47:00,2026-07-14 00:27:00,2026-07-14 00:53:00,0.95,1.1,17,26,Missed,Dev,Platform,Southeast Asia,1
+1250,Reporting,Reporting,Success,2026-07-10 17:15:00,2026-07-10 17:25:00,2026-07-10 20:30:00,2026-07-10 20:39:00,3.25,3.23,10,9,Missed,Prod,Data Eng A,East US,1
