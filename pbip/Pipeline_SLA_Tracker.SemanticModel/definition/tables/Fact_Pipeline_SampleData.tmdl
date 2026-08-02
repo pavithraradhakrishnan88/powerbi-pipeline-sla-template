@@ -1,64 +1,764 @@
 table Fact_Pipeline_SampleData
-	lineageTag: cecdfc6c-b333-441c-9810-6503bbc7b079
+	lineageTag: f8ed2dcd-c402-4584-98ff-818bd06ae87c
+
+	/// Total pipeline executions.
+	measure 'Active Pipelines' = COUNTROWS(Fact_Pipeline_SampleData)
+		formatString: #,##0
+		displayFolder: 01 Landing Page
+		lineageTag: 482f78c7-205f-4145-a0ab-a3353b15e990
+
+		annotation Owner = BI Team
+
+		annotation Category = KPI
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 10
+
+		annotation Template = CountRows
+
+		annotation Status = Active
+
+		annotation Tags = LandingPage;Executive
+
+		annotation Synonyms = Pipeline Count;Runs
+
+		annotation KPI = True
+
+		annotation DataType = Whole Number
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Successful pipeline executions.
+	measure 'Successful Runs' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[Status]="Success")
+		formatString: #,##0
+		displayFolder: 01 Landing Page
+		lineageTag: d34bc854-2e8e-47c7-9d52-9305af6da3e8
+
+		annotation Owner = BI Team
+
+		annotation Category = KPI
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 20
+
+		annotation Template = CountRows
+
+		annotation Status = Active
+
+		annotation Tags = LandingPage
+
+		annotation Synonyms = Successful Pipelines
+
+		annotation KPI = True
+
+		annotation DataType = Whole Number
+
+		annotation DependsOn = Active Pipelines
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Failed pipeline executions.
+	measure 'Failed Runs' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[Status]="Failed")
+		formatString: #,##0
+		displayFolder: 01 Landing Page
+		lineageTag: 712fd322-bb8c-4585-896d-c042501864b7
+
+		annotation Owner = BI Team
+
+		annotation Category = KPI
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 30
+
+		annotation Template = CountRows
+
+		annotation Status = Active
+
+		annotation Tags = LandingPage
+
+		annotation Synonyms = Failed Pipelines
+
+		annotation KPI = True
+
+		annotation DataType = Whole Number
+
+		annotation DependsOn = Active Pipelines
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Running pipelines.
+	measure 'Running Pipelines' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[Status]="Running")
+		formatString: #,##0
+		displayFolder: 01 Landing Page
+		lineageTag: 94f58ad4-9774-4b54-b9eb-96e5edd3af4e
+
+		annotation Owner = BI Team
+
+		annotation Category = KPI
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 40
+
+		annotation Template = CountRows
+
+		annotation Status = Active
+
+		annotation Tags = Operations
+
+		annotation Synonyms = Running
+
+		annotation KPI = False
+
+		annotation DataType = Whole Number
+
+		annotation DependsOn = Active Pipelines
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Queued pipelines.
+	measure 'Queued Pipelines' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[Status]="Queued")
+		formatString: #,##0
+		displayFolder: 01 Landing Page
+		lineageTag: 302b0ed8-24fe-4c16-8c82-7726945e818d
+
+		annotation Owner = BI Team
+
+		annotation Category = KPI
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 50
+
+		annotation Template = CountRows
+
+		annotation Status = Active
+
+		annotation Tags = Operations
+
+		annotation Synonyms = Queued
+
+		annotation KPI = False
+
+		annotation DataType = Whole Number
+
+		annotation DependsOn = Active Pipelines
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Percentage of successful pipeline executions.
+	measure 'Success Rate %' = DIVIDE([Successful Runs],[Active Pipelines])
+		formatString: 0.00%
+		displayFolder: 02 SLA
+		lineageTag: 0310c56d-6f43-41ab-9f14-a8d3ce6a960f
+
+		annotation Owner = BI Team
+
+		annotation Category = SLA
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 10
+
+		annotation Template = Ratio
+
+		annotation Status = Active
+
+		annotation Tags = Executive
+
+		annotation Synonyms = Success Rate
+
+		annotation KPI = True
+
+		annotation DataType = Percentage
+
+		annotation DependsOn = Successful Runs;Active Pipelines
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Percentage of failed pipeline executions.
+	measure 'Failure Rate %' = DIVIDE([Failed Runs],[Active Pipelines])
+		formatString: 0.00%
+		displayFolder: 02 SLA
+		lineageTag: 120eeabd-0511-4077-9563-64edf6233623
+
+		annotation Owner = BI Team
+
+		annotation Category = SLA
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 20
+
+		annotation Template = Ratio
+
+		annotation Status = Active
+
+		annotation Tags = Executive
+
+		annotation Synonyms = Failure Rate
+
+		annotation KPI = True
+
+		annotation DataType = Percentage
+
+		annotation DependsOn = Failed Runs;Active Pipelines
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Percentage of SLA breaches.
+	measure 'SLA Breach %' = DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[SLAStatus]="Missed"),[Active Pipelines])
+		formatString: 0.00%
+		displayFolder: 02 SLA
+		lineageTag: 0b94a07f-d2e1-4a1d-9cd9-ff7118d1fbc8
+
+		annotation Owner = BI Team
+
+		annotation Category = SLA
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 30
+
+		annotation Template = Ratio
+
+		annotation Status = Active
+
+		annotation Tags = Executive
+
+		annotation Synonyms = SLA
+
+		annotation KPI = True
+
+		annotation DataType = Percentage
+
+		annotation DependsOn = Active Pipelines
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Average runtime in hours.
+	measure 'Average Runtime' = AVERAGE(Fact_Pipeline_SampleData[DurationHours])
+		formatString: 0.00
+		displayFolder: 03 Runtime
+		lineageTag: f102e98f-67c6-41b5-9e3f-1993ce48083c
+
+		annotation Owner = BI Team
+
+		annotation Category = Runtime
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 10
+
+		annotation Template = Average
+
+		annotation Status = Active
+
+		annotation Tags = Performance
+
+		annotation Synonyms = Average Duration
+
+		annotation KPI = False
+
+		annotation DataType = Decimal
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Total runtime in minutes.
+	measure 'Total Runtime' = SUM(Fact_Pipeline_SampleData[DurationHours])
+		formatString: #,##0.00
+		displayFolder: 03 Runtime
+		lineageTag: edd1b320-e531-42b6-bd58-e97346650c3b
+
+		annotation Owner = BI Team
+
+		annotation Category = Runtime
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 20
+
+		annotation Template = Sum
+
+		annotation Status = Active
+
+		annotation Tags = Performance
+
+		annotation Synonyms = Runtime
+
+		annotation KPI = False
+
+		annotation DataType = Decimal
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Maximum runtime.
+	measure 'Maximum Runtime' = MAX(Fact_Pipeline_SampleData[DurationHours])
+		formatString: #,##0.00
+		displayFolder: 03 Runtime
+		lineageTag: 4ac147f7-58cd-434a-85ae-fb4f1701fb25
+
+		annotation Owner = BI Team
+
+		annotation Category = Runtime
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 30
+
+		annotation Template = Maximum
+
+		annotation Status = Active
+
+		annotation Tags = Performance
+
+		annotation Synonyms = Longest Runtime
+
+		annotation KPI = False
+
+		annotation DataType = Decimal
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Minimum runtime.
+	measure 'Minimum Runtime' = MIN(Fact_Pipeline_SampleData[DurationHours])
+		formatString: #,##0.00
+		displayFolder: 03 Runtime
+		lineageTag: ac946b59-fc71-4807-9076-6c7f0e5aca3b
+
+		annotation Owner = BI Team
+
+		annotation Category = Runtime
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 40
+
+		annotation Template = Minimum
+
+		annotation Status = Active
+
+		annotation Tags = Performance
+
+		annotation Synonyms = Shortest Runtime
+
+		annotation KPI = False
+
+		annotation DataType = Decimal
+
+		annotation LastUpdated = 2026-07-31
+
+	/// Starting position of floating bar timeline.
+	measure 'Timeline Base' =
+			VAR _Earliest =
+			    CALCULATE(
+			        MIN(Fact_Pipeline_SampleData[ScheduledStart]),
+			        ALL(Fact_Pipeline_SampleData)
+			    )
+			RETURN
+			DATEDIFF(
+			    _Earliest,
+			    MIN(Fact_Pipeline_SampleData[ScheduledStart]),
+			    HOUR
+			)
+		formatString: dd-MMM HH:mm
+		displayFolder: 05 Floating Bar
+		lineageTag: f62bacee-85c6-4d48-a4f3-25ec68b67195
+
+		annotation Owner = BI Team
+
+		annotation Category = Floating Bar
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 10
+
+		annotation Template = Minimum
+
+		annotation Status = Active
+
+		annotation Tags = FloatingBar;Timeline
+
+		annotation Synonyms = Bar Start;Timeline Start
+
+		annotation KPI = False
+
+		annotation DataType = DateTime
+
+		annotation LastUpdated = 2026-08-01
+
+	/// Length of floating bar in hours.
+	measure 'Floating Bar Duration' = AVERAGE(Fact_Pipeline_SampleData[DurationHours])
+		formatString: #,##0.00
+		displayFolder: 05 Floating Bar
+		lineageTag: a84c2fa1-0e7b-43d7-bf4d-411e871075d5
+
+		annotation Owner = BI Team
+
+		annotation Category = Floating Bar
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 20
+
+		annotation Template = Average
+
+		annotation Status = Active
+
+		annotation Tags = FloatingBar;Runtime
+
+		annotation Synonyms = Bar Width;Duration
+
+		annotation KPI = False
+
+		annotation DataType = Whole Number
+
+		annotation DependsOn = Average Runtime
+
+		annotation LastUpdated = 2026-08-01
+
+	/// Status label used for floating bar conditional formatting.
+	measure 'Floating Bar Status' = IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Breached","Breach","Within SLA")
+		displayFolder: 05 Floating Bar
+		lineageTag: 72a525d2-cada-4ad8-9e25-5bdbeaff725f
+
+		annotation Owner = BI Team
+
+		annotation Category = Floating Bar
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 30
+
+		annotation Template = Status
+
+		annotation Status = Active
+
+		annotation Tags = FloatingBar;SLA
+
+		annotation Synonyms = Bar Status
+
+		annotation KPI = False
+
+		annotation DataType = Text
+
+		annotation DependsOn = SLA Breach %
+
+		annotation LastUpdated = 2026-08-01
+
+	/// Color code for floating bar conditional formatting.
+	measure 'SLA Breach Color' = IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Breached", "#FF0000", "#00B050")
+		isHidden
+		displayFolder: 05 Floating Bar
+		lineageTag: 17b33bc2-853e-4eb8-8a4c-92db87b5242e
+
+		annotation Owner = BI Team
+
+		annotation Category = Floating Bar
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 40
+
+		annotation Template = Color
+
+		annotation Status = Active
+
+		annotation Tags = FloatingBar;ConditionalFormatting
+
+		annotation Synonyms = Bar Color
+
+		annotation KPI = False
+
+		annotation DataType = Text
+
+		annotation DependsOn = SLA Breach %
+
+		annotation LastUpdated = 2026-08-01
+
+	/// Average delay before pipeline start.
+	measure 'Average Start Delay' = AVERAGE(Fact_Pipeline_SampleData[StartDelayMinutes])
+		formatString: #,##0.00
+		displayFolder: 03 Runtime
+		lineageTag: 1ac04617-c6d5-4001-8646-03d50429095e
+
+		annotation Owner = BI Team
+
+		annotation Category = Runtime
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 50
+
+		annotation Template = Average
+
+		annotation Status = Active
+
+		annotation Tags = Delay
+
+		annotation Synonyms = Start Delay
+
+		annotation KPI = False
+
+		annotation DataType = Decimal
+
+		annotation LastUpdated = 2026-08-01
+
+	/// Average delay after scheduled completion.
+	measure 'Average End Delay' = AVERAGE(Fact_Pipeline_SampleData[EndDelayMinutes])
+		formatString: #,##0.00
+		displayFolder: 03 Runtime
+		lineageTag: dbf25099-444c-473a-a221-90d9de1947d0
+
+		annotation Owner = BI Team
+
+		annotation Category = Runtime
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 60
+
+		annotation Template = Average
+
+		annotation Status = Active
+
+		annotation Tags = Delay
+
+		annotation Synonyms = End Delay
+
+		annotation KPI = False
+
+		annotation DataType = Decimal
+
+		annotation LastUpdated = 2026-08-01
+
+	/// KPI for success rate with target and status.
+	measure 'Success Rate KPI' = [Success Rate %]
+		formatString: 0.00%
+		displayFolder: 02 SLA
+		lineageTag: 3136d0a2-e8af-4258-b405-857a0da616cc
+
+		annotation Owner = BI Team
+
+		annotation Category = SLA
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 40
+
+		annotation Template = Ratio
+
+		annotation Status = Active
+
+		annotation Tags = Executive
+
+		annotation Synonyms = Success Rate KPI
+
+		annotation KPI = True
+
+		annotation DataType = Percentage
+
+		annotation DependsOn = Success Rate %
+
+		annotation LastUpdated = 2026-08-01
+
+		annotation KPIConfig = @{TargetExpression=0.95; StatusExpression=IF([Success Rate %]>=0.95,1,0); TrendExpression=[Success Rate %]}
+
+	/// Last data refresh timestamp.
+	measure 'Last Refresh' = FORMAT(NOW(),"dd MMM yyyy hh:mm AM/PM")
+		displayFolder: 00 System
+		lineageTag: c4751141-c052-46e3-b0f4-a01a67279fcc
+
+		annotation Owner = BI Team
+
+		annotation Category = System
+
+		annotation Version = 1.0.0
+
+		annotation DisplayOrder = 5
+
+		annotation Template = Text
+
+		annotation Status = Active
+
+		annotation Tags = System
+
+		annotation Synonyms = Refresh Time
+
+		annotation KPI = False
+
+		annotation DataType = Text
+
+		annotation LastUpdated = 2026-08-02
 
 	column PipelineID
-		dataType: string
-		lineageTag: b95e861e-9f1b-4ff5-8589-ed86f6e1d0d1
-		summarizeBy: none
+		dataType: int64
+		formatString: 0
+		lineageTag: 4bb572c6-8150-4fbe-92d7-d4d78f2de8a4
+		summarizeBy: count
 		sourceColumn: PipelineID
 
 		annotation SummarizationSetBy = Automatic
 
-	column StartDate
-		dataType: dateTime
-		formatString: General Date
-		lineageTag: b791da56-3530-4ab3-aea2-1a5c5c8cd6a5
+	column PipelineName
+		dataType: string
+		lineageTag: 2b7b07ab-e96e-42e4-9170-702996a0321f
 		summarizeBy: none
-		sourceColumn: StartDate
-
-		variation Variation
-			isDefault
-			relationship: 473261bb-2e52-4950-aff4-63d776c2c369
-			defaultHierarchy: LocalDateTable_6456a979-cf46-4215-a54c-5263f86d576d.'Date Hierarchy'
-
-		annotation SummarizationSetBy = Automatic
-
-	column EndDate
-		dataType: dateTime
-		formatString: General Date
-		lineageTag: 98d14939-ee6a-45aa-bde8-fc25527b0c77
-		summarizeBy: none
-		sourceColumn: EndDate
-
-		variation Variation
-			isDefault
-			relationship: 33e66560-d6b2-4516-871a-eba92eb28e3f
-			defaultHierarchy: LocalDateTable_63057bfd-b81d-4c42-a78b-5fa6558f4706.'Date Hierarchy'
+		sourceColumn: PipelineName
 
 		annotation SummarizationSetBy = Automatic
 
 	column Category
 		dataType: string
-		lineageTag: 6b2d7b4b-4e4c-4ac6-9e2f-6591c74a3318
+		lineageTag: 2b42d247-4396-4ba4-afad-5ed6878c3428
 		summarizeBy: none
 		sourceColumn: Category
 
 		annotation SummarizationSetBy = Automatic
 
-	column SLA_Target_Hrs
-		dataType: int64
-		formatString: 0
-		lineageTag: 04886805-8041-4aad-b869-1814099f57b5
-		summarizeBy: sum
-		sourceColumn: SLA_Target_Hrs
+	column Status
+		dataType: string
+		lineageTag: 3d59969d-3765-46fb-a86c-0b8134169dd8
+		summarizeBy: none
+		sourceColumn: Status
 
 		annotation SummarizationSetBy = Automatic
 
-	column Status
-		dataType: string
-		lineageTag: c26d18e7-67db-446c-95ff-9044cfa21570
+	column ScheduledStart
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 893ffacc-b4ab-4f0a-a8a2-93c94910daa4
 		summarizeBy: none
-		sourceColumn: Status
+		sourceColumn: ScheduledStart
+
+		variation Variation
+			isDefault
+			relationship: db2083da-0a18-4176-ab57-a096ce539554
+			defaultHierarchy: LocalDateTable_9043e032-67a4-45e7-bf88-28fec57966b9.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column ActualStart
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: cd77b50a-3989-4c6b-abfc-ad19f32a6321
+		summarizeBy: none
+		sourceColumn: ActualStart
+
+		variation Variation
+			isDefault
+			relationship: c7324c3f-573c-4a3b-9563-7a1dcc4b99a3
+			defaultHierarchy: LocalDateTable_ac53fd01-924f-4452-a3f3-a0f9a1df973c.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column ScheduledEnd
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: bf529195-5507-440e-9d04-520ef93a2f0f
+		summarizeBy: none
+		sourceColumn: ScheduledEnd
+
+		variation Variation
+			isDefault
+			relationship: 5fcd5823-e6b0-472e-bf09-57997645718c
+			defaultHierarchy: LocalDateTable_d4583ee4-86f0-47d3-96ae-303f0614bf0d.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column ActualEnd
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 62708873-0cc1-4ae9-94b9-f02dff7bd4d4
+		summarizeBy: none
+		sourceColumn: ActualEnd
+
+		variation Variation
+			isDefault
+			relationship: 6bbc152f-49b4-4e1a-ad36-e50fd87530d8
+			defaultHierarchy: LocalDateTable_1c11b445-5c42-44a6-9f02-0bc10f99ee27.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column SLAHours
+		dataType: double
+		lineageTag: cc5bbd61-2588-407e-a7b2-b65a52184f0b
+		summarizeBy: sum
+		sourceColumn: SLAHours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column DurationHours
+		dataType: double
+		lineageTag: 78fc6587-09de-49fd-97db-76c91d93194a
+		summarizeBy: sum
+		sourceColumn: DurationHours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column StartDelayMinutes
+		dataType: int64
+		formatString: 0
+		lineageTag: 7f0b5c27-2bf2-4939-af25-e2c0d4e3eded
+		summarizeBy: sum
+		sourceColumn: StartDelayMinutes
+
+		annotation SummarizationSetBy = Automatic
+
+	column EndDelayMinutes
+		dataType: int64
+		formatString: 0
+		lineageTag: a36644c1-af23-4694-8029-421beff626bd
+		summarizeBy: sum
+		sourceColumn: EndDelayMinutes
+
+		annotation SummarizationSetBy = Automatic
+
+	column SLAStatus
+		dataType: string
+		lineageTag: 908c420a-2b2f-4ecd-aa54-a755b0a57a84
+		summarizeBy: none
+		sourceColumn: SLAStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column Environment
+		dataType: string
+		lineageTag: 45a7869c-f92c-45ad-b22b-944d04aebc28
+		summarizeBy: none
+		sourceColumn: Environment
+
+		annotation SummarizationSetBy = Automatic
+
+	column Owner
+		dataType: string
+		lineageTag: 4cfca6a7-ac64-4f1b-8a29-3c25fd3c9e70
+		summarizeBy: none
+		sourceColumn: Owner
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: d8d29990-e97e-490d-a2a1-d96c1368b4d0
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column RetryCount
+		dataType: int64
+		formatString: 0
+		lineageTag: edc59771-b424-4474-b3d4-dce2d3d1efa1
+		summarizeBy: sum
+		sourceColumn: RetryCount
 
 		annotation SummarizationSetBy = Automatic
 
@@ -66,11 +766,11 @@ table Fact_Pipeline_SampleData
 		mode: import
 		source =
 				let
-				    Source = Csv.Document(File.Contents("C:\Users\pavit\Projects\powerbi-pipeline-sla-template\data\Pipeline_SLA_SampleData_100Runs.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
-				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
-				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"PipelineID", type text}, {"StartDate", type datetime}, {"EndDate", type datetime}, {"Category", type text}, {"SLA_Target_Hrs", Int64.Type}, {"Status", type text}})
+				  Source = Csv.Document(File.Contents("C:\Users\pavit\Projects\powerbi-pipeline-sla-template\data\Fact_Pipeline_SampleData.csv"), [Delimiter = ",", Columns = 17, QuoteStyle = QuoteStyle.None]),
+				  #"Promoted headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				  #"Changed column type" = Table.TransformColumnTypes(#"Promoted headers", {{"PipelineID", Int64.Type}, {"PipelineName", type text}, {"Category", type text}, {"Status", type text}, {"ScheduledStart", type datetime}, {"ActualStart", type datetime}, {"ScheduledEnd", type datetime}, {"ActualEnd", type datetime}, {"SLAHours", type number}, {"DurationHours", type number}, {"StartDelayMinutes", Int64.Type}, {"EndDelayMinutes", Int64.Type}, {"SLAStatus", type text}, {"Environment", type text}, {"Owner", type text}, {"Region", type text}, {"RetryCount", Int64.Type}})
 				in
-				    #"Changed Type"
+				  #"Changed column type"
 
 	annotation PBI_NavigationStepName = Navigation
 

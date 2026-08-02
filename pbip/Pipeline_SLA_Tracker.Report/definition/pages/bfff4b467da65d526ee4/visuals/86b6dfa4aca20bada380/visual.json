@@ -20,14 +20,14 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "_Measure Table"
+                      "Entity": "Fact_Pipeline_SampleData"
                     }
                   },
-                  "Property": "Timeline Span"
+                  "Property": "Running Pipelines"
                 }
               },
-              "queryRef": "_Measure Table.Timeline Span",
-              "nativeQueryRef": "Timeline Span"
+              "queryRef": "Fact_Pipeline_SampleData.Running Pipelines",
+              "nativeQueryRef": "Running Pipelines"
             }
           ]
         }
@@ -39,10 +39,10 @@
               "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "_Measure Table"
+                    "Entity": "Fact_Pipeline_SampleData"
                   }
                 },
-                "Property": "Timeline Span"
+                "Property": "Running Pipelines"
               }
             },
             "direction": "Descending"

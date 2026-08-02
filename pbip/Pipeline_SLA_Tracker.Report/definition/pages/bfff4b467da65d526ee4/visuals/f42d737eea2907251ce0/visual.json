@@ -20,15 +20,14 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "_Measure Table"
+                      "Entity": "Fact_Pipeline_SampleData"
                     }
                   },
-                  "Property": "Timeline Coverage %"
+                  "Property": "Successful Runs"
                 }
               },
-              "queryRef": "_Measure Table.Timeline Coverage %",
-              "nativeQueryRef": "Timeline Coverage %",
-              "format": "0.00%;-0.00%;0.00%"
+              "queryRef": "Fact_Pipeline_SampleData.Successful Runs",
+              "nativeQueryRef": "Successful Runs"
             }
           ]
         }
@@ -40,10 +39,10 @@
               "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "_Measure Table"
+                    "Entity": "Fact_Pipeline_SampleData"
                   }
                 },
-                "Property": "Timeline Coverage %"
+                "Property": "Successful Runs"
               }
             },
             "direction": "Descending"

@@ -1,0 +1,15 @@
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\obj\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\obj\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.AssemblyInfoInputs.cache
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\obj\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.AssemblyInfo.cs
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\obj\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.csproj.CoreCompileInputs.cache
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\obj\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.sourcelink.json
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\bin\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.exe
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\bin\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.deps.json
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\bin\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.runtimeconfig.json
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\bin\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.dll
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\bin\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.pdb
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\obj\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.dll
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\obj\Debug\net8.0\refint\PowerBiPipelineSlaTemplate.Core.dll
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\obj\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.pdb
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\obj\Debug\net8.0\PowerBiPipelineSlaTemplate.Core.genruntimeconfig.cache
+C:\Users\pavit\Projects\powerbi-pipeline-sla-template\src\PowerBiPipelineSlaTemplate.Core\obj\Debug\net8.0\ref\PowerBiPipelineSlaTemplate.Core.dll

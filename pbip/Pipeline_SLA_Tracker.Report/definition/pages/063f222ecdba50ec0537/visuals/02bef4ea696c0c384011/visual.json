@@ -23,11 +23,11 @@
                       "Entity": "Fact_Pipeline_SampleData"
                     }
                   },
-                  "Property": "EndDate"
+                  "Property": "ActualEnd"
                 }
               },
-              "queryRef": "Fact_Pipeline_SampleData.EndDate",
-              "nativeQueryRef": "EndDate",
+              "queryRef": "Fact_Pipeline_SampleData.ActualEnd",
+              "nativeQueryRef": "ActualEnd",
               "active": true
             }
           ]
@@ -43,7 +43,7 @@
                     "Entity": "Fact_Pipeline_SampleData"
                   }
                 },
-                "Property": "EndDate"
+                "Property": "ActualEnd"
               }
             },
             "direction": "Ascending"
@@ -88,44 +88,7 @@
       ],
       "general": [
         {
-          "properties": {
-            "filter": {
-              "filter": {
-                "Version": 2,
-                "From": [
-                  {
-                    "Name": "f",
-                    "Entity": "Fact_Pipeline_SampleData",
-                    "Type": 0
-                  }
-                ],
-                "Where": [
-                  {
-                    "Condition": {
-                      "Comparison": {
-                        "ComparisonKind": 3,
-                        "Left": {
-                          "Column": {
-                            "Expression": {
-                              "SourceRef": {
-                                "Source": "f"
-                              }
-                            },
-                            "Property": "EndDate"
-                          }
-                        },
-                        "Right": {
-                          "Literal": {
-                            "Value": "datetime'2026-06-09T00:00:00'"
-                          }
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          }
+          "properties": {}
         }
       ],
       "slider": [
@@ -143,23 +106,5 @@
       ]
     },
     "drillFilterOtherVisuals": true
-  },
-  "filterConfig": {
-    "filters": [
-      {
-        "name": "487943fba17236326a8c",
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "Fact_Pipeline_SampleData"
-              }
-            },
-            "Property": "EndDate"
-          }
-        },
-        "type": "Categorical"
-      }
-    ]
   }
 }

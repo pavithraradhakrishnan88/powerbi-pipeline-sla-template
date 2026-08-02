@@ -1,0 +1,276 @@
+{
+  "Tables": [
+    {
+      "Name": "Dim_Category",
+      "DisplayFolder": "Dimensions",
+      "IsFactTable": false,
+      "IsDimensionTable": true,
+      "RowCount": 8,
+      "Columns": [
+        {
+          "Name": "CategoryID",
+          "DataType": "Int64",
+          "Nullable": false,
+          "IsPrimaryKey": true,
+          "IsForeignKey": false,
+          "DisplayFolder": "Keys",
+          "FormatString": "",
+          "Description": "Primary key for Dim Category."
+        },
+        {
+          "Name": "CategoryName",
+          "DataType": "Text",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Attributes",
+          "FormatString": "",
+          "Description": "Categoryname in Dim Category."
+        },
+        {
+          "Name": "Description",
+          "DataType": "Text",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Attributes",
+          "FormatString": "",
+          "Description": "Description in Dim Category."
+        },
+        {
+          "Name": "Vendor",
+          "DataType": "Text",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "",
+          "FormatString": "",
+          "Description": "Vendor in Dim Category."
+        },
+        {
+          "Name": "SortOrder",
+          "DataType": "Int64",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "",
+          "FormatString": "",
+          "Description": "Sortorder in Dim Category."
+        }
+      ]
+    },
+    {
+      "Name": "Fact_Pipeline_SampleData",
+      "DisplayFolder": "Facts",
+      "IsFactTable": true,
+      "IsDimensionTable": false,
+      "RowCount": 250,
+      "Columns": [
+        {
+          "Name": "PipelineID",
+          "DataType": "Int64",
+          "Nullable": false,
+          "IsPrimaryKey": true,
+          "IsForeignKey": false,
+          "DisplayFolder": "Keys",
+          "FormatString": "",
+          "Description": "Primary key for Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "PipelineName",
+          "DataType": "Text",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Attributes",
+          "FormatString": "",
+          "Description": "Pipelinename in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "Category",
+          "DataType": "Text",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Attributes",
+          "FormatString": "",
+          "Description": "Category in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "Status",
+          "DataType": "Text",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Attributes",
+          "FormatString": "",
+          "Description": "Status in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "ScheduledStart",
+          "DataType": "DateTime",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "yyyy-MM-dd",
+          "Description": "Scheduledstart in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "ActualStart",
+          "DataType": "DateTime",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "yyyy-MM-dd",
+          "Description": "Actualstart in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "ScheduledEnd",
+          "DataType": "DateTime",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "yyyy-MM-dd",
+          "Description": "Scheduledend in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "ActualEnd",
+          "DataType": "DateTime",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "yyyy-MM-dd",
+          "Description": "Actualend in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "SLAHours",
+          "DataType": "Decimal",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "",
+          "Description": "Slahours in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "DurationHours",
+          "DataType": "Decimal",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "0.00%",
+          "Description": "Measure attribute for Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "StartDelayMinutes",
+          "DataType": "Int64",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "",
+          "Description": "Startdelayminutes in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "EndDelayMinutes",
+          "DataType": "Int64",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "",
+          "Description": "Enddelayminutes in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "SLAStatus",
+          "DataType": "Text",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Attributes",
+          "FormatString": "",
+          "Description": "Slastatus in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "Environment",
+          "DataType": "Text",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "",
+          "Description": "Environment in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "Owner",
+          "DataType": "Text",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "",
+          "Description": "Owner in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "Region",
+          "DataType": "Text",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "",
+          "Description": "Region in Fact Pipeline Sampledata."
+        },
+        {
+          "Name": "RetryCount",
+          "DataType": "Int64",
+          "Nullable": false,
+          "IsPrimaryKey": false,
+          "IsForeignKey": false,
+          "DisplayFolder": "Measures",
+          "FormatString": "#,##0",
+          "Description": "Measure attribute for Fact Pipeline Sampledata."
+        }
+      ]
+    }
+  ],
+  "Relationships": [],
+  "Formatting": {
+    "Fact_Pipeline_SampleData.ScheduledStart": "yyyy-MM-dd",
+    "Fact_Pipeline_SampleData.ActualStart": "yyyy-MM-dd",
+    "Fact_Pipeline_SampleData.ScheduledEnd": "yyyy-MM-dd",
+    "Fact_Pipeline_SampleData.ActualEnd": "yyyy-MM-dd",
+    "Fact_Pipeline_SampleData.DurationHours": "0.00%",
+    "Fact_Pipeline_SampleData.RetryCount": "#,##0"
+  },
+  "DisplayFolders": {
+    "Dim_Category": "Dimensions",
+    "Dim_Category.CategoryID": "Keys",
+    "Dim_Category.CategoryName": "Attributes",
+    "Dim_Category.Description": "Attributes",
+    "Fact_Pipeline_SampleData": "Facts",
+    "Fact_Pipeline_SampleData.PipelineID": "Keys",
+    "Fact_Pipeline_SampleData.PipelineName": "Attributes",
+    "Fact_Pipeline_SampleData.Category": "Attributes",
+    "Fact_Pipeline_SampleData.Status": "Attributes",
+    "Fact_Pipeline_SampleData.ScheduledStart": "Measures",
+    "Fact_Pipeline_SampleData.ActualStart": "Measures",
+    "Fact_Pipeline_SampleData.ScheduledEnd": "Measures",
+    "Fact_Pipeline_SampleData.ActualEnd": "Measures",
+    "Fact_Pipeline_SampleData.SLAHours": "Measures",
+    "Fact_Pipeline_SampleData.DurationHours": "Measures",
+    "Fact_Pipeline_SampleData.StartDelayMinutes": "Measures",
+    "Fact_Pipeline_SampleData.EndDelayMinutes": "Measures",
+    "Fact_Pipeline_SampleData.SLAStatus": "Attributes",
+    "Fact_Pipeline_SampleData.Environment": "Measures",
+    "Fact_Pipeline_SampleData.Owner": "Measures",
+    "Fact_Pipeline_SampleData.Region": "Measures",
+    "Fact_Pipeline_SampleData.RetryCount": "Measures"
+  },
+  "ValidationErrors": []
+}

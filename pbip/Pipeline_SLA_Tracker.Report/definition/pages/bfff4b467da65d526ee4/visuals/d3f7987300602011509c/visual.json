@@ -20,15 +20,14 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "_Measure Table"
+                      "Entity": "Fact_Pipeline_SampleData"
                     }
                   },
-                  "Property": "Average Start Offset"
+                  "Property": "Failed Runs"
                 }
               },
-              "queryRef": "_Measure Table.Average Start Offset",
-              "nativeQueryRef": "Average Start Offset",
-              "format": "0.00"
+              "queryRef": "Fact_Pipeline_SampleData.Failed Runs",
+              "nativeQueryRef": "Failed Runs"
             }
           ]
         }
@@ -40,10 +39,10 @@
               "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "_Measure Table"
+                    "Entity": "Fact_Pipeline_SampleData"
                   }
                 },
-                "Property": "Average Start Offset"
+                "Property": "Failed Runs"
               }
             },
             "direction": "Descending"

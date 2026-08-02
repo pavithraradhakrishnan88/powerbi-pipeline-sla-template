@@ -20,15 +20,14 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "_Measure Table"
+                      "Entity": "Fact_Pipeline_SampleData"
                     }
                   },
-                  "Property": "Avg Duration by Category"
+                  "Property": "Queued Pipelines"
                 }
               },
-              "queryRef": "_Measure Table.Avg Duration by Category",
-              "nativeQueryRef": "Avg Run Time ",
-              "displayName": "Avg Run Time "
+              "queryRef": "Fact_Pipeline_SampleData.Queued Pipelines",
+              "nativeQueryRef": "Queued Pipelines"
             }
           ]
         }
@@ -40,10 +39,10 @@
               "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "_Measure Table"
+                    "Entity": "Fact_Pipeline_SampleData"
                   }
                 },
-                "Property": "Avg Duration by Category"
+                "Property": "Queued Pipelines"
               }
             },
             "direction": "Descending"

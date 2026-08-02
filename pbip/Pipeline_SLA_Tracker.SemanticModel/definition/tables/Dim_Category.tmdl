@@ -1,15 +1,6 @@
 table Dim_Category
 	lineageTag: 7307d8a7-c05e-4620-81fa-059a1630f4f1
 
-	measure 'Duration Color' =
-			
-			IF (
-			    [SLA Breach Flag] = 1,
-			    "#D62728",
-			    "#2CA02C"
-			)
-		lineageTag: 58e7cc7d-95ac-4915-9268-8c73f487b344
-
 	measure Userinfo = "Hello " & USERPRINCIPALNAME()
 		lineageTag: 2e966c31-9f60-4ca5-828a-81a90784d520
 
@@ -17,7 +8,7 @@ table Dim_Category
 		dataType: int64
 		formatString: 0
 		lineageTag: e40b2131-a44d-40c4-9429-d257236aee5b
-		summarizeBy: none
+		summarizeBy: count
 		sourceColumn: CategoryID
 
 		annotation SummarizationSetBy = Automatic
@@ -30,12 +21,11 @@ table Dim_Category
 
 		annotation SummarizationSetBy = Automatic
 
-	column SortOrder
-		dataType: int64
-		formatString: 0
-		lineageTag: 859858f4-9e46-4c65-9082-e7e520dcc65c
+	column Description
+		dataType: string
+		lineageTag: 92b06246-09e6-49b5-ab01-02659cf7788c
 		summarizeBy: none
-		sourceColumn: SortOrder
+		sourceColumn: Description
 
 		annotation SummarizationSetBy = Automatic
 
@@ -45,7 +35,7 @@ table Dim_Category
 				let
 				    Source = Csv.Document(File.Contents("C:\Users\pavit\Projects\powerbi-pipeline-sla-template\data\Dim_Category.csv"),[Delimiter=",", Columns=3, Encoding=1252, QuoteStyle=QuoteStyle.None]),
 				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
-				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"CategoryID", Int64.Type}, {"CategoryName", type text}, {"SortOrder", Int64.Type}})
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"CategoryID", Int64.Type}, {"CategoryName", type text}})
 				in
 				    #"Changed Type"
 
