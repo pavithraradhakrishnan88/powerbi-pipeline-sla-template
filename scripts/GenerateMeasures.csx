@@ -2,7 +2,7 @@
 // GenerateMeasures.csx
 // AUTO GENERATED
 //
-// Generated: 2026-08-02 10:32:39
+// Generated: 2026-08-02 11:19:34
 // Generator: GenerateMetadata.ps1 v1.0.0
 // Source: C:\Users\pavit\Projects\powerbi-pipeline-sla-template\scripts\tools\..\metadata\MeasureDefinitions.json
 // Tabular Editor 2.28
@@ -614,7 +614,17 @@ if(table_M016 != null)
     {
         measure_M016 = table_M016.AddMeasure(
             "Timeline Base",
-            @"MIN(Fact_Pipeline_SampleData[ActualStart])"
+            @"VAR Earliest =
+    CALCULATE(
+        MIN(Fact_Pipeline_SampleData[ScheduledStart]),
+        ALL(Fact_Pipeline_SampleData)
+    )
+RETURN
+DATEDIFF(
+    Earliest,
+    MIN(Fact_Pipeline_SampleData[ScheduledStart]),
+    HOUR
+)"
         );
 
         created++;
@@ -624,7 +634,17 @@ if(table_M016 != null)
         updated++;
     }
 
-    measure_M016.Expression = @"MIN(Fact_Pipeline_SampleData[ActualStart])";
+    measure_M016.Expression = @"VAR Earliest =
+    CALCULATE(
+        MIN(Fact_Pipeline_SampleData[ScheduledStart]),
+        ALL(Fact_Pipeline_SampleData)
+    )
+RETURN
+DATEDIFF(
+    Earliest,
+    MIN(Fact_Pipeline_SampleData[ScheduledStart]),
+    HOUR
+)";
     measure_M016.DisplayFolder = "05 Floating Bar";
     measure_M016.Description = "Starting position of floating bar timeline.";
     measure_M016.FormatString = "dd-MMM HH:mm";

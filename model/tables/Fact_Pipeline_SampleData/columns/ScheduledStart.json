@@ -1,0 +1,8 @@
+{
+  "name": "ScheduledStart",
+  "dataType": "dateTime",
+  "sourceColumn": "ScheduledStart",
+  "formatString": "General Date",
+  "lineageTag": "22334455-6677-8899-aabb-ccddeeff0011",
+  "summarizeBy": "none"
+}
