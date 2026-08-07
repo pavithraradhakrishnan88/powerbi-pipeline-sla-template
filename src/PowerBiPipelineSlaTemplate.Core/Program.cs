@@ -18,23 +18,24 @@ if (args.Length >= 2 && string.Equals(args[0], "--extract-metadata", StringCompa
     }
 }
 
-var schemaReader = new SchemaReader(dataDirectory, message => Console.WriteLine(message));
-var schema = schemaReader.Read();
-var builder = new ModelBuilder();
-var model = builder.Build(schema);
-builder.ValidateBuildResult(model);
-var json = builder.ToJson(model, true);
-var semanticModelPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "pbip", "Pipeline SLA.SemanticModel"));
-var semanticModelWriter = new PbipSemanticModelWriter();
-semanticModelWriter.Write(model, semanticModelPath);
-Console.WriteLine($"Wrote semantic model artifacts to {semanticModelPath}");
+var options = new PipelineOptions
 
-var absoluteOutputPath = Path.GetFullPath(outputPath);
-var outputDirectory = Path.GetDirectoryName(absoluteOutputPath);
-if (!string.IsNullOrWhiteSpace(outputDirectory))
 {
-    Directory.CreateDirectory(outputDirectory);
-}
-
-File.WriteAllText(absoluteOutputPath, json);
-Console.WriteLine($"Wrote metadata to {absoluteOutputPath}");
+    DataDirectoryPath = dataDirectory,
+    SemanticModelRootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "pbip", "Pipeline SLA.SemanticModel")),
+    ReportRootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "pbip", "Pipeline SLA.Report")),
+    ReportTemplateRootPath = Path.GetFullPath(
+    Path.Combine(AppContext.BaseDirectory,
+        "..", "..", "..", "..", "..",
+        "pbip",
+        "Pipeline_SLA_Tracker.Report")),
+    SemanticModelRelativePath = "../Pipeline SLA.SemanticModel",
+    MetadataOutputPath = outputPath,
+    ThrowOnValidationError = true,
+    Logger = message => Console.WriteLine(message),
+};
+var orchestrator = new PipelineOrchestrator();
+var result = orchestrator.Run(options);
+Console.WriteLine("Pipeline completed successfully.");
+Console.WriteLine($"Semantic Model: {result.SemanticModelRootPath}");
+Console.WriteLine($"Report: {result.ReportRootPath}");

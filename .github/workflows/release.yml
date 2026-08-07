@@ -7,31 +7,81 @@ on:
 
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release:
     runs-on: windows-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+
+      - name: Restore
+        run: dotnet restore
+
       - name: Validate
         shell: pwsh
-        run: ./build/validate.ps1
+        run: |
+          $ErrorActionPreference = "Stop"
+          ./build/validate.ps1
 
       - name: Build
         shell: pwsh
-        run: ./build/build.ps1
+        run: |
+          $ErrorActionPreference = "Stop"
+          ./build/build.ps1
+
+      - name: Verify build artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (!(Test-Path "artifacts")) {
+              throw "Artifacts folder not found."
+          }
 
       - name: Package PBIP
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
           Compress-Archive `
             -Path artifacts/* `
-            -DestinationPath PBIP-Release.zip
+            -DestinationPath PBIP-Release.zip `
+            -Force
 
-      - name: Upload Release Artifact
+      - name: Upload Workflow Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: PBIP-Release
           path: PBIP-Release.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: PBIP-Release.zip
+
+      - name: Upload Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Release-Logs
+          path: |
+            **/*.log
+            **/TestResults/**
+          if-no-files-found: ignore
+          retention-days: 7

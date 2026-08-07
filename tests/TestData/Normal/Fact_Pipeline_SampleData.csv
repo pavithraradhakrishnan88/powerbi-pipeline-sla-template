@@ -1,0 +1,4 @@
+PipelineID,CategoryId,Status,DurationHours,SLA_Target_Hrs,StartDate,EndDate
+P001,1,Success,2.5,4,2026-01-01T01:00:00,2026-01-01T03:30:00
+P002,2,Failed,6.0,4,2026-01-01T04:00:00,2026-01-01T10:00:00
+P003,3,Success,1.0,2,2026-01-01T11:00:00,2026-01-01T12:00:00

@@ -5,13 +5,33 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: windows-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Show .NET information
+        run: dotnet --info
 
       - name: Show PowerShell version
         shell: pwsh
@@ -19,4 +39,20 @@ jobs:
 
       - name: Run validation
         shell: pwsh
-        run: ./build/validate.ps1
+        run: |
+          $ErrorActionPreference = "Stop"
+          ./build/validate.ps1
+
+      - name: Verify solution builds
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Upload Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Validation-Logs
+          path: |
+            **/*.log
+            **/TestResults/**
+          if-no-files-found: ignore
+          retention-days: 7

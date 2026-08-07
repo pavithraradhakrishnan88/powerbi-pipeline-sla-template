@@ -23,3 +23,17 @@ Desktop.ini
 
 # Build artifacts
 artifacts/
+
+# ============================================
+# .NET Build Output
+# ============================================
+
+**/bin/
+**/obj/
+
+# Test results
+TestResults/
+*.trx
+
+# Logs
+*.log

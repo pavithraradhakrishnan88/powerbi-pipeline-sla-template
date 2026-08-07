@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutput>$(MSBuildThisFileDirectory)..\TestResults\Coverage\$(MSBuildProjectName)\</CoverletOutput>
+    <CoverletOutputFormat>cobertura,opencover,json</CoverletOutputFormat>
+    <ExcludeByFile>**/obj/**;**/bin/**</ExcludeByFile>
+  </PropertyGroup>
+</Project>

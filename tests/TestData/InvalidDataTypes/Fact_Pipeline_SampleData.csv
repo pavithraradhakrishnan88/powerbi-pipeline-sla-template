@@ -1,0 +1,3 @@
+PipelineID,CategoryId,Status,DurationHours,SLA_Target_Hrs,StartDate,EndDate
+P001,abc,Success,hello,high,not-a-date,still-not-a-date
+P002,xyz,Failed,world,low,2026-99-99,2026-88-88

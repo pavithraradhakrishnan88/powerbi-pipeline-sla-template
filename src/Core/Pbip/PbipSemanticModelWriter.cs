@@ -13,6 +13,33 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             ArgumentNullException.ThrowIfNull(model);
             ArgumentException.ThrowIfNullOrWhiteSpace(semanticModelRootPath);
 
+            WriteSemanticModel(model, semanticModelRootPath);
+
+            var semanticModelDirectoryName = new DirectoryInfo(semanticModelRootPath).Name;
+            var projectBaseName = semanticModelDirectoryName.EndsWith(".SemanticModel", StringComparison.OrdinalIgnoreCase)
+                ? semanticModelDirectoryName[..^".SemanticModel".Length]
+                : semanticModelDirectoryName;
+            var pbipRootPath = Path.GetDirectoryName(semanticModelRootPath) ?? semanticModelRootPath;
+            var reportRootPath = Path.Combine(pbipRootPath, $"{projectBaseName}.Report");
+            var reportTemplatePath = Path.Combine(pbipRootPath, "Pipeline_SLA_Tracker.Report");
+
+            var reportWriter = new PbirReportWriter();
+            reportWriter.WriteFromTemplate(
+                reportTemplatePath,
+                reportRootPath,
+                $"../{projectBaseName}.SemanticModel");
+        }
+
+        /// <summary>
+        /// Writes the semantic model artifacts without generating the report artifact.
+        /// </summary>
+        /// <param name="model">The model to write.</param>
+        /// <param name="semanticModelRootPath">The semantic model root directory.</param>
+        public void WriteSemanticModel(ModelBuildResult model, string semanticModelRootPath)
+        {
+            ArgumentNullException.ThrowIfNull(model);
+            ArgumentException.ThrowIfNullOrWhiteSpace(semanticModelRootPath);
+
             var semanticModelDirectoryName = new DirectoryInfo(semanticModelRootPath).Name;
             var projectBaseName = semanticModelDirectoryName.EndsWith(".SemanticModel", StringComparison.OrdinalIgnoreCase)
                 ? semanticModelDirectoryName[..^".SemanticModel".Length]
@@ -58,12 +85,6 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             File.WriteAllText(Path.Combine(semanticModelRootPath, "definition.pbism"), BuildPbism(model));
 
             File.WriteAllText(Path.Combine(pbipRootPath, $"{projectBaseName}.pbip"), BuildPbipPointer(projectBaseName));
-
-            var reportWriter = new PbirReportWriter();
-            reportWriter.WriteFromTemplate(
-                reportTemplatePath,
-                reportRootPath,
-                $"../{projectBaseName}.SemanticModel");
         }
 
         private static string BuildModelTmdl(ModelBuildResult model)
@@ -97,26 +118,21 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         }
 
         private static string BuildPbipPointer(string projectBaseName)
-        {
-            return "{" + Environment.NewLine
-                + "  \"version\": \"1.0\"," + Environment.NewLine
-                + "  \"artifacts\": [" + Environment.NewLine
-                + "    {" + Environment.NewLine
-                + "      \"report\": {" + Environment.NewLine
-                + "        \"path\": \"" + EscapeJsonString($"{projectBaseName}.Report") + "\"" + Environment.NewLine
-                + "      }" + Environment.NewLine
-                + "    }," + Environment.NewLine
-                + "    {" + Environment.NewLine
-                + "      \"semanticModel\": {" + Environment.NewLine
-                + "        \"path\": \"" + EscapeJsonString($"{projectBaseName}.SemanticModel") + "\"" + Environment.NewLine
-                + "      }" + Environment.NewLine
-                + "    }" + Environment.NewLine
-                + "  ]," + Environment.NewLine
-                + "  \"settings\": {" + Environment.NewLine
-                + "    \"enableAutoRecovery\": true" + Environment.NewLine
-                + "  }" + Environment.NewLine
-                + "}";
-        }
+{
+    return "{" + Environment.NewLine
+        + "  \"version\": \"1.0\"," + Environment.NewLine
+        + "  \"artifacts\": [" + Environment.NewLine
+        + "    {" + Environment.NewLine
+        + "      \"report\": {" + Environment.NewLine
+        + "        \"path\": \"" + EscapeJsonString($"{projectBaseName}.Report") + "\"" + Environment.NewLine
+        + "      }" + Environment.NewLine
+        + "    }" + Environment.NewLine
+        + "  ]," + Environment.NewLine
+        + "  \"settings\": {" + Environment.NewLine
+        + "    \"enableAutoRecovery\": true" + Environment.NewLine
+        + "  }" + Environment.NewLine
+        + "}";
+}
 
         private static string BuildTableTmdl(BuiltTable table, string dataDirectoryPath)
         {
