@@ -1,0 +1,17 @@
+table Dim_Spacing
+	lineageTag: e0fd4bca-a06c-4063-b926-7e35c6ec7027
+
+	column Index
+		formatString: 0
+		lineageTag: a5cdd78b-5ebb-4f73-8a99-40f83cd17136
+		summarizeBy: sum
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Spacing = calculated
+		mode: import
+		source = GENERATESERIES(0, 200, 1)
+
+	annotation PBI_Id = 3975db39ba86478f8fa5ada0e150fc6f
+

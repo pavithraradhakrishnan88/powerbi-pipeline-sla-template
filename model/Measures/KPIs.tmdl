@@ -1,0 +1,3 @@
+// Auto-generated measure group: KPIs
+measure 'Total Pipelineid' = SUM('Fact_Pipeline_SampleData'['PipelineID'])
+measure 'Total Retrycount' = SUM('Fact_Pipeline_SampleData'['RetryCount'])

@@ -1,0 +1,4 @@
+// Auto-generated measure group: Duration
+measure 'Total Durationhours' = SUM('Fact_Pipeline_SampleData'['DurationHours'])
+measure 'Total Startdelayminutes' = SUM('Fact_Pipeline_SampleData'['StartDelayMinutes'])
+measure 'Total Enddelayminutes' = SUM('Fact_Pipeline_SampleData'['EndDelayMinutes'])

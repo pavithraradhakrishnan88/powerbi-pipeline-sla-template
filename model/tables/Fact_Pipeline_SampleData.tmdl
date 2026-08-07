@@ -1,0 +1,128 @@
+table 'Fact_Pipeline_SampleData'
+{
+  column 'PipelineID'
+  {
+    dataType: Int64
+    isNullable: false
+    displayFolder: 'Keys'
+    description: 'Primary key for Fact Pipeline Sampledata.'
+  }
+  column 'PipelineName'
+  {
+    dataType: Text
+    isNullable: false
+    displayFolder: 'Attributes'
+    description: 'Pipelinename in Fact Pipeline Sampledata.'
+  }
+  column 'Category'
+  {
+    dataType: Text
+    isNullable: false
+    displayFolder: 'Attributes'
+    description: 'Category in Fact Pipeline Sampledata.'
+  }
+  column 'Status'
+  {
+    dataType: Text
+    isNullable: false
+    displayFolder: 'Attributes'
+    description: 'Status in Fact Pipeline Sampledata.'
+  }
+  column 'ScheduledStart'
+  {
+    dataType: DateTime
+    isNullable: false
+    displayFolder: 'Measures'
+    formatString: 'yyyy-MM-dd'
+    description: 'Scheduledstart in Fact Pipeline Sampledata.'
+  }
+  column 'ActualStart'
+  {
+    dataType: DateTime
+    isNullable: false
+    displayFolder: 'Measures'
+    formatString: 'yyyy-MM-dd'
+    description: 'Actualstart in Fact Pipeline Sampledata.'
+  }
+  column 'ScheduledEnd'
+  {
+    dataType: DateTime
+    isNullable: false
+    displayFolder: 'Measures'
+    formatString: 'yyyy-MM-dd'
+    description: 'Scheduledend in Fact Pipeline Sampledata.'
+  }
+  column 'ActualEnd'
+  {
+    dataType: DateTime
+    isNullable: false
+    displayFolder: 'Measures'
+    formatString: 'yyyy-MM-dd'
+    description: 'Actualend in Fact Pipeline Sampledata.'
+  }
+  column 'SLAHours'
+  {
+    dataType: Decimal
+    isNullable: false
+    displayFolder: 'Measures'
+    description: 'Slahours in Fact Pipeline Sampledata.'
+  }
+  column 'DurationHours'
+  {
+    dataType: Decimal
+    isNullable: false
+    displayFolder: 'Measures'
+    formatString: '0.00%'
+    description: 'Measure attribute for Fact Pipeline Sampledata.'
+  }
+  column 'StartDelayMinutes'
+  {
+    dataType: Int64
+    isNullable: false
+    displayFolder: 'Measures'
+    description: 'Startdelayminutes in Fact Pipeline Sampledata.'
+  }
+  column 'EndDelayMinutes'
+  {
+    dataType: Int64
+    isNullable: false
+    displayFolder: 'Measures'
+    description: 'Enddelayminutes in Fact Pipeline Sampledata.'
+  }
+  column 'SLAStatus'
+  {
+    dataType: Text
+    isNullable: false
+    displayFolder: 'Attributes'
+    description: 'Slastatus in Fact Pipeline Sampledata.'
+  }
+  column 'Environment'
+  {
+    dataType: Text
+    isNullable: false
+    displayFolder: 'Measures'
+    description: 'Environment in Fact Pipeline Sampledata.'
+  }
+  column 'Owner'
+  {
+    dataType: Text
+    isNullable: false
+    displayFolder: 'Measures'
+    description: 'Owner in Fact Pipeline Sampledata.'
+  }
+  column 'Region'
+  {
+    dataType: Text
+    isNullable: false
+    displayFolder: 'Measures'
+    description: 'Region in Fact Pipeline Sampledata.'
+  }
+  column 'RetryCount'
+  {
+    dataType: Int64
+    isNullable: false
+    displayFolder: 'Measures'
+    formatString: '#,##0'
+    description: 'Measure attribute for Fact Pipeline Sampledata.'
+  }
+}

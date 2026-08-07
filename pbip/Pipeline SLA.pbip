@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "artifacts": [
+    {
+      "report": {
+        "path": "Pipeline SLA.Report"
+      }
+    },
+    {
+      "semanticModel": {
+        "path": "Pipeline SLA.SemanticModel"
+      }
+    }
+  ],
+  "settings": {
+    "enableAutoRecovery": true
+  }
+}

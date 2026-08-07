@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using PowerBiPipelineSlaTemplate.Core.Models;
 using PowerBiPipelineSlaTemplate.Core.Serialization;
 
@@ -37,6 +39,50 @@ namespace PowerBiPipelineSlaTemplate.Core
             ArgumentNullException.ThrowIfNull(model);
 
             return model.ToJson(indented);
+        }
+
+        public void ValidateBuildResult(ModelBuildResult model)
+        {
+            ArgumentNullException.ThrowIfNull(model);
+
+            if (model.ValidationErrors.Count == 0)
+            {
+                return;
+            }
+
+            var message = "Model validation failed before generation:" + Environment.NewLine
+                + string.Join(Environment.NewLine, model.ValidationErrors.Select(error => $" - {error}"));
+
+            throw new InvalidOperationException(message);
+        }
+
+        public void WriteTmdlArtifacts(ModelBuildResult model, string modelRootPath)
+        {
+            ArgumentNullException.ThrowIfNull(model);
+            ArgumentException.ThrowIfNullOrWhiteSpace(modelRootPath);
+
+            var tablesPath = Path.Combine(modelRootPath, "Tables");
+            var measuresPath = Path.Combine(modelRootPath, "Measures");
+
+            Directory.CreateDirectory(modelRootPath);
+            Directory.CreateDirectory(tablesPath);
+            Directory.CreateDirectory(measuresPath);
+
+            foreach (var table in model.Tables)
+            {
+                var tableFilePath = Path.Combine(tablesPath, $"{SanitizeFileName(table.Name)}.tmdl");
+                File.WriteAllText(tableFilePath, BuildTableTmdl(table));
+            }
+
+            var relationshipsFilePath = Path.Combine(modelRootPath, "Relationships.tmdl");
+            File.WriteAllText(relationshipsFilePath, BuildRelationshipsTmdl(model.Relationships));
+
+            var groupedMeasures = BuildMeasureGroups(model.Tables);
+            foreach (var group in groupedMeasures)
+            {
+                var measureFilePath = Path.Combine(measuresPath, $"{group.Key}.tmdl");
+                File.WriteAllText(measureFilePath, BuildMeasuresTmdl(group.Key, group.Value));
+            }
         }
 
         private static BuiltTable BuildTable(TableDefinition table)
@@ -448,6 +494,150 @@ namespace PowerBiPipelineSlaTemplate.Core
 
             return string.Join(" ", value.Split(new[] { '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(part => char.ToUpperInvariant(part[0]) + part[1..].ToLowerInvariant()));
+        }
+
+        private static string BuildTableTmdl(BuiltTable table)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine($"table '{table.Name}'");
+            builder.AppendLine("{");
+
+            foreach (var column in table.Columns)
+            {
+                builder.AppendLine($"  column '{column.Name}'");
+                builder.AppendLine("  {");
+                builder.AppendLine($"    dataType: {column.DataType}");
+                builder.AppendLine($"    isNullable: {(column.Nullable ? "true" : "false")}");
+                if (!string.IsNullOrWhiteSpace(column.DisplayFolder))
+                {
+                    builder.AppendLine($"    displayFolder: '{column.DisplayFolder}'");
+                }
+
+                if (!string.IsNullOrWhiteSpace(column.FormatString))
+                {
+                    builder.AppendLine($"    formatString: '{column.FormatString}'");
+                }
+
+                if (!string.IsNullOrWhiteSpace(column.Description))
+                {
+                    builder.AppendLine($"    description: '{EscapeSingleQuotes(column.Description)}'");
+                }
+
+                builder.AppendLine("  }");
+            }
+
+            builder.AppendLine("}");
+            return builder.ToString();
+        }
+
+        private static string BuildRelationshipsTmdl(IReadOnlyList<ModelRelationship> relationships)
+        {
+            var builder = new StringBuilder();
+
+            foreach (var relationship in relationships)
+            {
+                builder.AppendLine($"relationship '{relationship.FromTable}_{relationship.FromColumn}_to_{relationship.ToTable}_{relationship.ToColumn}'");
+                builder.AppendLine("{");
+                builder.AppendLine($"  fromColumn: '{relationship.FromTable}'['{relationship.FromColumn}']");
+                builder.AppendLine($"  toColumn: '{relationship.ToTable}'['{relationship.ToColumn}']");
+                builder.AppendLine($"  cardinality: {relationship.Cardinality}");
+                builder.AppendLine($"  crossFilteringBehavior: {relationship.CrossFilteringBehavior}");
+                builder.AppendLine("}");
+            }
+
+            return builder.ToString();
+        }
+
+        private static Dictionary<string, List<MeasureCandidate>> BuildMeasureGroups(IReadOnlyList<BuiltTable> tables)
+        {
+            var groups = new Dictionary<string, List<MeasureCandidate>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["SLA"] = new List<MeasureCandidate>(),
+                ["Duration"] = new List<MeasureCandidate>(),
+                ["KPIs"] = new List<MeasureCandidate>()
+            };
+
+            foreach (var table in tables.Where(table => table.IsFactTable))
+            {
+                foreach (var column in table.Columns.Where(IsNumericColumn))
+                {
+                    var name = column.Name ?? string.Empty;
+                    var normalizedName = name.ToLowerInvariant();
+                    var candidate = new MeasureCandidate(table.Name, name);
+
+                    if (normalizedName.Contains("sla") || normalizedName.Contains("breach") || normalizedName.Contains("compliance") || normalizedName.Contains("target"))
+                    {
+                        groups["SLA"].Add(candidate);
+                        continue;
+                    }
+
+                    if (normalizedName.Contains("duration") || normalizedName.Contains("time") || normalizedName.Contains("hour") || normalizedName.Contains("minute") || normalizedName.Contains("second"))
+                    {
+                        groups["Duration"].Add(candidate);
+                        continue;
+                    }
+
+                    groups["KPIs"].Add(candidate);
+                }
+            }
+
+            return groups;
+        }
+
+        private static string BuildMeasuresTmdl(string groupName, IReadOnlyList<MeasureCandidate> measures)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine($"// Auto-generated measure group: {groupName}");
+
+            if (measures.Count == 0)
+            {
+                builder.AppendLine("// No inferred numeric columns available for this group.");
+                return builder.ToString();
+            }
+
+            foreach (var measure in measures)
+            {
+                var measureName = $"Total {HumanizeName(measure.ColumnName)}";
+                builder.AppendLine($"measure '{measureName}' = SUM('{measure.TableName}'['{measure.ColumnName}'])");
+            }
+
+            return builder.ToString();
+        }
+
+        private static bool IsNumericColumn(BuiltColumn column)
+        {
+            return string.Equals(column.DataType, "Int64", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(column.DataType, "Decimal", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(column.DataType, "Double", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string EscapeSingleQuotes(string value)
+        {
+            return value.Replace("'", "''", StringComparison.Ordinal);
+        }
+
+        private static string SanitizeFileName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "ModelObject";
+            }
+
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var cleaned = new string(value.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
+            return string.IsNullOrWhiteSpace(cleaned) ? "ModelObject" : cleaned;
+        }
+
+        private sealed class MeasureCandidate
+        {
+            public MeasureCandidate(string tableName, string columnName)
+            {
+                TableName = tableName;
+                ColumnName = columnName;
+            }
+
+            public string TableName { get; }
+            public string ColumnName { get; }
         }
     }
 

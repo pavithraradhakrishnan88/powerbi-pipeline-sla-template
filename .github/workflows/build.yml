@@ -2,13 +2,26 @@ name: Build
 
 on:
   push:
+    branches:
+      - main
+      - master
     paths:
       - "data/**"
       - "model/**"
       - "powerquery/**"
       - "theme/**"
+      - "src/**"
+      - "build/**"
+
+  pull_request:
+    branches:
+      - main
+      - master
 
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -18,16 +31,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build Solution
+        run: dotnet build --configuration Release --no-restore
+
       - name: Validate project
         shell: pwsh
         run: ./build/validate.ps1
 
-      - name: Build project
+      - name: Generate PBIP
         shell: pwsh
         run: ./build/build.ps1
+
+      - name: Verify Artifacts
+        shell: pwsh
+        run: |
+          if (!(Test-Path "artifacts")) {
+              throw "artifacts folder was not created."
+          }
+
+          Get-ChildItem artifacts -Recurse
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: PBIP-Build
-          path: artifacts/
+          path: artifacts/**
+          if-no-files-found: error
+          retention-days: 30

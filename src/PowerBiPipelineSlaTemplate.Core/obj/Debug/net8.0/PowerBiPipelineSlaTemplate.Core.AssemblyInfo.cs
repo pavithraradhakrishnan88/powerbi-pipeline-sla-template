@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PowerBiPipelineSlaTemplate.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c25cc8a3d6e69a06ab5e52132a66dc1b7e8d22bf")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1496e942f230a025ee76bec09ad5f76fa8502385")]
 [assembly: System.Reflection.AssemblyProductAttribute("PowerBiPipelineSlaTemplate.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PowerBiPipelineSlaTemplate.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

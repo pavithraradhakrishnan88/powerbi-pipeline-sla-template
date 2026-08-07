@@ -1,0 +1,31 @@
+{
+  "name": "Pipeline SLA Report",
+  "version": "1.0",
+  "pages": [
+    {
+      "name": "pipeline-overview",
+      "displayName": "Pipeline Overview",
+      "order": 0
+    },
+    {
+      "name": "sla-analysis",
+      "displayName": "SLA Analysis",
+      "order": 1
+    }
+  ],
+  "navigation": {
+    "defaultPage": "pipeline-overview",
+    "menu": [
+      "pipeline-overview",
+      "sla-analysis"
+    ]
+  },
+  "bookmarks": [
+    {
+      "name": "default-view",
+      "displayName": "Default View",
+      "page": "pipeline-overview",
+      "isDefault": true
+    }
+  ]
+}

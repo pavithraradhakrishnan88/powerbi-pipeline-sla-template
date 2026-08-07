@@ -1,0 +1,70 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "pipeline-overview",
+  "displayName": "Pipeline Overview",
+  "displayOption": "FitToPage",
+  "height": 720,
+  "width": 1280,
+  "visualContainers": [
+    {
+      "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
+      "name": "KpiCardTotal",
+      "position": {
+        "x": 40,
+        "y": 40,
+        "z": 1000,
+        "height": 130,
+        "width": 280,
+        "tabOrder": 1
+      },
+      "visual": {
+        "visualType": "shape",
+        "drillFilterOtherVisuals": true
+      }
+    },
+    {
+      "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
+      "name": "SlicerFactPipelineSampleDataStatus",
+      "position": {
+        "x": 980,
+        "y": 40,
+        "z": 2001,
+        "height": 60,
+        "width": 240,
+        "tabOrder": 2
+      },
+      "visual": {
+        "visualType": "slicer",
+        "query": {
+          "queryState": {
+            "Values": {
+              "projections": [
+                {
+                  "queryRef": "Fact_Pipeline_SampleData[Status]",
+                  "nativeQueryRef": "Fact_Pipeline_SampleData[Status]",
+                  "active": true
+                }
+              ]
+            }
+          }
+        },
+        "objects": {
+          "data": [
+            {
+              "properties": {
+                "mode": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "\u0027dropdown\u0027"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "drillFilterOtherVisuals": true
+      }
+    }
+  ]
+}

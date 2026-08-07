@@ -1,0 +1,158 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
+  "name": "2d1dd9bfeec100be432b",
+  "position": {
+    "x": 1015.7676348547718,
+    "y": 20.912863070539419,
+    "z": 1004,
+    "height": 29.875518672199171,
+    "width": 228.54771784232366,
+    "tabOrder": 4
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": {
+                      "propertyIdentifier": {
+                        "objectName": "values",
+                        "propertyName": "expr"
+                      },
+                      "selector": {
+                        "id": "Userinfo"
+                      }
+                    },
+                    "textStyle": {
+                      "color": "#ffffff"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": [
+        {
+          "properties": {
+            "expr": {
+              "expr": {
+                "Min": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "Subquery": {
+                          "Query": {
+                            "Version": 2,
+                            "From": [
+                              {
+                                "Name": "_",
+                                "Entity": "_Measure Table",
+                                "Type": 0
+                              }
+                            ],
+                            "Select": [
+                              {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Source": "_"
+                                    }
+                                  },
+                                  "Property": "Last Refresh"
+                                },
+                                "Name": "_Measure Table.Last Refresh"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "Property": "_Measure Table.Last Refresh"
+                    }
+                  },
+                  "IncludeAllTypes": 1
+                },
+                "Annotations": {
+                  "NaturalLanguage": {
+                    "version": 1,
+                    "kind": "NaturalLanguage",
+                    "annotation": {
+                      "name": "Last Refresh",
+                      "utterance": "last refresh"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "Last Refresh"
+          }
+        },
+        {
+          "properties": {
+            "expr": {
+              "expr": {
+                "Min": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "Subquery": {
+                          "Query": {
+                            "Version": 2,
+                            "From": [
+                              {
+                                "Name": "d",
+                                "Entity": "Dim_Category",
+                                "Type": 0
+                              }
+                            ],
+                            "Select": [
+                              {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Source": "d"
+                                    }
+                                  },
+                                  "Property": "Userinfo"
+                                },
+                                "Name": "Dim_Category.Userinfo"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "Property": "Dim_Category.Userinfo"
+                    }
+                  },
+                  "IncludeAllTypes": 1
+                },
+                "Annotations": {
+                  "NaturalLanguage": {
+                    "version": 1,
+                    "kind": "NaturalLanguage",
+                    "annotation": {
+                      "name": "Userinfo",
+                      "utterance": "userinfo"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "Userinfo"
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

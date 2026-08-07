@@ -1,0 +1,26 @@
+table _Measures
+	/// Group: SLA
+	measure 'Total Slahours' = SUM(Fact_Pipeline_SampleData[SLAHours])
+		displayFolder: SLA
+
+	/// Group: Duration
+	measure 'Total Durationhours' = SUM(Fact_Pipeline_SampleData[DurationHours])
+		displayFolder: Duration
+	measure 'Total Startdelayminutes' = SUM(Fact_Pipeline_SampleData[StartDelayMinutes])
+		displayFolder: Duration
+	measure 'Total Enddelayminutes' = SUM(Fact_Pipeline_SampleData[EndDelayMinutes])
+		displayFolder: Duration
+
+	/// Group: KPIs
+	measure 'Total Pipelineid' = SUM(Fact_Pipeline_SampleData[PipelineID])
+		displayFolder: KPIs
+	measure 'Total Retrycount' = SUM(Fact_Pipeline_SampleData[RetryCount])
+		displayFolder: KPIs
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				    Source = #table({}, {})
+				in
+				    Source

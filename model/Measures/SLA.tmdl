@@ -1,0 +1,2 @@
+// Auto-generated measure group: SLA
+measure 'Total Slahours' = SUM('Fact_Pipeline_SampleData'['SLAHours'])

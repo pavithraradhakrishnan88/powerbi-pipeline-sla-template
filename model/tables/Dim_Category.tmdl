@@ -1,0 +1,36 @@
+table 'Dim_Category'
+{
+  column 'CategoryID'
+  {
+    dataType: Int64
+    isNullable: false
+    displayFolder: 'Keys'
+    description: 'Primary key for Dim Category.'
+  }
+  column 'CategoryName'
+  {
+    dataType: Text
+    isNullable: false
+    displayFolder: 'Attributes'
+    description: 'Categoryname in Dim Category.'
+  }
+  column 'Description'
+  {
+    dataType: Text
+    isNullable: false
+    displayFolder: 'Attributes'
+    description: 'Description in Dim Category.'
+  }
+  column 'Vendor'
+  {
+    dataType: Text
+    isNullable: false
+    description: 'Vendor in Dim Category.'
+  }
+  column 'SortOrder'
+  {
+    dataType: Int64
+    isNullable: false
+    description: 'Sortorder in Dim Category.'
+  }
+}

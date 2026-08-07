@@ -1,8 +1,7 @@
 using System;
 using System.IO;
 using PowerBiPipelineSlaTemplate.Core;
-using PowerBiPipelineSlaTemplate.Core.Models;
-using PowerBiPipelineSlaTemplate.Core.Serialization;
+using PowerBiPipelineSlaTemplate.Core.Pbip;
 
 var outputPath = "metadata/metadata.json";
 var dataDirectory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "data"));
@@ -23,7 +22,12 @@ var schemaReader = new SchemaReader(dataDirectory, message => Console.WriteLine(
 var schema = schemaReader.Read();
 var builder = new ModelBuilder();
 var model = builder.Build(schema);
+builder.ValidateBuildResult(model);
 var json = builder.ToJson(model, true);
+var semanticModelPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "pbip", "Pipeline SLA.SemanticModel"));
+var semanticModelWriter = new PbipSemanticModelWriter();
+semanticModelWriter.Write(model, semanticModelPath);
+Console.WriteLine($"Wrote semantic model artifacts to {semanticModelPath}");
 
 var absoluteOutputPath = Path.GetFullPath(outputPath);
 var outputDirectory = Path.GetDirectoryName(absoluteOutputPath);

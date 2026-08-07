@@ -43,4 +43,36 @@ if (Test-Path $projectPath) {
     Write-Host "Skipping metadata generation: project not found at $projectPath"
 }
 
+Write-Host "Publishing PBIP artifacts to BuildResult..."
+
+$pbipSourceRoot = Join-Path $PSScriptRoot "..\pbip"
+$pbipOutputRoot = Join-Path $PSScriptRoot "..\BuildResult\PBIP"
+$pbipName = "Pipeline SLA"
+
+if (!(Test-Path $pbipOutputRoot)) {
+    New-Item -ItemType Directory -Path $pbipOutputRoot | Out-Null
+}
+
+$pbipSourceFile = Join-Path $pbipSourceRoot "$pbipName.pbip"
+$pbipSourceReport = Join-Path $pbipSourceRoot "$pbipName.Report"
+$pbipSourceSemanticModel = Join-Path $pbipSourceRoot "$pbipName.SemanticModel"
+
+if (Test-Path $pbipSourceFile) {
+    cmd /c copy /Y "$pbipSourceFile" "$pbipOutputRoot\" | Out-Null
+} else {
+    Write-Host "Missing PBIP file: $pbipSourceFile"
+}
+
+if (Test-Path $pbipSourceReport) {
+    robocopy $pbipSourceReport (Join-Path $pbipOutputRoot "$pbipName.Report") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
+} else {
+    Write-Host "Missing report folder: $pbipSourceReport"
+}
+
+if (Test-Path $pbipSourceSemanticModel) {
+    robocopy $pbipSourceSemanticModel (Join-Path $pbipOutputRoot "$pbipName.SemanticModel") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
+} else {
+    Write-Host "Missing semantic model folder: $pbipSourceSemanticModel"
+}
+
 Write-Host "Build complete."
