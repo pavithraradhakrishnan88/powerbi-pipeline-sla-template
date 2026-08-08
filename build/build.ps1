@@ -92,14 +92,21 @@ if (Test-Path $pbipSourceFile) {
 
 if (Test-Path $pbipSourceReport) {
     robocopy $pbipSourceReport (Join-Path $pbipOutputRoot "$pbipName.Report") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
+    if ($LASTEXITCODE -gt 7) {
+        throw "robocopy failed for report folder with exit code $LASTEXITCODE"
+    }
 } else {
     Write-Host "Missing report folder: $pbipSourceReport"
 }
 
 if (Test-Path $pbipSourceSemanticModel) {
     robocopy $pbipSourceSemanticModel (Join-Path $pbipOutputRoot "$pbipName.SemanticModel") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
+    if ($LASTEXITCODE -gt 7) {
+        throw "robocopy failed for semantic model folder with exit code $LASTEXITCODE"
+    }
 } else {
     Write-Host "Missing semantic model folder: $pbipSourceSemanticModel"
 }
 
+$global:LASTEXITCODE = 0
 Write-Host "Build complete."
