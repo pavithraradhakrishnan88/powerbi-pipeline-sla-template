@@ -30,7 +30,7 @@ jobs:
           cache: true
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore src/PowerBiPipelineSlaTemplate.Core/PowerBiPipelineSlaTemplate.Core.csproj
 
       - name: Validate
         shell: pwsh

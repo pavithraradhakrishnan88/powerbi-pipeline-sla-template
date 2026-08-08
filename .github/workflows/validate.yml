@@ -28,7 +28,7 @@ jobs:
           cache: true
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore src/PowerBiPipelineSlaTemplate.Core/PowerBiPipelineSlaTemplate.Core.csproj
 
       - name: Show .NET information
         run: dotnet --info
@@ -44,7 +44,7 @@ jobs:
           ./build/validate.ps1
 
       - name: Verify solution builds
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build src/PowerBiPipelineSlaTemplate.Core/PowerBiPipelineSlaTemplate.Core.csproj --configuration Release --no-restore
 
       - name: Upload Logs on Failure
         if: failure()

@@ -43,14 +43,15 @@ jobs:
           cache: true
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore src/PowerBiPipelineSlaTemplate.Core/PowerBiPipelineSlaTemplate.Core.csproj
 
       - name: Build Solution
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build src/PowerBiPipelineSlaTemplate.Core/PowerBiPipelineSlaTemplate.Core.csproj --configuration Release --no-restore
 
       - name: Run Tests with Coverage
         run: >
-          dotnet test
+          dotnet build tests/PowerBiPipelineSlaTemplate.Tests/PowerBiPipelineSlaTemplate.Tests.csproj --configuration Release
+          && dotnet test tests/PowerBiPipelineSlaTemplate.Tests/PowerBiPipelineSlaTemplate.Tests.csproj
           --configuration Release
           --no-build
           --collect:"XPlat Code Coverage"
