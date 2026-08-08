@@ -1,4 +1,22 @@
 {
+  "Project": {
+    "Name": "Power BI Pipeline SLA Template",
+    "Version": "1.0.0",
+    "Generator": "MetadataGenerator",
+    "GeneratedOn": "2026-08-07T22:45:00Z",
+    "Repository": "https://github.com/<user>/powerbi-pipeline-sla-template"
+  },
+
+  "Summary": {
+  "TableCount": 2,
+  "ColumnCount": 22,
+  "RelationshipCount": 0,
+  "FactTables": 1,
+  "DimensionTables": 1,
+  "MeasureCount": 0,
+  "RowCount": 258
+  },
+
   "Tables": [
     {
       "Name": "Dim_Category",
@@ -94,7 +112,7 @@
           "IsForeignKey": false,
           "DisplayFolder": "Attributes",
           "FormatString": "",
-          "Description": "Category in Fact Pipeline Sampledata."
+          "Description": "Pipeline category used for SLA grouping and reporting."
         },
         {
           "Name": "Status",
@@ -163,7 +181,7 @@
           "IsPrimaryKey": false,
           "IsForeignKey": false,
           "DisplayFolder": "Measures",
-          "FormatString": "0.00%",
+          "FormatString": "0.00",
           "Description": "Measure attribute for Fact Pipeline Sampledata."
         },
         {
@@ -214,7 +232,7 @@
           "IsForeignKey": false,
           "DisplayFolder": "Measures",
           "FormatString": "",
-          "Description": "Owner in Fact Pipeline Sampledata."
+          "Description": "Business owner responsible for pipeline execution."
         },
         {
           "Name": "Region",
@@ -239,13 +257,23 @@
       ]
     }
   ],
-  "Relationships": [],
+  "Relationships": [
+  {
+    "FromTable": "",
+    "FromColumn": "",
+    "ToTable": "",
+    "ToColumn": "",
+    "Cardinality": "",
+    "CrossFilterDirection": ""
+  }
+],
+
   "Formatting": {
     "Fact_Pipeline_SampleData.ScheduledStart": "yyyy-MM-dd",
     "Fact_Pipeline_SampleData.ActualStart": "yyyy-MM-dd",
     "Fact_Pipeline_SampleData.ScheduledEnd": "yyyy-MM-dd",
     "Fact_Pipeline_SampleData.ActualEnd": "yyyy-MM-dd",
-    "Fact_Pipeline_SampleData.DurationHours": "0.00%",
+    "Fact_Pipeline_SampleData.DurationHours": "0.00",
     "Fact_Pipeline_SampleData.RetryCount": "#,##0"
   },
   "DisplayFolders": {
@@ -258,19 +286,23 @@
     "Fact_Pipeline_SampleData.PipelineName": "Attributes",
     "Fact_Pipeline_SampleData.Category": "Attributes",
     "Fact_Pipeline_SampleData.Status": "Attributes",
-    "Fact_Pipeline_SampleData.ScheduledStart": "Measures",
-    "Fact_Pipeline_SampleData.ActualStart": "Measures",
-    "Fact_Pipeline_SampleData.ScheduledEnd": "Measures",
-    "Fact_Pipeline_SampleData.ActualEnd": "Measures",
-    "Fact_Pipeline_SampleData.SLAHours": "Measures",
-    "Fact_Pipeline_SampleData.DurationHours": "Measures",
-    "Fact_Pipeline_SampleData.StartDelayMinutes": "Measures",
-    "Fact_Pipeline_SampleData.EndDelayMinutes": "Measures",
+    "Fact_Pipeline_SampleData.ScheduledStart": "Dates",
+    "Fact_Pipeline_SampleData.ActualStart": "Dates",
+    "Fact_Pipeline_SampleData.ScheduledEnd": "Dates",
+    "Fact_Pipeline_SampleData.ActualEnd": "Dates",
+    "Fact_Pipeline_SampleData.SLAHours": "Metrics",
+    "Fact_Pipeline_SampleData.DurationHours": "Metrics",
+    "Fact_Pipeline_SampleData.StartDelayMinutes": "Metrics",
+    "Fact_Pipeline_SampleData.EndDelayMinutes": "Metrics",
     "Fact_Pipeline_SampleData.SLAStatus": "Attributes",
-    "Fact_Pipeline_SampleData.Environment": "Measures",
-    "Fact_Pipeline_SampleData.Owner": "Measures",
-    "Fact_Pipeline_SampleData.Region": "Measures",
-    "Fact_Pipeline_SampleData.RetryCount": "Measures"
+    "Fact_Pipeline_SampleData.Environment": "Attributes",
+    "Fact_Pipeline_SampleData.Owner": "Attributes",
+    "Fact_Pipeline_SampleData.Region": "Attributes",
+    "Fact_Pipeline_SampleData.RetryCount": "Metrics"
   },
-  "ValidationErrors": []
+  "Validation": {
+    "Passed": true,
+    "ErrorCount": 0,
+    "WarningCount": 0
+}
 }
