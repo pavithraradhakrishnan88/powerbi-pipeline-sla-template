@@ -2,9 +2,9 @@
 // GenerateMeasures.csx
 // AUTO GENERATED
 //
-// Generated: 2026-08-08 11:25:59
+// Generated: 2026-08-09 00:49:30
 // Generator: GenerateMetadata.ps1 v1.0.0
-// Source: C:\Users\pavit\powerbi-pipeline-sla-template-git\scripts\tools\..\metadata\MeasureDefinitions.json
+// Source: C:\Users\pavit\powerbi-pipeline-sla-template-git\build\..\scripts\metadata\MeasureDefinitions.json
 // Tabular Editor 2.28
 // ==========================================================
 
@@ -614,17 +614,7 @@ if(table_M016 != null)
     {
         measure_M016 = table_M016.AddMeasure(
             "Timeline Base",
-            @"VAR Earliest =
-    CALCULATE(
-        MIN(Fact_Pipeline_SampleData[ScheduledStart]),
-        ALL(Fact_Pipeline_SampleData)
-    )
-RETURN
-DATEDIFF(
-    Earliest,
-    MIN(Fact_Pipeline_SampleData[ScheduledStart]),
-    HOUR
-)"
+            @"DATEDIFF(CALCULATE(MIN(Fact_Pipeline_SampleData[ScheduledStart]), ALL(Fact_Pipeline_SampleData)), MIN(Fact_Pipeline_SampleData[ScheduledStart]), HOUR)"
         );
 
         created++;
@@ -634,20 +624,10 @@ DATEDIFF(
         updated++;
     }
 
-    measure_M016.Expression = @"VAR Earliest =
-    CALCULATE(
-        MIN(Fact_Pipeline_SampleData[ScheduledStart]),
-        ALL(Fact_Pipeline_SampleData)
-    )
-RETURN
-DATEDIFF(
-    Earliest,
-    MIN(Fact_Pipeline_SampleData[ScheduledStart]),
-    HOUR
-)";
+    measure_M016.Expression = @"DATEDIFF(CALCULATE(MIN(Fact_Pipeline_SampleData[ScheduledStart]), ALL(Fact_Pipeline_SampleData)), MIN(Fact_Pipeline_SampleData[ScheduledStart]), HOUR)";
     measure_M016.DisplayFolder = "05 Floating Bar";
     measure_M016.Description = "Starting position of floating bar timeline.";
-    measure_M016.FormatString = "#,##0";
+    measure_M016.FormatString = "0";
     measure_M016.IsHidden = false;
 
     measure_M016.SetAnnotation("Owner", "BI Team");
@@ -682,7 +662,7 @@ if(table_M017 != null)
     {
         measure_M017 = table_M017.AddMeasure(
             "Floating Bar Duration",
-            @"AVERAGE(Fact_Pipeline_SampleData[DurationHours])"
+            @"[Average Runtime]"
         );
 
         created++;
@@ -692,7 +672,7 @@ if(table_M017 != null)
         updated++;
     }
 
-    measure_M017.Expression = @"AVERAGE(Fact_Pipeline_SampleData[DurationHours])";
+    measure_M017.Expression = @"[Average Runtime]";
     measure_M017.DisplayFolder = "05 Floating Bar";
     measure_M017.Description = "Length of floating bar in hours.";
     measure_M017.FormatString = "#,##0.00";

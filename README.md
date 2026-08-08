@@ -2,8 +2,7 @@
 
 A ready-to-use Power BI template for tracking pipeline/process SLA compliance, featuring a custom **floating bar chart** technique (built with a disconnected `GENERATESERIES` spacing table) to visualize start-to-end duration against SLA targets at a glance.
 
-![Dashboard Preview](assets/preview.png)
-*(add a screenshot or GIF of the report here before publishing)*
+<!-- TODO: add assets/preview.png before publishing -- image is currently referenced but missing -->
 
 ---
 
