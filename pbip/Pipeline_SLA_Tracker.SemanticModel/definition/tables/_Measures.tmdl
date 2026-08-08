@@ -12,8 +12,6 @@ table _Measures
 		displayFolder: Duration
 
 	/// Group: KPIs
-	measure 'Total Pipelineid' = SUM(Fact_Pipeline_SampleData[PipelineID])
-		displayFolder: KPIs
 	measure 'Total Retrycount' = SUM(Fact_Pipeline_SampleData[RetryCount])
 		displayFolder: KPIs
 

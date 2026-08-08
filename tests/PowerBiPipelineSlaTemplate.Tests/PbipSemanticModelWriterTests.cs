@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
+using PowerBiPipelineSlaTemplate.Core;
 using PowerBiPipelineSlaTemplate.Core.Pbip;
 using PowerBiPipelineSlaTemplate.Tests.Shared.Fixtures;
 using PowerBiPipelineSlaTemplate.Tests.Shared.Utilities;
@@ -58,6 +60,45 @@ public class PbipSemanticModelWriterTests
 
         Directory.Exists(Path.Combine(pbipRoot, "Pipeline SLA.Report")).Should().BeTrue();
         File.Exists(Path.Combine(pbipRoot, "Pipeline SLA.Report", "definition.pbir")).Should().BeTrue();
+    }
+
+    [Fact]
+    public void WriteSemanticModel_ShouldSkipIdAndKeyColumnsFromGenericSumMeasures()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var pbipRoot = workspace.CreateDirectory("pbip");
+        var semanticModelPath = Path.Combine(pbipRoot, "Pipeline_SLA_Tracker.SemanticModel");
+
+        var model = new ModelBuildResult
+        {
+            Tables = new List<BuiltTable>
+            {
+                new BuiltTable
+                {
+                    Name = "Fact_Pipeline_SampleData",
+                    IsFactTable = true,
+                    Columns = new List<BuiltColumn>
+                    {
+                        new BuiltColumn { Name = "PipelineID", DataType = "Int64", IsPrimaryKey = true },
+                        new BuiltColumn { Name = "DurationHours", DataType = "Decimal" },
+                        new BuiltColumn { Name = "SLAHours", DataType = "Decimal" },
+                        new BuiltColumn { Name = "RetryCount", DataType = "Int64" }
+                    }
+                }
+            }
+        };
+
+        var writer = new PbipSemanticModelWriter();
+        writer.WriteSemanticModel(model, semanticModelPath);
+
+        var measuresPath = Path.Combine(semanticModelPath, "definition", "tables", "_Measures.tmdl");
+        File.Exists(measuresPath).Should().BeTrue();
+
+        var content = File.ReadAllText(measuresPath);
+        content.Should().NotContain("SUM(Fact_Pipeline_SampleData[PipelineID])");
+        content.Should().Contain("SUM(Fact_Pipeline_SampleData[DurationHours])");
+        content.Should().Contain("SUM(Fact_Pipeline_SampleData[SLAHours])");
+        content.Should().Contain("SUM(Fact_Pipeline_SampleData[RetryCount])");
     }
 
     [Fact]

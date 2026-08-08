@@ -559,7 +559,7 @@ namespace PowerBiPipelineSlaTemplate.Core
 
             foreach (var table in tables.Where(table => table.IsFactTable))
             {
-                foreach (var column in table.Columns.Where(IsNumericColumn))
+                foreach (var column in table.Columns.Where(IsNumericColumn).Where(column => !ShouldSkipGenericMeasure(column)))
                 {
                     var name = column.Name ?? string.Empty;
                     var normalizedName = name.ToLowerInvariant();
@@ -609,6 +609,29 @@ namespace PowerBiPipelineSlaTemplate.Core
             return string.Equals(column.DataType, "Int64", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(column.DataType, "Decimal", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(column.DataType, "Double", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool ShouldSkipGenericMeasure(BuiltColumn column)
+        {
+            if (column is null)
+            {
+                return false;
+            }
+
+            var name = column.Name ?? string.Empty;
+            var normalizedName = name.ToLowerInvariant();
+
+            if (column.IsPrimaryKey || column.IsForeignKey)
+            {
+                return true;
+            }
+
+            if (normalizedName.Contains("id") || normalizedName.Contains("key") || normalizedName.Contains("pk") || normalizedName.Contains("fk"))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private static string EscapeSingleQuotes(string value)

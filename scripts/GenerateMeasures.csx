@@ -2,9 +2,9 @@
 // GenerateMeasures.csx
 // AUTO GENERATED
 //
-// Generated: 2026-08-02 11:57:44
+// Generated: 2026-08-08 11:25:59
 // Generator: GenerateMetadata.ps1 v1.0.0
-// Source: C:\Users\pavit\Projects\powerbi-pipeline-sla-template\scripts\tools\..\metadata\MeasureDefinitions.json
+// Source: C:\Users\pavit\powerbi-pipeline-sla-template-git\scripts\tools\..\metadata\MeasureDefinitions.json
 // Tabular Editor 2.28
 // ==========================================================
 
@@ -373,7 +373,7 @@ if(table_M008 != null)
     {
         measure_M008 = table_M008.AddMeasure(
             "SLA Breach %",
-            @"DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[SLAStatus]=""Missed""),[Active Pipelines])"
+            @"DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData), Fact_Pipeline_SampleData[SLAStatus] = ""Missed""), [Active Pipelines], 0)"
         );
 
         created++;
@@ -383,7 +383,7 @@ if(table_M008 != null)
         updated++;
     }
 
-    measure_M008.Expression = @"DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[SLAStatus]=""Missed""),[Active Pipelines])";
+    measure_M008.Expression = @"DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData), Fact_Pipeline_SampleData[SLAStatus] = ""Missed""), [Active Pipelines], 0)";
     measure_M008.DisplayFolder = "02 SLA";
     measure_M008.Description = "Percentage of SLA breaches.";
     measure_M008.FormatString = "0.00%";
@@ -647,7 +647,7 @@ DATEDIFF(
 )";
     measure_M016.DisplayFolder = "05 Floating Bar";
     measure_M016.Description = "Starting position of floating bar timeline.";
-    measure_M016.FormatString = "dd-MMM HH:mm";
+    measure_M016.FormatString = "#,##0";
     measure_M016.IsHidden = false;
 
     measure_M016.SetAnnotation("Owner", "BI Team");
@@ -659,7 +659,7 @@ DATEDIFF(
     measure_M016.SetAnnotation("Tags", "FloatingBar;Timeline");
     measure_M016.SetAnnotation("Synonyms", "Bar Start;Timeline Start");
     measure_M016.SetAnnotation("KPI", "False");
-    measure_M016.SetAnnotation("DataType", "DateTime");
+    measure_M016.SetAnnotation("DataType", "Whole Number");
     measure_M016.SetAnnotation("LastUpdated", "2026-08-01");
 }
 else
@@ -707,8 +707,7 @@ if(table_M017 != null)
     measure_M017.SetAnnotation("Tags", "FloatingBar;Runtime");
     measure_M017.SetAnnotation("Synonyms", "Bar Width;Duration");
     measure_M017.SetAnnotation("KPI", "False");
-    measure_M017.SetAnnotation("DataType", "Whole Number");
-    measure_M017.SetAnnotation("DependsOn", "Average Runtime");
+    measure_M017.SetAnnotation("DataType", "Decimal Number");
     measure_M017.SetAnnotation("LastUpdated", "2026-08-01");
 }
 else

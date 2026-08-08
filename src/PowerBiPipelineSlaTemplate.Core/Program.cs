@@ -22,14 +22,14 @@ var options = new PipelineOptions
 
 {
     DataDirectoryPath = dataDirectory,
-    SemanticModelRootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "pbip", "Pipeline SLA.SemanticModel")),
-    ReportRootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "pbip", "Pipeline SLA.Report")),
+    SemanticModelRootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "pbip", "Pipeline_SLA_Tracker.SemanticModel")),
+    ReportRootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "pbip", "Pipeline_SLA_Tracker.Report")),
     ReportTemplateRootPath = Path.GetFullPath(
     Path.Combine(AppContext.BaseDirectory,
         "..", "..", "..", "..", "..",
         "pbip",
         "Pipeline_SLA_Tracker.Report")),
-    SemanticModelRelativePath = "../Pipeline SLA.SemanticModel",
+    SemanticModelRelativePath = "../Pipeline_SLA_Tracker.SemanticModel",
     MetadataOutputPath = outputPath,
     ThrowOnValidationError = true,
     Logger = message => Console.WriteLine(message),

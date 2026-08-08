@@ -47,7 +47,7 @@ Write-Host "Publishing PBIP artifacts to BuildResult..."
 
 $pbipSourceRoot = Join-Path $PSScriptRoot "..\pbip"
 $pbipOutputRoot = Join-Path $PSScriptRoot "..\BuildResult\PBIP"
-$pbipName = "Pipeline SLA"
+$pbipName = "Pipeline_SLA_Tracker"
 
 if (!(Test-Path $pbipOutputRoot)) {
     New-Item -ItemType Directory -Path $pbipOutputRoot | Out-Null

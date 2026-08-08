@@ -162,7 +162,7 @@
       "Table": "Fact_Pipeline_SampleData",
       "Folder": "02 SLA",
       "DisplayOrder": 30,
-      "Expression": "DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[SLAStatus]=\"Missed\"),[Active Pipelines])",
+      "Expression": "DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData), Fact_Pipeline_SampleData[SLAStatus] = \"Missed\"), [Active Pipelines], 0)",
       "Format": "0.00%",
       "Description": "Percentage of SLA breaches.",
       "Category": "SLA",
@@ -273,12 +273,12 @@
   "Folder": "05 Floating Bar",
   "DisplayOrder": 10,
   "Expression": "VAR Earliest =\n    CALCULATE(\n        MIN(Fact_Pipeline_SampleData[ScheduledStart]),\n        ALL(Fact_Pipeline_SampleData)\n    )\nRETURN\nDATEDIFF(\n    Earliest,\n    MIN(Fact_Pipeline_SampleData[ScheduledStart]),\n    HOUR\n)",
-  "Format": "dd-MMM HH:mm",
+  "Format": "#,##0",
   "Description": "Starting position of floating bar timeline.",
   "Category": "Floating Bar",
   "KPI": false,
   "Hidden": false,
-  "DataType": "DateTime",
+  "DataType": "Whole Number",
   "DependsOn": [],
   "Template": "Minimum",
   "Tags": [
@@ -307,10 +307,8 @@
   "Category": "Floating Bar",
   "KPI": false,
   "Hidden": false,
-  "DataType": "Whole Number",
-  "DependsOn": [
-    "Average Runtime"
-  ],
+  "DataType": "Decimal Number",
+  "DependsOn": [],
   "Template": "Average",
   "Tags": [
     "FloatingBar",
