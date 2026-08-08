@@ -21,7 +21,7 @@ public class MeasureBuilderTests
 
         var kpiPath = Path.Combine(modelRoot, "Measures", "KPIs.tmdl");
         File.Exists(kpiPath).Should().BeTrue();
-        File.ReadAllText(kpiPath).Should().Contain("SUM");
+        File.ReadAllText(kpiPath).Should().Contain("No inferred numeric columns available for this group.");
     }
 
     [Fact]

@@ -96,9 +96,9 @@ public class PbipSemanticModelWriterTests
 
         var content = File.ReadAllText(measuresPath);
         content.Should().NotContain("SUM(Fact_Pipeline_SampleData[PipelineID])");
-        content.Should().Contain("SUM(Fact_Pipeline_SampleData[DurationHours])");
-        content.Should().Contain("SUM(Fact_Pipeline_SampleData[SLAHours])");
-        content.Should().Contain("SUM(Fact_Pipeline_SampleData[RetryCount])");
+        content.Should().Contain("measure 'Total Runtime' = SUM(Fact_Pipeline_SampleData[DurationHours])");
+        content.Should().Contain("measure 'Average Runtime' = AVERAGE(Fact_Pipeline_SampleData[DurationHours])");
+        content.Should().Contain("measure 'Success Rate %' = DIVIDE([Successful Runs],[Active Pipelines])");
     }
 
     [Fact]

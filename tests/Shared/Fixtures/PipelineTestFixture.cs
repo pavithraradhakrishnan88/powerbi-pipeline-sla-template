@@ -16,9 +16,25 @@ public sealed class PipelineTestFixture : IDisposable
         DataDirectoryPath = _workspace.CreateDirectory("data");
         SampleCsvGenerator.CopyScenarioToWorkspace(scenarioName, DataDirectoryPath);
 
-        var pbipRoot = _workspace.CreateDirectory("pbip");
-        var repoRoot = WorkspacePaths.FindRepoRoot();
-        var sourceTemplatePath = Path.Combine(repoRoot, "pbip", "Pipeline_SLA_Tracker.Report");
+var pbipRoot = _workspace.CreateDirectory("pbip");
+var repoRoot = WorkspacePaths.FindRepoRoot();
+
+var sourceMeasureDefinitionsPath = Path.Combine(
+    repoRoot,
+    "scripts",
+    "metadata",
+    "MeasureDefinitions.json");
+
+var destinationMeasureDefinitionsPath = _workspace.GetPath(
+    Path.Combine("scripts", "metadata", "MeasureDefinitions.json"));
+
+Directory.CreateDirectory(Path.GetDirectoryName(destinationMeasureDefinitionsPath)!);
+File.Copy(sourceMeasureDefinitionsPath, destinationMeasureDefinitionsPath, overwrite: true);
+
+var sourceTemplatePath = Path.Combine(
+    repoRoot,
+    "pbip",
+    "Pipeline_SLA_Tracker.Report");
 
         ReportTemplateRootPath = Path.Combine(pbipRoot, "Pipeline_SLA_Tracker.Report");
         CopyDirectory(sourceTemplatePath, ReportTemplateRootPath);

@@ -50,9 +50,31 @@ namespace PowerBiPipelineSlaTemplate.Core
         {
             return new MetadataDocument
             {
+                Project = new ProjectMetadata
+                {
+                    Name = "Pipeline SLA Tracker",
+                    Version = "1.0",
+                    Generator = "PowerBiPipelineSlaTemplate",
+                    GeneratedOn = DateTime.UtcNow.ToString("o"),
+                    Repository = "powerbi-pipeline-sla-template-git"
+                },
+                Summary = new MetadataSummary
+                {
+                    TableCount = tables?.Count(table => table != null) ?? 0,
+                    ColumnCount = tables?.Sum(table => table?.Columns?.Count ?? 0) ?? 0,
+                    RelationshipCount = 0,
+                    FactTables = tables?.Count(table => table?.IsFactTable == true) ?? 0,
+                    DimensionTables = tables?.Count(table => table?.IsDimensionTable == true) ?? 0,
+                    MeasureCount = 0,
+                    RowCount = 0
+                },
                 Tables = tables?.Where(table => table != null).Select(table => new TableMetadata
                 {
                     Name = table.Name,
+                    DisplayFolder = table.DisplayFolder,
+                    IsFactTable = table.IsFactTable,
+                    IsDimensionTable = table.IsDimensionTable,
+                    RowCount = table.RowCount,
                     Columns = table.Columns?.Where(column => column != null).Select(column => new ColumnMetadata
                     {
                         Name = column.Name,

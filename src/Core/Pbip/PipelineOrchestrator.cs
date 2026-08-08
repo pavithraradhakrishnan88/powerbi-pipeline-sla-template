@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Linq;
 using PowerBiPipelineSlaTemplate.Core.Models;
+using PowerBiPipelineSlaTemplate.Core.Serialization;
 
 namespace PowerBiPipelineSlaTemplate.Core.Pbip
 {
@@ -67,20 +69,61 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         }
 
         private static void WriteMetadata(ModelBuildResult model, PipelineOptions options)
-{
-    var modelBuilder = new ModelBuilder();
+        {
+            var metadataDocument = new MetadataDocument
+            {
+                Project = new ProjectMetadata
+                {
+                    Name = "Pipeline SLA Tracker",
+                    Version = "1.0",
+                    Generator = "PowerBiPipelineSlaTemplate",
+                    GeneratedOn = DateTimeOffset.UtcNow.ToString("o"),
+                    Repository = "powerbi-pipeline-sla-template-git"
+                },
+                Summary = new MetadataSummary
+                {
+                    TableCount = model.Tables.Count,
+                    ColumnCount = model.Tables.Sum(table => table.Columns.Count),
+                    RelationshipCount = model.Relationships.Count,
+                    FactTables = model.Tables.Count(table => table.IsFactTable),
+                    DimensionTables = model.Tables.Count(table => table.IsDimensionTable),
+                    MeasureCount = 0,
+                    RowCount = model.Tables.Sum(table => table.RowCount)
+                },
+                Tables = model.Tables.Select(table => new TableMetadata
+                {
+                    Name = table.Name,
+                    DisplayFolder = table.DisplayFolder,
+                    IsFactTable = table.IsFactTable,
+                    IsDimensionTable = table.IsDimensionTable,
+                    RowCount = table.RowCount,
+                    Columns = table.Columns.Select(column => new ColumnMetadata
+                    {
+                        Name = column.Name,
+                        Type = column.DataType,
+                        Nullable = column.Nullable,
+                        IsPrimaryKey = column.IsPrimaryKey,
+                        IsForeignKey = column.IsForeignKey,
+                        Description = column.Description,
+                        DatabaseType = column.DataType,
+                        PowerBiType = column.DataType,
+                        DisplayFolder = column.DisplayFolder,
+                        FormatString = column.FormatString
+                    }).ToList()
+                }).ToList()
+            };
 
-    var json = modelBuilder.ToJson(model, true);
+            var json = MetadataSerializer.ToJson(metadataDocument, true);
 
-    var directory = Path.GetDirectoryName(options.MetadataOutputPath);
+            var directory = Path.GetDirectoryName(options.MetadataOutputPath);
 
-    if (!string.IsNullOrWhiteSpace(directory))
-    {
-        Directory.CreateDirectory(directory);
-    }
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
 
-    File.WriteAllText(options.MetadataOutputPath, json);
-}
+            File.WriteAllText(options.MetadataOutputPath, json);
+        }
 
         private static void WriteSemanticModel(ModelBuildResult model, PipelineOptions options)
         {

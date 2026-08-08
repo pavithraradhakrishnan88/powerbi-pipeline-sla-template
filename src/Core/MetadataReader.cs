@@ -35,6 +35,15 @@ public sealed class MetadataReader
         var metadata = System.Text.Json.JsonSerializer.Deserialize<MetadataDocument>(json, JsonOptions)
             ?? throw new InvalidDataException("Metadata could not be deserialized.");
 
+        if (metadata.Project is null)
+            metadata.Project = new ProjectMetadata();
+
+        if (metadata.Summary is null)
+            metadata.Summary = new MetadataSummary();
+
+        if (metadata.Tables is null)
+            metadata.Tables = new();
+
         ValidateTables(metadata);
         NormalizeColumns(metadata);
 

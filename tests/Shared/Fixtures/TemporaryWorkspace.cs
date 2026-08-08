@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using PowerBiPipelineSlaTemplate.Tests.Shared.Utilities;
 
 namespace PowerBiPipelineSlaTemplate.Tests.Shared.Fixtures;
 
@@ -9,6 +10,22 @@ public sealed class TemporaryWorkspace : IDisposable
     {
         RootPath = Path.Combine(Path.GetTempPath(), "pbip-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(RootPath);
+
+        try
+        {
+            var repoRoot = WorkspacePaths.FindRepoRoot();
+            var sourceMeasureDefinitionsPath = Path.Combine(repoRoot, "scripts", "metadata", "MeasureDefinitions.json");
+            if (File.Exists(sourceMeasureDefinitionsPath))
+            {
+                var destinationMeasureDefinitionsPath = Path.Combine(RootPath, "scripts", "metadata", "MeasureDefinitions.json");
+                Directory.CreateDirectory(Path.GetDirectoryName(destinationMeasureDefinitionsPath)!);
+                File.Copy(sourceMeasureDefinitionsPath, destinationMeasureDefinitionsPath, overwrite: true);
+            }
+        }
+        catch (Exception)
+        {
+            // Best-effort test fixture setup; the tests only require the file when present.
+        }
     }
 
     public string RootPath { get; }

@@ -17,9 +17,36 @@ Write-Host "Starting build..."
 # Create artifacts folder
 $artifactPath = Join-Path $PSScriptRoot "..\artifacts"
 
-if (!(Test-Path $artifactPath)) {
-    New-Item -ItemType Directory -Path $artifactPath | Out-Null
-    Write-Host "Artifacts folder created."
+if (Test-Path $artifactPath) {
+    Remove-Item -Path $artifactPath -Recurse -Force
+}
+
+New-Item -ItemType Directory -Path $artifactPath | Out-Null
+Write-Host "Artifacts folder created."
+
+$releaseEntries = @(
+    "pbip",
+    "docs",
+    "data",
+    "scripts",
+    "theme",
+    "LICENSE",
+    "CHANGELOG.md",
+    "README.md"
+)
+
+foreach ($entry in $releaseEntries) {
+    $sourcePath = Join-Path $PSScriptRoot "..\$entry"
+    $destinationPath = Join-Path $artifactPath (Split-Path $entry -Leaf)
+
+    if (Test-Path $sourcePath) {
+        if (Test-Path $destinationPath) {
+            Remove-Item -Path $destinationPath -Recurse -Force
+        }
+
+        Copy-Item -Path $sourcePath -Destination $destinationPath -Recurse -Force
+        Write-Host "Included release entry: $entry"
+    }
 }
 
 $sourceFiles = @(
