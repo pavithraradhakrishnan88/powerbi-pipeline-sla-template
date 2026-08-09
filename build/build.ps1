@@ -130,18 +130,22 @@ if (Test-Path $pbipSourceFile) {
 
 if (Test-Path $pbipSourceReport) {
     robocopy $pbipSourceReport (Join-Path $pbipOutputRoot "$pbipName.Report") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
-    if ($LASTEXITCODE -gt 7) {
-        throw "robocopy failed for report folder with exit code $LASTEXITCODE"
+    $robocopyExitCode = $LASTEXITCODE
+    if ($robocopyExitCode -gt 7) {
+        throw "robocopy failed for report folder with exit code $robocopyExitCode"
     }
+    Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
 } else {
     Write-Host "Missing report folder: $pbipSourceReport"
 }
 
 if (Test-Path $pbipSourceSemanticModel) {
     robocopy $pbipSourceSemanticModel (Join-Path $pbipOutputRoot "$pbipName.SemanticModel") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
-    if ($LASTEXITCODE -gt 7) {
-        throw "robocopy failed for semantic model folder with exit code $LASTEXITCODE"
+    $robocopyExitCode = $LASTEXITCODE
+    if ($robocopyExitCode -gt 7) {
+        throw "robocopy failed for semantic model folder with exit code $robocopyExitCode"
     }
+    Write-Host "Semantic model copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
 } else {
     Write-Host "Missing semantic model folder: $pbipSourceSemanticModel"
 }
@@ -154,5 +158,9 @@ foreach ($localDateTable in $publishedLocalDateTables) {
     Remove-Item -Path $localDateTable.FullName -Force
     Write-Host "Removed stale published PBIP local date variation table: $($localDateTable.FullName)"
 }
+
+# Robocopy intentionally returns 1 when files were copied successfully.
+# Clear the native exit-code state so this PowerShell script exits successfully.
+$global:LASTEXITCODE = 0
 
 Write-Host "Build complete."
