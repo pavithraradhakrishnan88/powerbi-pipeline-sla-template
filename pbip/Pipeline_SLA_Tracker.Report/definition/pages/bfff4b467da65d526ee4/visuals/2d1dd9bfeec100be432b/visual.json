@@ -25,7 +25,7 @@
                         "propertyName": "expr"
                       },
                       "selector": {
-                        "id": "Userinfo"
+                        "id": "Last Refresh"
                       }
                     },
                     "textStyle": {
@@ -52,8 +52,8 @@
                             "Version": 2,
                             "From": [
                               {
-                                "Name": "_",
-                                "Entity": "_Measure Table",
+                                "Name": "m",
+                                "Entity": "_Measures",
                                 "Type": 0
                               }
                             ],
@@ -62,18 +62,18 @@
                                 "Measure": {
                                   "Expression": {
                                     "SourceRef": {
-                                      "Source": "_"
+                                      "Source": "m"
                                     }
                                   },
                                   "Property": "Last Refresh"
                                 },
-                                "Name": "_Measure Table.Last Refresh"
+                                "Name": "_Measures.Last Refresh"
                               }
                             ]
                           }
                         }
                       },
-                      "Property": "_Measure Table.Last Refresh"
+                      "Property": "_Measures.Last Refresh"
                     }
                   },
                   "IncludeAllTypes": 1
@@ -93,62 +93,6 @@
           },
           "selector": {
             "id": "Last Refresh"
-          }
-        },
-        {
-          "properties": {
-            "expr": {
-              "expr": {
-                "Min": {
-                  "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "Subquery": {
-                          "Query": {
-                            "Version": 2,
-                            "From": [
-                              {
-                                "Name": "d",
-                                "Entity": "Dim_Category",
-                                "Type": 0
-                              }
-                            ],
-                            "Select": [
-                              {
-                                "Measure": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Source": "d"
-                                    }
-                                  },
-                                  "Property": "Userinfo"
-                                },
-                                "Name": "Dim_Category.Userinfo"
-                              }
-                            ]
-                          }
-                        }
-                      },
-                      "Property": "Dim_Category.Userinfo"
-                    }
-                  },
-                  "IncludeAllTypes": 1
-                },
-                "Annotations": {
-                  "NaturalLanguage": {
-                    "version": 1,
-                    "kind": "NaturalLanguage",
-                    "annotation": {
-                      "name": "Userinfo",
-                      "utterance": "userinfo"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "selector": {
-            "id": "Userinfo"
           }
         }
       ]
