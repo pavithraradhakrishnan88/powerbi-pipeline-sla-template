@@ -6,7 +6,9 @@
     "visualType": "cardVisual",
     "query": { "queryState": { "Data": { "projections": [{ "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "_Measures" } }, "Property": "Total Runs" } }, "queryRef": "_Measures.Total Runs", "nativeQueryRef": "Total Runs" }] } } },
     "objects": { "label": [{ "properties": { "position": { "expr": { "Literal": { "Value": "'aboveValue'" } } } }, "selector": { "id": "default" } }] },
-    "visualContainerObjects": { "title": [{ "properties": { "show": { "expr": { "Literal": { "Value": "false" } } } }] },
     "drillFilterOtherVisuals": true
+  },
+  "visualContainerObjects": {
+    "title": [{ "properties": { "show": { "expr": { "Literal": { "Value": "false" } } } } }]
   }
 }
