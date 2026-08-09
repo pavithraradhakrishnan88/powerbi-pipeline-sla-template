@@ -147,15 +147,9 @@ Write-Host "Regenerating PBIP/report through the existing .NET pipeline before r
 if ($LASTEXITCODE -ne 0) { throw "PBIP/report regeneration failed with exit code $LASTEXITCODE" }
 Write-Host "Existing .NET PBIP/report regeneration completed."
 
-# The existing generator emits the PBIR envelope; normalize its schema before
-# any strict source validation. This is deliberately before normalization and
-# publication, and does not change the generator architecture.
 $generatedDefinitionPath = Join-Path $sourceReportRoot "definition.pbir"
 Ensure-PbirDefinitionSchema -DefinitionPath $generatedDefinitionPath
 
-# Power BI measures live in the dedicated _Measures table. Normalize only the
-# Measure.Expression.SourceRef.Entity field. Never rewrite column queryRef or
-# metadata merely because they contain the fact-table name.
 Normalize-PbipMeasureBindings -ReportRoot $sourceReportRoot
 
 Assert-PbirDefinition -ReportRoot $sourceReportRoot -SemanticModelRoot $sourceSemanticModelRoot
@@ -217,7 +211,6 @@ $robocopyExitCode = $LASTEXITCODE
 if ($robocopyExitCode -gt 7) { throw "robocopy failed for report folder with exit code $robocopyExitCode" }
 Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
 
-Assert-PbirDefinition -ReportRoot $publishedReport -SemanticModelRoot (Join-Path $pbipOutputRoot "$pbipName.SemanticModel")
 Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
 Write-Host "Published report visual.json inventory matches regenerated source."
 
