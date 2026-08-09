@@ -82,7 +82,7 @@ Directory.CreateDirectory(culturesPath);
                 foreach (var table in model.Tables)
                 {
                     var tableFilePath = Path.Combine(tablesPath, $"{SanitizeFileName(table.Name)}.tmdl");
-                    File.WriteAllText(tableFilePath, BuildTableTmdl(table, dataDirectoryPath));
+                    File.WriteAllText(tableFilePath, BuildTableTmdl(table));
                 }
 
                 var relationshipFilePath = Path.Combine(definitionPath, "relationships.tmdl");
@@ -100,7 +100,7 @@ Directory.CreateDirectory(culturesPath);
                 BuildMeasuresTableTmdl(measureDefinitionsPath, model.Tables));
 
                 File.WriteAllText(Path.Combine(definitionPath, "database.tmdl"), BuildDatabaseTmdl(model));
-                File.WriteAllText(Path.Combine(definitionPath, "expressions.tmdl"), BuildExpressionsTmdl());
+                File.WriteAllText(Path.Combine(definitionPath, "expressions.tmdl"), BuildExpressionsTmdl(dataDirectoryPath));
                 File.WriteAllText(Path.Combine(definitionPath, "model.tmdl"), BuildModelTmdl(model));
                 File.WriteAllText(Path.Combine(culturesPath, "en-US.tmdl"), BuildCultureTmdl());
                 File.WriteAllText(Path.Combine(semanticModelRootPath, "definition.pbism"), BuildPbism(model));
@@ -155,7 +155,7 @@ Directory.CreateDirectory(culturesPath);
             + "}";
     }
 
-            private static string BuildTableTmdl(BuiltTable table, string dataDirectoryPath)
+            private static string BuildTableTmdl(BuiltTable table)
             {
                 var builder = new StringBuilder();
                 var tableName = SanitizeObjectName(table.Name);
@@ -187,12 +187,11 @@ Directory.CreateDirectory(culturesPath);
                     builder.AppendLine();
                 }
 
-                var tableCsvPath = Path.Combine(dataDirectoryPath, $"{table.Name}.csv");
                 builder.AppendLine($"\tpartition {tableName} = m");
                 builder.AppendLine("\t\tmode: import");
                 builder.AppendLine("\t\tsource =");
                 builder.AppendLine("\t\t\t\tlet");
-                builder.AppendLine($"\t\t\t\t    Source = Csv.Document(File.Contents(\"{EscapeMString(tableCsvPath)}\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),");
+                builder.AppendLine($"\t\t\t\t    Source = Csv.Document(File.Contents(DataFolder & \"\\{EscapeMString(table.Name)}.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),");
                 builder.AppendLine("\t\t\t\t    #\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])");
                 builder.AppendLine("\t\t\t\tin");
                 builder.AppendLine("\t\t\t\t    #\"Promoted Headers\"");
@@ -394,9 +393,12 @@ builder.AppendLine(
                     + "\tcompatibilityLevel: 1601" + Environment.NewLine;
             }
 
-            private static string BuildExpressionsTmdl()
+            private static string BuildExpressionsTmdl(string dataDirectoryPath)
             {
-                return string.Empty;
+                var builder = new StringBuilder();
+                builder.AppendLine(
+                    $"expression DataFolder = \"{EscapeMString(dataDirectoryPath)}\" meta [IsParameterQuery=true, Type=\"Text\", IsParameterQueryRequired=true]");
+                return builder.ToString();
             }
 
             private static string BuildCultureTmdl()
