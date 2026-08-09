@@ -8,6 +8,7 @@ on:
     paths:
       - "data/**"
       - "model/**"
+      - "pbip/**"
       - "powerquery/**"
       - "theme/**"
       - "src/**"
