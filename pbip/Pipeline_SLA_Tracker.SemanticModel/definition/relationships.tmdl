@@ -1,0 +1,7 @@
+relationship 'Dim_Category_CategoryName_to_Fact_Category'
+	fromColumn: Fact_Pipeline_SampleData.Category
+	toColumn: Dim_Category.CategoryName
+	fromCardinality: many
+	toCardinality: one
+	crossFilteringBehavior: oneDirection
+	isActive: true
