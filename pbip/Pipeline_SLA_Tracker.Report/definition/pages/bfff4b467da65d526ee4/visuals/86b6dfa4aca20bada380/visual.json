@@ -6,7 +6,21 @@
     "visualType": "cardVisual",
     "query": { "queryState": { "Data": { "projections": [{ "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "_Measures" } }, "Property": "Failed Runs" } }, "queryRef": "_Measures.Failed Runs", "nativeQueryRef": "Failed Runs" }] } } },
     "objects": { "label": [{ "properties": { "position": { "expr": { "Literal": { "Value": "'aboveValue'" } } } }, "selector": { "id": "default" } }] },
-    "visualContainerObjects": { "title": [{ "properties": { "show": { "expr": { "Literal": { "Value": "false" } } } }] },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Pipeline SLA Tracker'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
     "drillFilterOtherVisuals": true
   }
 }
