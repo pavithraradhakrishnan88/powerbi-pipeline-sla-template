@@ -10,6 +10,8 @@
 # - Create build artifacts
 # =====================================
 
+$ErrorActionPreference = "Stop"
+
 Write-Host "Starting build..."
 
 # The repository owns its date semantics explicitly. Power BI auto-generated
@@ -33,11 +35,16 @@ foreach ($semanticModelRoot in $pbipSemanticModelRoots) {
     }
 }
 
-# Run validation
+# Run validation. validate.ps1 is a PowerShell child script and signals
+# validation failures through terminating errors. Do not inspect $LASTEXITCODE:
+# it is reserved for native executables and may contain a stale value even
+# when the PowerShell validation completed successfully.
+Write-Host "Running validation..."
 & "$PSScriptRoot\validate.ps1"
-if ($LASTEXITCODE -ne 0) {
+if (-not $?) {
     throw "Validation failed. Build stopped."
 }
+Write-Host "Validation succeeded. Continuing build..."
 
 # Create artifacts folder
 $artifactPath = Join-Path $PSScriptRoot "..\artifacts"
@@ -91,6 +98,9 @@ $outputPath = Join-Path $PSScriptRoot "..\metadata\metadata.json"
 
 if (Test-Path $projectPath) {
     & dotnet run --project $projectPath --extract-metadata --output $outputPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Metadata generation failed with exit code $LASTEXITCODE"
+    }
 } else {
     Write-Host "Skipping metadata generation: project not found at $projectPath"
 }
@@ -111,6 +121,9 @@ $pbipSourceSemanticModel = Join-Path $pbipSourceRoot "$pbipName.SemanticModel"
 
 if (Test-Path $pbipSourceFile) {
     cmd /c copy /Y "$pbipSourceFile" "$pbipOutputRoot\" | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "PBIP file copy failed with exit code $LASTEXITCODE"
+    }
 } else {
     Write-Host "Missing PBIP file: $pbipSourceFile"
 }
