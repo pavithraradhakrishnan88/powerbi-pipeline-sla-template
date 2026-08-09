@@ -206,7 +206,7 @@ if ($LASTEXITCODE -ne 0) { throw "PBIP file copy failed with exit code $LASTEXIT
 
 Write-Host "Publishing regenerated report with robocopy..."
 $publishedReport = Join-Path $pbipOutputRoot "$pbipName.Report"
-robocopy $pbipSourceReport $publishedReport /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
+robocopy $pbipSourceReport $publishedReport /MIR /IS /NFL /NDL /NJH /NJS /NC /NS | Out-Null
 $robocopyExitCode = $LASTEXITCODE
 if ($robocopyExitCode -gt 7) { throw "robocopy failed for report folder with exit code $robocopyExitCode" }
 Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
