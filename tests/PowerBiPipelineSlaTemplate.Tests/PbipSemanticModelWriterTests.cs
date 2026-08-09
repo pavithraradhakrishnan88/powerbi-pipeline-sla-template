@@ -48,8 +48,8 @@ public class PbipSemanticModelWriterTests
         foreach (var table in new[] { "Fact_Pipeline_SampleData", "Dim_Category" })
         {
             var tmdl = File.ReadAllText(Path.Combine(semanticModelPath, "definition", "tables", $"{table}.tmdl"));
-            tmdl.Should().Contain($"File.Contents(DataFolder & \\\"\\\\{table}.csv\\\")");
-            tmdl.Should().NotContain("C:\\\\Users\\\\");
+            tmdl.Should().Contain($"File.Contents(DataFolder & \"\\{table}.csv\")");
+            tmdl.Should().NotContain("C:\\Users\\");
         }
     }
 
