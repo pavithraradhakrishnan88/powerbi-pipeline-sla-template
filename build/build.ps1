@@ -211,6 +211,14 @@ $robocopyExitCode = $LASTEXITCODE
 if ($robocopyExitCode -gt 7) { throw "robocopy failed for report folder with exit code $robocopyExitCode" }
 Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
 
+# Robocopy can preserve a destination definition.pbir that differs from the
+# normalized source. Force the authoritative normalized envelope into the
+# published report before any published PBIR validation.
+$publishedDefinitionPath = Join-Path $publishedReport "definition.pbir"
+Copy-Item -Path $generatedDefinitionPath -Destination $publishedDefinitionPath -Force
+if (!(Test-Path $publishedDefinitionPath -PathType Leaf)) { throw "PBIR publication failed: missing '$publishedDefinitionPath' after authoritative definition copy." }
+Write-Host "Published definition.pbir refreshed from normalized source."
+
 Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
 Write-Host "Published report visual.json inventory matches regenerated source."
 
