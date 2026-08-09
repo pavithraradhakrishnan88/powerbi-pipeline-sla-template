@@ -70,6 +70,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Release Asset
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: PBIP-Release.zip
