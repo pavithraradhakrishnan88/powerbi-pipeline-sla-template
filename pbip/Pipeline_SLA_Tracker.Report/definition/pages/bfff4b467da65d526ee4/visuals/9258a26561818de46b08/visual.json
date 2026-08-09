@@ -5,7 +5,7 @@
   "visual": {
     "visualType": "cardVisual",
     "query": { "queryState": { "Data": { "projections": [{ "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "_Measures" } }, "Property": "SLA Compliance %" } }, "queryRef": "_Measures.SLA Compliance %", "nativeQueryRef": "SLA Compliance %" }] } } },
-    "objects": { "label": [{ "properties": { "position": { "expr": { "Literal": { "Value": "'aboveValue'" } } } }, "selector": { "id": "default" }] }] },
+    "objects": { "label": [{ "properties": { "position": { "expr": { "Literal": { "Value": "'aboveValue'" } } } }, "selector": { "id": "default" } }] },
     "visualContainerObjects": {
       "title": [
         {
