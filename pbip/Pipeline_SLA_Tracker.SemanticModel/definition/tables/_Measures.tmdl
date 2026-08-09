@@ -17,7 +17,7 @@ table _Measures
 
 	measure 'Timeline Base' = DATEDIFF(CALCULATE(MIN(Fact_Pipeline_SampleData[ScheduledStart]), ALL(Fact_Pipeline_SampleData)), MIN(Fact_Pipeline_SampleData[ScheduledStart]), HOUR)
 		displayFolder: '05 Floating Bar'
-		formatString: '#,##0'
+		formatString: '0'
 
 	measure 'Successful Runs' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[Status]="Success")
 		displayFolder: '01 Landing Page'
@@ -31,7 +31,7 @@ table _Measures
 		displayFolder: '03 Runtime'
 		formatString: '#,##0.00'
 
-	measure 'Floating Bar Duration' = AVERAGE(Fact_Pipeline_SampleData[DurationHours])
+	measure 'Floating Bar Duration' = [Average Runtime]
 		displayFolder: '05 Floating Bar'
 		formatString: '#,##0.00'
 

@@ -1,8 +1,12 @@
+using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using FluentAssertions;
 using PowerBiPipelineSlaTemplate.Core;
 using PowerBiPipelineSlaTemplate.Core.Models;
+using PowerBiPipelineSlaTemplate.Core.Pbip;
 using PowerBiPipelineSlaTemplate.Tests.Shared.Fixtures;
+using PowerBiPipelineSlaTemplate.Tests.Shared.Utilities;
 using Xunit;
 
 namespace PowerBiPipelineSlaTemplate.Tests;
@@ -54,5 +58,40 @@ public class MeasureBuilderTests
         var durationPath = Path.Combine(modelRoot, "Measures", "Duration.tmdl");
         File.Exists(durationPath).Should().BeTrue();
         File.ReadAllText(durationPath).Should().Contain("No inferred numeric columns");
+    }
+
+    [Fact]
+    public void MetadataDefinitions_ShouldContainExpectedMeasuresAndConsistentFloatingBarDefinitions()
+    {
+        var repoRoot = WorkspacePaths.FindRepoRoot();
+        var metadataPath = Path.Combine(repoRoot, "scripts", "metadata", "MeasureDefinitions.json");
+        var json = File.ReadAllText(metadataPath);
+        using var document = JsonDocument.Parse(json);
+        var measures = document.RootElement.GetProperty("measures").EnumerateArray().ToList();
+
+        measures.Should().ContainSingle(m => m.GetProperty("MeasureID").GetString() == "M008" && m.GetProperty("Name").GetString() == "SLA Breach %" && m.GetProperty("Expression").GetString()!.Contains("SLAStatus") && m.GetProperty("DataType").GetString() == "Percentage");
+        measures.Should().ContainSingle(m => m.GetProperty("MeasureID").GetString() == "M016" && m.GetProperty("Name").GetString() == "Timeline Base" && m.GetProperty("Format").GetString() == "0" && m.GetProperty("DataType").GetString() == "Whole Number");
+        measures.Should().ContainSingle(m => m.GetProperty("MeasureID").GetString() == "M017" && m.GetProperty("Name").GetString() == "Floating Bar Duration" && m.GetProperty("Expression").GetString() == "[Average Runtime]" && m.GetProperty("Format").GetString() == "#,##0.00");
+    }
+
+    [Fact]
+    public void PbipWriter_ShouldEmitMetadataDrivenMeasuresIntoTmdl()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var pbipRoot = workspace.CreateDirectory("pbip");
+        var semanticModelPath = Path.Combine(pbipRoot, "Pipeline_SLA_Tracker.SemanticModel");
+        var writer = new PbipSemanticModelWriter();
+        var model = SampleModel.Normal();
+
+        writer.WriteSemanticModel(model, semanticModelPath);
+
+        var measuresPath = Path.Combine(semanticModelPath, "definition", "tables", "_Measures.tmdl");
+        File.Exists(measuresPath).Should().BeTrue();
+
+        var content = File.ReadAllText(measuresPath);
+        content.Should().Contain("measure 'SLA Breach %'");
+        content.Should().Contain("measure 'Timeline Base'");
+        content.Should().Contain("measure 'Floating Bar Duration'");
+        content.Should().Contain("measure 'Average Runtime'");
     }
 }
