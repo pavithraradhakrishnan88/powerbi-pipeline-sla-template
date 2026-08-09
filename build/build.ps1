@@ -5,8 +5,8 @@
 # - Remove unsupported orphaned PBIP local date variation output
 # - Run validation
 # - Update semantic model
-# - Run Tabular Editor
-# - Run pbi-tools
+# - Generate/publish PBIP output
+# - Validate PBIR definition envelope and artifact shape
 # - Create build artifacts
 # =====================================
 
@@ -14,13 +14,78 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "Starting build..."
 
-# The repository owns its date semantics explicitly. Power BI auto-generated
-# LocalDateTable_* artifacts are not generated with variation target metadata
-# by this pipeline and can make the PBIP fail to load in Power BI Desktop.
-# Remove them before validation and before publishing BuildResult.
+$repoRoot = Split-Path $PSScriptRoot -Parent
+$pbipSourceRoot = Join-Path $repoRoot "pbip"
+$pbipOutputRoot = Join-Path $repoRoot "BuildResult\PBIP"
+$pbipName = "Pipeline_SLA_Tracker"
+
+# Power BI Desktop requires the report definition envelope to use the
+# definitionProperties schema. Keep the generated PBIR deterministic and
+# reject stale/legacy envelopes before they can be packaged.
+function Assert-PbirDefinition {
+    param(
+        [Parameter(Mandatory = $true)][string]$ReportRoot,
+        [Parameter(Mandatory = $true)][string]$SemanticModelRoot
+    )
+
+    $definitionPath = Join-Path $ReportRoot "definition.pbir"
+    if (!(Test-Path $definitionPath -PathType Leaf)) {
+        throw "PBIR validation failed: missing required '$definitionPath'."
+    }
+
+    try {
+        $definition = Get-Content -Raw -Path $definitionPath | ConvertFrom-Json
+    }
+    catch {
+        throw "PBIR validation failed: '$definitionPath' is not valid JSON. $($_.Exception.Message)"
+    }
+
+    if ($definition.'$schema' -ne "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json") {
+        throw "PBIR validation failed: definition.pbir has an invalid or missing definitionProperties schema."
+    }
+
+    if ([string]$definition.version -ne "4.0") {
+        throw "PBIR validation failed: expected definition.pbir version 4.0, found '$($definition.version)'."
+    }
+
+    $relativePath = $definition.datasetReference.byPath.path
+    if ([string]::IsNullOrWhiteSpace([string]$relativePath)) {
+        throw "PBIR validation failed: datasetReference.byPath.path is missing."
+    }
+
+    if ([System.IO.Path]::IsPathRooted([string]$relativePath)) {
+        throw "PBIR validation failed: datasetReference.byPath.path must be relative, found '$relativePath'."
+    }
+
+    $resolvedSemanticModel = [System.IO.Path]::GetFullPath((Join-Path $ReportRoot $relativePath))
+    $expectedSemanticModel = [System.IO.Path]::GetFullPath($SemanticModelRoot)
+    if ($resolvedSemanticModel.TrimEnd('\') -ine $expectedSemanticModel.TrimEnd('\')) {
+        throw "PBIR validation failed: datasetReference path '$relativePath' does not resolve to '$SemanticModelRoot'."
+    }
+
+    $reportDefinitionRoot = Join-Path $ReportRoot "definition"
+    if (!(Test-Path $reportDefinitionRoot -PathType Container)) {
+        throw "PBIR validation failed: missing report definition folder '$reportDefinitionRoot'."
+    }
+
+    $pagesJson = Join-Path $reportDefinitionRoot "pages\pages.json"
+    $reportJson = Join-Path $reportDefinitionRoot "report.json"
+    if (!(Test-Path $pagesJson -PathType Leaf)) {
+        throw "PBIR validation failed: missing '$pagesJson'."
+    }
+    if (!(Test-Path $reportJson -PathType Leaf)) {
+        throw "PBIR validation failed: missing '$reportJson'."
+    }
+
+    Write-Host "PBIR definition validated: $definitionPath"
+}
+
+# Remove unsupported Power BI auto-generated LocalDateTable_* artifacts before
+# validation and publishing. These are intentionally not part of the generated
+# semantic model and can create orphaned local date variation output.
 $pbipSemanticModelRoots = @(
-    Join-Path $PSScriptRoot "..\pbip\Pipeline_SLA_Tracker.SemanticModel",
-    Join-Path $PSScriptRoot "..\BuildResult\PBIP\Pipeline_SLA_Tracker.SemanticModel"
+    Join-Path $pbipSourceRoot "$pbipName.SemanticModel",
+    Join-Path $pbipOutputRoot "$pbipName.SemanticModel"
 )
 
 foreach ($semanticModelRoot in $pbipSemanticModelRoots) {
@@ -36,9 +101,7 @@ foreach ($semanticModelRoot in $pbipSemanticModelRoots) {
 }
 
 # Run validation. validate.ps1 is a PowerShell child script and signals
-# validation failures through terminating errors. Do not inspect $LASTEXITCODE:
-# it is reserved for native executables and may contain a stale value even
-# when the PowerShell validation completed successfully.
+# validation failures through terminating errors.
 Write-Host "Running validation..."
 & "$PSScriptRoot\validate.ps1"
 if (-not $?) {
@@ -46,13 +109,17 @@ if (-not $?) {
 }
 Write-Host "Validation succeeded. Continuing build..."
 
-# Create artifacts folder
-$artifactPath = Join-Path $PSScriptRoot "..\artifacts"
+# Validate the committed PBIP source before copying it. This prevents a
+# successful CI build from publishing an artifact that Power BI Desktop cannot open.
+$sourceReportRoot = Join-Path $pbipSourceRoot "$pbipName.Report"
+$sourceSemanticModelRoot = Join-Path $pbipSourceRoot "$pbipName.SemanticModel"
+Assert-PbirDefinition -ReportRoot $sourceReportRoot -SemanticModelRoot $sourceSemanticModelRoot
 
+# Create artifacts folder
+$artifactPath = Join-Path $repoRoot "artifacts"
 if (Test-Path $artifactPath) {
     Remove-Item -Path $artifactPath -Recurse -Force
 }
-
 New-Item -ItemType Directory -Path $artifactPath | Out-Null
 Write-Host "Artifacts folder created."
 
@@ -68,49 +135,30 @@ $releaseEntries = @(
 )
 
 foreach ($entry in $releaseEntries) {
-    $sourcePath = Join-Path $PSScriptRoot "..\$entry"
+    $sourcePath = Join-Path $repoRoot $entry
     $destinationPath = Join-Path $artifactPath (Split-Path $entry -Leaf)
 
     if (Test-Path $sourcePath) {
         if (Test-Path $destinationPath) {
             Remove-Item -Path $destinationPath -Recurse -Force
         }
-
         Copy-Item -Path $sourcePath -Destination $destinationPath -Recurse -Force
         Write-Host "Included release entry: $entry"
     }
 }
 
-$sourceFiles = @(
-    "src/Core/Models/*.cs",
-    "src/Core/Serialization/*.cs",
-    "src/Core/SchemaReader.cs",
-    "src/Core/ModelBuilder.cs"
-)
-
-Write-Host "Build inputs:"
-$sourceFiles | ForEach-Object { Write-Host " - $_" }
-
 Write-Host "Generating metadata..."
-
-$projectPath = Join-Path $PSScriptRoot "..\src\PowerBiPipelineSlaTemplate.Core"
-$outputPath = Join-Path $PSScriptRoot "..\metadata\metadata.json"
+$projectPath = Join-Path $repoRoot "src\PowerBiPipelineSlaTemplate.Core"
+$outputPath = Join-Path $repoRoot "metadata\metadata.json"
 
 if (Test-Path $projectPath) {
     & dotnet run --project $projectPath --extract-metadata --output $outputPath
     if ($LASTEXITCODE -ne 0) {
         throw "Metadata generation failed with exit code $LASTEXITCODE"
     }
-} else {
-    Write-Host "Skipping metadata generation: project not found at $projectPath"
 }
 
 Write-Host "Publishing PBIP artifacts to BuildResult..."
-
-$pbipSourceRoot = Join-Path $PSScriptRoot "..\pbip"
-$pbipOutputRoot = Join-Path $PSScriptRoot "..\BuildResult\PBIP"
-$pbipName = "Pipeline_SLA_Tracker"
-
 if (!(Test-Path $pbipOutputRoot)) {
     New-Item -ItemType Directory -Path $pbipOutputRoot | Out-Null
 }
@@ -119,39 +167,37 @@ $pbipSourceFile = Join-Path $pbipSourceRoot "$pbipName.pbip"
 $pbipSourceReport = Join-Path $pbipSourceRoot "$pbipName.Report"
 $pbipSourceSemanticModel = Join-Path $pbipSourceRoot "$pbipName.SemanticModel"
 
-if (Test-Path $pbipSourceFile) {
-    cmd /c copy /Y "$pbipSourceFile" "$pbipOutputRoot\" | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "PBIP file copy failed with exit code $LASTEXITCODE"
-    }
-} else {
-    Write-Host "Missing PBIP file: $pbipSourceFile"
+if (!(Test-Path $pbipSourceFile -PathType Leaf)) {
+    throw "Missing PBIP file: $pbipSourceFile"
+}
+if (!(Test-Path $pbipSourceReport -PathType Container)) {
+    throw "Missing report folder: $pbipSourceReport"
+}
+if (!(Test-Path $pbipSourceSemanticModel -PathType Container)) {
+    throw "Missing semantic model folder: $pbipSourceSemanticModel"
 }
 
-if (Test-Path $pbipSourceReport) {
-    robocopy $pbipSourceReport (Join-Path $pbipOutputRoot "$pbipName.Report") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
-    $robocopyExitCode = $LASTEXITCODE
-    if ($robocopyExitCode -gt 7) {
-        throw "robocopy failed for report folder with exit code $robocopyExitCode"
-    }
-    Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
-} else {
-    Write-Host "Missing report folder: $pbipSourceReport"
+cmd /c copy /Y "$pbipSourceFile" "$pbipOutputRoot\" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "PBIP file copy failed with exit code $LASTEXITCODE"
 }
 
-if (Test-Path $pbipSourceSemanticModel) {
-    robocopy $pbipSourceSemanticModel (Join-Path $pbipOutputRoot "$pbipName.SemanticModel") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
-    $robocopyExitCode = $LASTEXITCODE
-    if ($robocopyExitCode -gt 7) {
-        throw "robocopy failed for semantic model folder with exit code $robocopyExitCode"
-    }
-    Write-Host "Semantic model copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
-} else {
-    Write-Host "Missing semantic model folder: $pbipSourceSemanticModel"
+robocopy $pbipSourceReport (Join-Path $pbipOutputRoot "$pbipName.Report") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
+$robocopyExitCode = $LASTEXITCODE
+if ($robocopyExitCode -gt 7) {
+    throw "robocopy failed for report folder with exit code $robocopyExitCode"
 }
+Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
 
-# Re-run the output guard after the PBIP copy so BuildResult cannot retain
-# stale LocalDateTable_* files from an earlier build.
+robocopy $pbipSourceSemanticModel (Join-Path $pbipOutputRoot "$pbipName.SemanticModel") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
+$robocopyExitCode = $LASTEXITCODE
+if ($robocopyExitCode -gt 7) {
+    throw "robocopy failed for semantic model folder with exit code $robocopyExitCode"
+}
+Write-Host "Semantic model copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
+
+# Re-run the output guard after the PBIP copy so BuildResult cannot retain stale
+# LocalDateTable_* files from an earlier build.
 $publishedSemanticModel = Join-Path $pbipOutputRoot "$pbipName.SemanticModel"
 $publishedLocalDateTables = Get-ChildItem -Path $publishedSemanticModel -Recurse -Filter "LocalDateTable_*.tmdl" -File -ErrorAction SilentlyContinue
 foreach ($localDateTable in $publishedLocalDateTables) {
@@ -159,8 +205,9 @@ foreach ($localDateTable in $publishedLocalDateTables) {
     Write-Host "Removed stale published PBIP local date variation table: $($localDateTable.FullName)"
 }
 
-# Robocopy intentionally returns 1 when files were copied successfully.
-# Clear the native exit-code state so this PowerShell script exits successfully.
-$global:LASTEXITCODE = 0
+$publishedReport = Join-Path $pbipOutputRoot "$pbipName.Report"
+Assert-PbirDefinition -ReportRoot $publishedReport -SemanticModelRoot $publishedSemanticModel
 
-Write-Host "Build complete."
+# Robocopy intentionally returns 1 when files were copied successfully.
+$global:LASTEXITCODE = 0
+Write-Host "Build complete. PBIP output is structurally validated."
