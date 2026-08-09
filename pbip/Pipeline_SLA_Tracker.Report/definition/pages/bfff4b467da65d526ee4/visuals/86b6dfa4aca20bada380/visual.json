@@ -1,89 +1,12 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "86b6dfa4aca20bada380",
-  "position": {
-    "x": 800.66390041493787,
-    "y": 558.67219917012449,
-    "z": 1008,
-    "height": 118.00829875518673,
-    "width": 189.70954356846474,
-    "tabOrder": 8
-  },
+  "position": { "x": 800.6639004149379, "y": 558.6721991701245, "z": 1008, "height": 118.00829875518673, "width": 189.70954356846474, "tabOrder": 8 },
   "visual": {
     "visualType": "cardVisual",
-    "query": {
-      "queryState": {
-        "Data": {
-          "projections": [
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Fact_Pipeline_SampleData"
-                    }
-                  },
-                  "Property": "Running Pipelines"
-                }
-              },
-              "queryRef": "Fact_Pipeline_SampleData.Running Pipelines",
-              "nativeQueryRef": "Running Pipelines"
-            }
-          ]
-        }
-      },
-      "sortDefinition": {
-        "sort": [
-          {
-            "field": {
-              "Measure": {
-                "Expression": {
-                  "SourceRef": {
-                    "Entity": "Fact_Pipeline_SampleData"
-                  }
-                },
-                "Property": "Running Pipelines"
-              }
-            },
-            "direction": "Descending"
-          }
-        ],
-        "isDefaultSort": true
-      }
-    },
-    "objects": {
-      "label": [
-        {
-          "properties": {
-            "position": {
-              "expr": {
-                "Literal": {
-                  "Value": "'aboveValue'"
-                }
-              }
-            }
-          },
-          "selector": {
-            "id": "default"
-          }
-        }
-      ]
-    },
-    "visualContainerObjects": {
-      "title": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            }
-          }
-        }
-      ]
-    },
+    "query": { "queryState": { "Data": { "projections": [{ "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "_Measures" } }, "Property": "Failed Runs" } }, "queryRef": "_Measures.Failed Runs", "nativeQueryRef": "Failed Runs" }] } } },
+    "objects": { "label": [{ "properties": { "position": { "expr": { "Literal": { "Value": "'aboveValue'" } } } }, "selector": { "id": "default" } }] },
+    "visualContainerObjects": { "title": [{ "properties": { "show": { "expr": { "Literal": { "Value": "false" } } } }] },
     "drillFilterOtherVisuals": true
   }
 }
