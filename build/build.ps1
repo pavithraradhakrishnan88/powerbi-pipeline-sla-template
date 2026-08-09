@@ -113,8 +113,14 @@ function Ensure-PbirDefinitionSchema {
     $definition = Get-Content -Raw -Path $DefinitionPath | ConvertFrom-Json
     $schema = "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json"
     $datasetReferenceJson = $definition.datasetReference | ConvertTo-Json -Depth 20 -Compress
-    $json = '{"$schema":"' + $schema + '","version":"' + [string]$definition.version + '","datasetReference":' + $datasetReferenceJson + '}'
-    Set-Content -Path $DefinitionPath -Value $json -Encoding utf8
+    $json = @"
+{
+  `"`$schema`": `"$schema`",
+  `"version`": `"$([string]$definition.version)`",
+  `"datasetReference`": $datasetReferenceJson
+}
+"@
+    Set-Content -Path $DefinitionPath -Value $json.Trim() -Encoding utf8
     Write-Host "Normalized PBIR definitionProperties schema: $DefinitionPath"
 }
 
