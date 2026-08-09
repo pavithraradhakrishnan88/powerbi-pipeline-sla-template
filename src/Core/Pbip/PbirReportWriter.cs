@@ -56,7 +56,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 CopyDirectoryRecursively(templateReportRootPath, stagingPath);
                 PbirVisualContainerNormalizer.NormalizeReport(stagingPath);
                 File.WriteAllText(Path.Combine(stagingPath, "definition.pbir"), BuildDefinitionPbir(semanticModelRelativePath));
-                File.WriteAllText(Path.Combine(stagingPath, "reportExtensions.json"), BuildReportExtensionsJson());
+                File.WriteAllText(Path.Combine(stagingPath, "definition", "reportExtensions.json"), BuildReportExtensionsJson());
                 ValidateTemplateOutput(stagingPath);
                 ReplaceDirectoryAtomically(stagingPath, reportRootPath);
             }
@@ -212,7 +212,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
         private static void ValidateTemplateOutput(string outputRootPath)
         {
-            var requiredFiles = new[] { Path.Combine(outputRootPath, "definition.pbir"), Path.Combine(outputRootPath, "definition", "report.json"), Path.Combine(outputRootPath, "definition", "pages", "pages.json") };
+            var requiredFiles = new[] { Path.Combine(outputRootPath, "definition.pbir"), Path.Combine(outputRootPath, "definition", "report.json"), Path.Combine(outputRootPath, "definition", "reportExtensions.json"), Path.Combine(outputRootPath, "definition", "pages", "pages.json") };
             foreach (var filePath in requiredFiles) { if (!File.Exists(filePath)) throw new InvalidOperationException($"Generated PBIP output is missing required template file '{filePath}'."); ValidateJsonFile(filePath); }
         }
 
