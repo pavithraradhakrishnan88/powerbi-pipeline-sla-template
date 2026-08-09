@@ -107,6 +107,20 @@ function Normalize-PbipMeasureBindings {
     Write-Host "PBIP measure binding normalization complete. Visuals updated: $updated"
 }
 
+function Ensure-PbirDefinitionSchema {
+    param([Parameter(Mandatory = $true)][string]$DefinitionPath)
+    if (!(Test-Path $DefinitionPath -PathType Leaf)) { throw "PBIR schema normalization failed: missing '$DefinitionPath'." }
+    $definition = Get-Content -Raw -Path $DefinitionPath | ConvertFrom-Json
+    $definition | Add-Member -NotePropertyName '$schema' -NotePropertyValue "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json" -Force
+    $normalized = [ordered]@{
+        '$schema' = $definition.'$schema'
+        version = [string]$definition.version
+        datasetReference = $definition.datasetReference
+    }
+    $normalized | ConvertTo-Json -Depth 20 | Set-Content -Path $DefinitionPath -Encoding utf8
+    Write-Host "Normalized PBIR definitionProperties schema: $DefinitionPath"
+}
+
 $pbipSemanticModelRoots = @(
     Join-Path $pbipSourceRoot "$pbipName.SemanticModel",
     Join-Path $pbipOutputRoot "$pbipName.SemanticModel"
@@ -132,6 +146,12 @@ Write-Host "Regenerating PBIP/report through the existing .NET pipeline before r
 & dotnet run --project $projectPath --configuration Release
 if ($LASTEXITCODE -ne 0) { throw "PBIP/report regeneration failed with exit code $LASTEXITCODE" }
 Write-Host "Existing .NET PBIP/report regeneration completed."
+
+# The existing generator emits the PBIR envelope; normalize its schema before
+# any strict source validation. This is deliberately before normalization and
+# publication, and does not change the generator architecture.
+$generatedDefinitionPath = Join-Path $sourceReportRoot "definition.pbir"
+Ensure-PbirDefinitionSchema -DefinitionPath $generatedDefinitionPath
 
 # Power BI measures live in the dedicated _Measures table. Normalize only the
 # Measure.Expression.SourceRef.Entity field. Never rewrite column queryRef or
@@ -176,24 +196,6 @@ if (Test-Path $projectPath) {
     & dotnet run --project $projectPath --extract-metadata --output $outputPath
     if ($LASTEXITCODE -ne 0) { throw "Metadata generation failed with exit code $LASTEXITCODE" }
 }
-
-function Ensure-PbirDefinitionSchema {
-    param([Parameter(Mandatory = $true)][string]$DefinitionPath)
-    if (!(Test-Path $DefinitionPath -PathType Leaf)) { throw "PBIR schema normalization failed: missing '$DefinitionPath'." }
-    $definition = Get-Content -Raw -Path $DefinitionPath | ConvertFrom-Json
-    $definition | Add-Member -NotePropertyName '$schema' -NotePropertyValue "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json" -Force
-    $normalized = [ordered]@{
-        '$schema' = $definition.'$schema'
-        version = [string]$definition.version
-        datasetReference = $definition.datasetReference
-    }
-    $normalized | ConvertTo-Json -Depth 20 | Set-Content -Path $DefinitionPath -Encoding utf8
-    Write-Host "Normalized PBIR definitionProperties schema: $DefinitionPath"
-}
-
-$generatedDefinitionPath = Join-Path $sourceReportRoot "definition.pbir"
-Ensure-PbirDefinitionSchema -DefinitionPath $generatedDefinitionPath
-Assert-PbirDefinition -ReportRoot $sourceReportRoot -SemanticModelRoot $sourceSemanticModelRoot
 
 Write-Host "Publishing PBIP artifacts to BuildResult..."
 if (!(Test-Path $pbipOutputRoot)) { New-Item -ItemType Directory -Path $pbipOutputRoot | Out-Null }
