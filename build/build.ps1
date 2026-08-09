@@ -69,8 +69,9 @@ $sourceSemanticModelRoot = Join-Path $pbipSourceRoot "$pbipName.SemanticModel"
 
 # Power BI measures live in the dedicated _Measures table. Some legacy PBIP
 # visual definitions contain measure bindings that incorrectly point at the
-# fact table. Normalize only Measure expressions/queryRefs/metadata selectors;
-# column bindings must remain unchanged.
+# fact table. Normalize only the Measure.Expression.SourceRef.Entity field.
+# Never rewrite column queryRef or metadata merely because they contain the
+# fact-table name.
 function Normalize-PbipMeasureBindings {
     param([Parameter(Mandatory = $true)][string]$ReportRoot)
 
@@ -83,8 +84,6 @@ function Normalize-PbipMeasureBindings {
         $original = $json
 
         $json = [regex]::Replace($json, '(?<="Measure"\s*:\s*\{\s*"Expression"\s*:\s*\{\s*"SourceRef"\s*:\s*\{\s*"Entity"\s*:\s*")Fact_Pipeline_SampleData(?=")', '_Measures')
-        $json = [regex]::Replace($json, '(?<="queryRef"\s*:\s*")Fact_Pipeline_SampleData\.(?=[^"]+"\s*,\s*"nativeQueryRef")', '_Measures.')
-        $json = [regex]::Replace($json, '(?<="metadata"\s*:\s*")Fact_Pipeline_SampleData\.(?=[^"]+")', '_Measures.')
 
         if ($json -ne $original) {
             Set-Content -Path $visualPath.FullName -Value $json -Encoding utf8
@@ -101,7 +100,7 @@ Normalize-PbipMeasureBindings -ReportRoot $sourceReportRoot
 Assert-PbirDefinition -ReportRoot $sourceReportRoot -SemanticModelRoot $sourceSemanticModelRoot
 
 $artifactPath = Join-Path $repoRoot "artifacts"
-if (Test-Path $artifactPath) { Remove-Item -Path $artifactPath -Recurse -Force }
+if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
 New-Item -ItemType Directory -Path $artifactPath | Out-Null
 Write-Host "Artifacts folder created."
 
@@ -119,8 +118,8 @@ foreach ($entry in $releaseEntries) {
     $sourcePath = Join-Path $repoRoot $entry
     $destinationPath = Join-Path $artifactPath (Split-Path $entry -Leaf)
     if (Test-Path $sourcePath) {
-        if (Test-Path $destinationPath) { Remove-Item -Path $destinationPath -Recurse -Force }
-        Copy-Item -Path $sourcePath -Destination $destinationPath -Recurse -Force
+        if (Test-Path $destinationPath) { Remove-Item $destinationPath -Recurse -Force }
+        Copy-Item $sourcePath -Destination $destinationPath -Recurse -Force
         Write-Host "Included release entry: $entry"
     }
 }
