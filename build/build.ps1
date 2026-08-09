@@ -158,6 +158,36 @@ if (Test-Path $projectPath) {
     }
 }
 
+# The current PBIR writer emits the version and datasetReference envelope but
+# omits the required definitionProperties schema. Normalize that generated
+# envelope here before copying or packaging the PBIP. This keeps the existing
+# generation pipeline intact while ensuring Power BI Desktop-compatible output.
+function Ensure-PbirDefinitionSchema {
+    param(
+        [Parameter(Mandatory = $true)][string]$DefinitionPath
+    )
+
+    if (!(Test-Path $DefinitionPath -PathType Leaf)) {
+        throw "PBIR schema normalization failed: missing '$DefinitionPath'."
+    }
+
+    $definition = Get-Content -Raw -Path $DefinitionPath | ConvertFrom-Json
+    $definition | Add-Member -NotePropertyName '$schema' -NotePropertyValue "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json" -Force
+
+    $normalized = [ordered]@{
+        '$schema' = $definition.'$schema'
+        version = [string]$definition.version
+        datasetReference = $definition.datasetReference
+    }
+
+    $normalized | ConvertTo-Json -Depth 20 | Set-Content -Path $DefinitionPath -Encoding utf8
+    Write-Host "Normalized PBIR definitionProperties schema: $DefinitionPath"
+}
+
+$generatedDefinitionPath = Join-Path $sourceReportRoot "definition.pbir"
+Ensure-PbirDefinitionSchema -DefinitionPath $generatedDefinitionPath
+Assert-PbirDefinition -ReportRoot $sourceReportRoot -SemanticModelRoot $sourceSemanticModelRoot
+
 Write-Host "Publishing PBIP artifacts to BuildResult..."
 if (!(Test-Path $pbipOutputRoot)) {
     New-Item -ItemType Directory -Path $pbipOutputRoot | Out-Null
