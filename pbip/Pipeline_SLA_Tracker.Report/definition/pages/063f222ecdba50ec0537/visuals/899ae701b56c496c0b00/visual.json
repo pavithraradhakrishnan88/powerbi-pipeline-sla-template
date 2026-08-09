@@ -26,7 +26,7 @@
                   "Property": "Success Rate %"
                 }
               },
-              "queryRef": "Fact_Pipeline_SampleData.Success Rate %",
+              "queryRef": "_Measures.Success Rate %",
               "nativeQueryRef": "Success Rate %"
             }
           ]
@@ -145,12 +145,12 @@
                 "Literal": {
                   "Value": "18D"
                 }
-              }
-            },
-            "horizontalAlignment": {
-              "expr": {
-                "Literal": {
-                  "Value": "'left'"
+              },
+              "horizontalAlignment": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'left'"
+                  }
                 }
               }
             }
