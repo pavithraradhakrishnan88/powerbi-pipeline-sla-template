@@ -2,8 +2,8 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "82d35456eec910986948",
   "position": {
-    "x": 31.369294605809131,
-    "y": 285.31120331950211,
+    "x": 31.36929460580913,
+    "y": 285.3112033195021,
     "z": 6010,
     "height": 104.56431535269711,
     "width": 131.45228215767636,
@@ -26,7 +26,7 @@
                   "Property": "Failure Rate %"
                 }
               },
-              "queryRef": "Fact_Pipeline_SampleData.Failure Rate %",
+              "queryRef": "_Measures.Failure Rate %",
               "nativeQueryRef": "Failure Rate %"
             }
           ]
