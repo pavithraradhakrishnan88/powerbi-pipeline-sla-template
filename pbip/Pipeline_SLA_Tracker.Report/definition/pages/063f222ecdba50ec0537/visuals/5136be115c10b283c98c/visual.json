@@ -6,7 +6,7 @@
     "y": 173.2780082987552,
     "z": 2000,
     "height": 421.24481327800834,
-    "width": 728.96265560165978,
+    "width": 728.9626556016598,
     "tabOrder": 1000
   },
   "visual": {
@@ -45,7 +45,7 @@
                   "Property": "Timeline Base"
                 }
               },
-              "queryRef": "Fact_Pipeline_SampleData.Timeline Base",
+              "queryRef": "_Measures.Timeline Base",
               "nativeQueryRef": "Timeline Base"
             },
             {
@@ -59,7 +59,7 @@
                   "Property": "Floating Bar Duration"
                 }
               },
-              "queryRef": "Fact_Pipeline_SampleData.Floating Bar Duration",
+              "queryRef": "_Measures.Floating Bar Duration",
               "nativeQueryRef": "Floating Bar Duration"
             }
           ]
