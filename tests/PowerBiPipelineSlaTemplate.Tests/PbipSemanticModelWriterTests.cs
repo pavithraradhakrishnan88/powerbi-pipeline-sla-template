@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json.Nodes;
 using FluentAssertions;
 using PowerBiPipelineSlaTemplate.Core;
 using PowerBiPipelineSlaTemplate.Core.Pbip;
@@ -58,8 +59,44 @@ public class PbipSemanticModelWriterTests
 
         writer.Write(SampleModel.Normal(), semanticModelPath);
 
-        Directory.Exists(Path.Combine(pbipRoot, "Pipeline SLA.Report")).Should().BeTrue();
-        File.Exists(Path.Combine(pbipRoot, "Pipeline SLA.Report", "definition.pbir")).Should().BeTrue();
+        var reportRoot = Path.Combine(pbipRoot, "Pipeline SLA.Report");
+        Directory.Exists(reportRoot).Should().BeTrue();
+        File.Exists(Path.Combine(reportRoot, "definition.pbir")).Should().BeTrue();
+
+        var visualFiles = Directory.GetFiles(
+            Path.Combine(reportRoot, "definition", "pages"),
+            "visual.json",
+            SearchOption.AllDirectories);
+
+        visualFiles.Should().NotBeEmpty();
+
+        foreach (var visualFile in visualFiles)
+        {
+            var root = JsonNode.Parse(File.ReadAllText(visualFile)).Should().NotBeNull();
+            root.Should().BeOfType<JsonObject>();
+
+            var visualContainerObjects = root!["visual"]?["visualContainerObjects"] as JsonObject
+                ?? root["visualContainerObjects"] as JsonObject;
+
+            if (visualContainerObjects?["title"] is JsonNode title)
+            {
+                title.Should().BeOfType<JsonArray>();
+            }
+        }
+
+        var kpiVisual = Array.Find(
+            visualFiles,
+            file => file.EndsWith("9258a26561818de46b08\\visual.json", StringComparison.OrdinalIgnoreCase));
+
+        kpiVisual.Should().NotBeNull();
+        var kpiRoot = JsonNode.Parse(File.ReadAllText(kpiVisual!)).Should().NotBeNull();
+        var kpiTitle = kpiRoot!["visual"]?["visualContainerObjects"]?["title"] as JsonArray
+            ?? kpiRoot["visualContainerObjects"]?["title"] as JsonArray;
+
+        kpiTitle.Should().NotBeNull();
+        kpiTitle!.Count.Should().Be(1);
+        kpiTitle[0]?["properties"]?["text"]?["expr"]?["Literal"]?["Value"]?.GetValue<string>()
+            .Should().Be("'Pipeline SLA Tracker'");
     }
 
     [Fact]
