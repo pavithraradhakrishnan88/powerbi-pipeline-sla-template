@@ -125,8 +125,8 @@ function Ensure-PbirDefinitionSchema {
 }
 
 $pbipSemanticModelRoots = @(
-    Join-Path $pbipSourceRoot "$pbipName.SemanticModel",
-    Join-Path $pbipOutputRoot "$pbipName.SemanticModel"
+    Join-Path -Path $pbipSourceRoot -ChildPath "$pbipName.SemanticModel"
+    Join-Path -Path $pbipOutputRoot -ChildPath "$pbipName.SemanticModel"
 )
 foreach ($semanticModelRoot in $pbipSemanticModelRoots) {
     if (!(Test-Path $semanticModelRoot)) { continue }
@@ -149,6 +149,13 @@ Write-Host "Regenerating PBIP/report through the existing .NET pipeline before r
 & dotnet run --project $projectPath --configuration Release
 if ($LASTEXITCODE -ne 0) { throw "PBIP/report regeneration failed with exit code $LASTEXITCODE" }
 Write-Host "Existing .NET PBIP/report regeneration completed."
+
+Write-Host "Generating metadata..."
+$outputPath = Join-Path $repoRoot "metadata\metadata.json"
+if (Test-Path $projectPath) {
+    & dotnet run --project $projectPath --extract-metadata --output $outputPath
+    if ($LASTEXITCODE -ne 0) { throw "Metadata generation failed with exit code $LASTEXITCODE" }
+}
 
 $generatedDefinitionPath = Join-Path $sourceReportRoot "definition.pbir"
 Ensure-PbirDefinitionSchema -DefinitionPath $generatedDefinitionPath
@@ -185,13 +192,6 @@ foreach ($entry in $releaseEntries) {
         Copy-Item $sourcePath -Destination $destinationPath -Recurse -Force
         Write-Host "Included release entry: $entry"
     }
-}
-
-Write-Host "Generating metadata..."
-$outputPath = Join-Path $repoRoot "metadata\metadata.json"
-if (Test-Path $projectPath) {
-    & dotnet run --project $projectPath --extract-metadata --output $outputPath
-    if ($LASTEXITCODE -ne 0) { throw "Metadata generation failed with exit code $LASTEXITCODE" }
 }
 
 Write-Host "Publishing PBIP artifacts to BuildResult..."
