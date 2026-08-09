@@ -111,13 +111,10 @@ function Ensure-PbirDefinitionSchema {
     param([Parameter(Mandatory = $true)][string]$DefinitionPath)
     if (!(Test-Path $DefinitionPath -PathType Leaf)) { throw "PBIR schema normalization failed: missing '$DefinitionPath'." }
     $definition = Get-Content -Raw -Path $DefinitionPath | ConvertFrom-Json
-    $definition | Add-Member -NotePropertyName '$schema' -NotePropertyValue "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json" -Force
-    $normalized = [ordered]@{
-        '$schema' = $definition.'$schema'
-        version = [string]$definition.version
-        datasetReference = $definition.datasetReference
-    }
-    $normalized | ConvertTo-Json -Depth 20 | Set-Content -Path $DefinitionPath -Encoding utf8
+    $schema = "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json"
+    $datasetReferenceJson = $definition.datasetReference | ConvertTo-Json -Depth 20 -Compress
+    $json = '{"$schema":"' + $schema + '","version":"' + [string]$definition.version + '","datasetReference":' + $datasetReferenceJson + '}'
+    Set-Content -Path $DefinitionPath -Value $json -Encoding utf8
     Write-Host "Normalized PBIR definitionProperties schema: $DefinitionPath"
 }
 
