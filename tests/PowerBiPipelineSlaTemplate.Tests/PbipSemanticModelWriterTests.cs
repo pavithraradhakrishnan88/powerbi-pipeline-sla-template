@@ -47,27 +47,18 @@ public class PbipSemanticModelWriterTests
             var relative = Path.GetRelativePath(sourceTemplatePath, sourceFile);
             var destination = Path.Combine(destinationTemplatePath, relative);
             var dir = Path.GetDirectoryName(destination);
-            if (!string.IsNullOrWhiteSpace(dir))
-            {
-                Directory.CreateDirectory(dir);
-            }
-
+            if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
             File.Copy(sourceFile, destination, overwrite: true);
         }
 
         var writer = new PbipSemanticModelWriter();
-
         writer.Write(SampleModel.Normal(), semanticModelPath);
 
         var reportRoot = Path.Combine(pbipRoot, "Pipeline SLA.Report");
         Directory.Exists(reportRoot).Should().BeTrue();
         File.Exists(Path.Combine(reportRoot, "definition.pbir")).Should().BeTrue();
 
-        var visualFiles = Directory.GetFiles(
-            Path.Combine(reportRoot, "definition", "pages"),
-            "visual.json",
-            SearchOption.AllDirectories);
-
+        var visualFiles = Directory.GetFiles(Path.Combine(reportRoot, "definition", "pages"), "visual.json", SearchOption.AllDirectories);
         visualFiles.Should().NotBeEmpty();
 
         foreach (var visualFile in visualFiles)
@@ -76,29 +67,25 @@ public class PbipSemanticModelWriterTests
             root.Should().NotBeNull();
             root.Should().BeOfType<JsonObject>();
 
-            var visualContainerObjects = root!["visual"]?["visualContainerObjects"] as JsonObject
-                ?? root["visualContainerObjects"] as JsonObject;
+            var visualContainerObjects = root!["visualContainerObjects"] as JsonObject
+                ?? root["visual"]?["visualContainerObjects"] as JsonObject;
 
             if (visualContainerObjects?["title"] is JsonNode title)
-            {
                 title.Should().BeOfType<JsonArray>();
-            }
         }
 
-        var kpiVisual = Array.Find(
-            visualFiles,
-            file => file.EndsWith("9258a26561818de46b08\\visual.json", StringComparison.OrdinalIgnoreCase));
-
+        var kpiVisual = Array.Find(visualFiles, file => file.EndsWith("d3f7987300602011509c\\visual.json", StringComparison.OrdinalIgnoreCase));
         kpiVisual.Should().NotBeNull();
+
         var kpiRoot = JsonNode.Parse(File.ReadAllText(kpiVisual!));
         kpiRoot.Should().NotBeNull();
-        var kpiTitle = kpiRoot!["visual"]?["visualContainerObjects"]?["title"] as JsonArray
-            ?? kpiRoot["visualContainerObjects"]?["title"] as JsonArray;
+        var kpiTitle = kpiRoot!["visualContainerObjects"]?["title"] as JsonArray
+            ?? kpiRoot["visual"]?["visualContainerObjects"]?["title"] as JsonArray;
 
         kpiTitle.Should().NotBeNull();
         kpiTitle!.Count.Should().Be(1);
-        kpiTitle[0]?["properties"]?["text"]?["expr"]?["Literal"]?["Value"]?.GetValue<string>()
-            .Should().Be("'Pipeline SLA Tracker'");
+        kpiTitle[0]?["properties"]?["show"]?["expr"]?["Literal"]?["Value"]?.GetValue<string>()
+            .Should().Be("false");
     }
 
     [Fact]
@@ -132,7 +119,6 @@ public class PbipSemanticModelWriterTests
 
         var measuresPath = Path.Combine(semanticModelPath, "definition", "tables", "_Measures.tmdl");
         File.Exists(measuresPath).Should().BeTrue();
-
         var content = File.ReadAllText(measuresPath);
         content.Should().NotContain("SUM(Fact_Pipeline_SampleData[PipelineID])");
         content.Should().Contain("measure 'Total Runtime' = SUM(Fact_Pipeline_SampleData[DurationHours])");
@@ -144,9 +130,7 @@ public class PbipSemanticModelWriterTests
     public void WriteSemanticModel_ShouldThrow_ForInvalidInput()
     {
         var writer = new PbipSemanticModelWriter();
-
         Action act = () => writer.WriteSemanticModel(null!, "");
-
         act.Should().Throw<ArgumentNullException>();
     }
 }
