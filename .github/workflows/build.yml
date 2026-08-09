@@ -66,7 +66,27 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          ./build/build.ps1
+          $logDirectory = Join-Path $PWD "build-logs"
+          New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
+          $logPath = Join-Path $logDirectory "generate-pbip.log"
+
+          if (Test-Path $logPath) {
+              Remove-Item $logPath -Force
+          }
+
+          try {
+              & {
+                  ./build/build.ps1
+              } *>&1 | Tee-Object -FilePath $logPath
+
+              if ($LASTEXITCODE -ne 0) {
+                  throw "Generate PBIP failed with exit code $LASTEXITCODE. See $logPath."
+              }
+          }
+          catch {
+              $_ | Format-List * -Force | Out-String | Tee-Object -FilePath $logPath -Append | Write-Host
+              throw
+          }
 
       - name: Verify Artifacts
         shell: pwsh
@@ -93,6 +113,7 @@ jobs:
         with:
           name: Build-Logs
           path: |
+            build-logs/**
             **/*.log
             **/TestResults/**
           if-no-files-found: ignore
