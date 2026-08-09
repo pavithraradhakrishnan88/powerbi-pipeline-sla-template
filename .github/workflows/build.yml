@@ -70,21 +70,17 @@ jobs:
           New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
           $logPath = Join-Path $logDirectory "generate-pbip.log"
 
-          if (Test-Path $logPath) {
-              Remove-Item $logPath -Force
-          }
-
           try {
-              & {
-                  ./build/build.ps1
-              } *>&1 | Tee-Object -FilePath $logPath
-
-              if ($LASTEXITCODE -ne 0) {
-                  throw "Generate PBIP failed with exit code $LASTEXITCODE. See $logPath."
+              ./build/build.ps1 *>&1 | Tee-Object -FilePath $logPath
+              $buildExitCode = $LASTEXITCODE
+              if ($null -ne $buildExitCode -and $buildExitCode -ne 0) {
+                  throw "Generate PBIP failed with exit code $buildExitCode. See $logPath."
               }
           }
           catch {
-              $_ | Format-List * -Force | Out-String | Tee-Object -FilePath $logPath -Append | Write-Host
+              $formattedError = $_ | Format-List * -Force | Out-String
+              Add-Content -Path $logPath -Value $formattedError
+              Write-Host $formattedError
               throw
           }
 
