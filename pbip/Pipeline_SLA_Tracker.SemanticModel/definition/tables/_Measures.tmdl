@@ -7,9 +7,21 @@ table _Measures
 		displayFolder: '01 Landing Page'
 		formatString: '#,##0'
 
+	measure 'Total Runs' = [Active Pipelines]
+		displayFolder: '01 Landing Page'
+		formatString: '#,##0'
+
 	measure 'Success Rate %' = DIVIDE([Successful Runs],[Active Pipelines])
 		displayFolder: '02 SLA'
 		formatString: '0.00%'
+
+	measure 'SLA Compliance %' = DIVIDE([Total Runs] - [Breached Count], [Total Runs], 0)
+		displayFolder: '02 SLA'
+		formatString: '0.00%'
+
+	measure 'Breached Count' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData), Fact_Pipeline_SampleData[SLAStatus] = "Missed")
+		displayFolder: '01 Landing Page'
+		formatString: '#,##0'
 
 	measure 'Average Runtime' = AVERAGE(Fact_Pipeline_SampleData[DurationHours])
 		displayFolder: '03 Runtime'
