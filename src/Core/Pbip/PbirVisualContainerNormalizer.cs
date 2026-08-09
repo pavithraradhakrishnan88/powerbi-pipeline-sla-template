@@ -8,34 +8,31 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 {
     internal static class PbirVisualContainerNormalizer
     {
-        // PBIR title metadata is normalized during report generation, never by patching BuildResult.
+        // Kept as the existing writer hook, but validation is now non-mutating.
+        // visualContainerObjects.title must already be serialized as a JsonArray by the template/generator.
         public static void NormalizeReport(string reportRootPath)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(reportRootPath);
             var definitionPath = Path.Combine(reportRootPath, "definition", "pages");
             if (!Directory.Exists(definitionPath)) return;
-            foreach (var visualPath in Directory.EnumerateFiles(definitionPath, "visual.json", SearchOption.AllDirectories)) NormalizeVisual(visualPath);
+            foreach (var visualPath in Directory.EnumerateFiles(definitionPath, "visual.json", SearchOption.AllDirectories)) ValidateVisual(visualPath);
         }
 
-        private static void NormalizeVisual(string visualPath)
+        private static void ValidateVisual(string visualPath)
         {
             var root = JsonNode.Parse(File.ReadAllText(visualPath)) as JsonObject
                 ?? throw new InvalidOperationException($"PBIR visual '{visualPath}' must contain a JSON object.");
-            if (root["visual"] is not JsonObject visual) return;
 
-            if (visual["visualContainerObjects"] is JsonNode nestedContainerObjects)
+            if (root["visualContainerObjects"] is not JsonObject containerObjects)
             {
-                visual.Remove("visualContainerObjects");
-                if (root["visualContainerObjects"] is null) root["visualContainerObjects"] = nestedContainerObjects;
+                return;
             }
 
-            if (root["visualContainerObjects"] is JsonObject containerObjects && containerObjects["title"] is JsonNode title)
+            if (containerObjects["title"] is JsonNode title && title is not JsonArray)
             {
-                if (title is JsonObject titleObject) containerObjects["title"] = new JsonArray(titleObject.DeepClone());
-                else if (title is not JsonArray) throw new InvalidOperationException($"PBIR visual '{visualPath}' has an invalid visualContainerObjects.title value. Expected an object or array of objects.");
+                throw new InvalidOperationException(
+                    $"PBIR visual '{visualPath}' has an invalid visualContainerObjects.title value. The generator must serialize title as a JSON array.");
             }
-
-            File.WriteAllText(visualPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         }
     }
 }
