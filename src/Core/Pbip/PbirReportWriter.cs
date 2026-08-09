@@ -56,6 +56,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 CopyDirectoryRecursively(templateReportRootPath, stagingPath);
                 PbirVisualContainerNormalizer.NormalizeReport(stagingPath);
                 File.WriteAllText(Path.Combine(stagingPath, "definition.pbir"), BuildDefinitionPbir(semanticModelRelativePath));
+                File.WriteAllText(Path.Combine(stagingPath, "reportExtensions.json"), BuildReportExtensionsJson());
                 ValidateTemplateOutput(stagingPath);
                 ReplaceDirectoryAtomically(stagingPath, reportRootPath);
             }
