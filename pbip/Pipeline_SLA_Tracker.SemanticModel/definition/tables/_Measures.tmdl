@@ -43,6 +43,10 @@ table _Measures
 		displayFolder: '02 SLA'
 		formatString: '0.00%'
 
+	measure 'SLA Compliance %' = 1 - [SLA Breach %]
+		displayFolder: '02 SLA'
+		formatString: '0.00%'
+
 	measure 'Maximum Runtime' = MAX(Fact_Pipeline_SampleData[DurationHours])
 		displayFolder: '03 Runtime'
 		formatString: '#,##0.00'
