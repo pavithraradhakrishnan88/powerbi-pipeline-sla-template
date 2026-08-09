@@ -234,6 +234,18 @@ foreach ($localDateTable in $publishedLocalDateTables) {
     Write-Host "Removed stale published PBIP local date variation table: $($localDateTable.FullName)"
 }
 
+# Diagnostic-only logging for the published PBIR envelope. Keep Assert-PbirDefinition strict.
+Write-Host "Published definition.pbir content:"
+Get-Content -Raw $publishedDefinitionPath | Write-Host
+try {
+    $publishedDefinition = Get-Content -Raw $publishedDefinitionPath | ConvertFrom-Json
+    Write-Host "Published schema value: [$($publishedDefinition.'$schema')]"
+    Write-Host "Published version: [$($publishedDefinition.version)]"
+}
+catch {
+    Write-Host "Published definition.pbir diagnostic parse failed: $($_.Exception.Message)"
+}
+
 Assert-PbirDefinition -ReportRoot $publishedReport -SemanticModelRoot $publishedSemanticModel
 Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
 
