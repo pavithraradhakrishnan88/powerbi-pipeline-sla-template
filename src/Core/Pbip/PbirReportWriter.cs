@@ -33,17 +33,11 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             ArgumentException.ThrowIfNullOrWhiteSpace(reportRootPath);
             ArgumentException.ThrowIfNullOrWhiteSpace(semanticModelRelativePath);
             ValidateReportDefinition(document);
-
             var parentDirectory = Path.GetDirectoryName(reportRootPath);
             if (string.IsNullOrWhiteSpace(parentDirectory)) throw new InvalidOperationException($"Unable to determine parent directory for '{reportRootPath}'.");
             Directory.CreateDirectory(parentDirectory);
-
             var stagingPath = Path.Combine(parentDirectory, $"{Path.GetFileName(reportRootPath)}.tmp-{Guid.NewGuid():N}");
-            try
-            {
-                WriteToDirectory(document, stagingPath, semanticModelRelativePath, themeSourceRootPath);
-                ReplaceDirectoryAtomically(stagingPath, reportRootPath);
-            }
+            try { WriteToDirectory(document, stagingPath, semanticModelRelativePath, themeSourceRootPath); ReplaceDirectoryAtomically(stagingPath, reportRootPath); }
             finally { SafeDeleteDirectory(stagingPath); }
         }
 
@@ -53,19 +47,14 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             ArgumentException.ThrowIfNullOrWhiteSpace(reportRootPath);
             ArgumentException.ThrowIfNullOrWhiteSpace(semanticModelRelativePath);
             if (!Directory.Exists(templateReportRootPath)) throw new InvalidOperationException($"Report template directory '{templateReportRootPath}' does not exist.");
-
             var parentDirectory = Path.GetDirectoryName(reportRootPath);
             if (string.IsNullOrWhiteSpace(parentDirectory)) throw new InvalidOperationException($"Unable to determine parent directory for '{reportRootPath}'.");
             Directory.CreateDirectory(parentDirectory);
-
             var stagingPath = Path.Combine(parentDirectory, $"{Path.GetFileName(reportRootPath)}.tmp-{Guid.NewGuid():N}");
             try
             {
                 CopyDirectoryRecursively(templateReportRootPath, stagingPath);
-                // The template contains native visual definitions. Normalize the writer's
-                // output here so visualContainerObjects.title is serialized as an array.
                 PbirVisualContainerNormalizer.NormalizeReport(stagingPath);
-
                 File.WriteAllText(Path.Combine(stagingPath, "definition.pbir"), BuildDefinitionPbir(semanticModelRelativePath));
                 ValidateTemplateOutput(stagingPath);
                 ReplaceDirectoryAtomically(stagingPath, reportRootPath);
@@ -79,17 +68,14 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var pagesPath = Path.Combine(outputRootPath, "pages");
             var staticResourcesPath = Path.Combine(outputRootPath, "staticResources");
             var registeredResourcesPath = Path.Combine(staticResourcesPath, "RegisteredResources");
-            Directory.CreateDirectory(pagesPath);
-            Directory.CreateDirectory(staticResourcesPath);
-            Directory.CreateDirectory(registeredResourcesPath);
-
+            Directory.CreateDirectory(pagesPath); Directory.CreateDirectory(staticResourcesPath); Directory.CreateDirectory(registeredResourcesPath);
             File.WriteAllText(Path.Combine(outputRootPath, "definition.pbir"), BuildDefinitionPbir(semanticModelRelativePath));
             File.WriteAllText(Path.Combine(outputRootPath, "report.json"), BuildNativeReportJson(document));
             File.WriteAllText(Path.Combine(outputRootPath, "reportExtensions.json"), BuildReportExtensionsJson());
             foreach (var page in document.Pages)
             {
-                var pageFolderPath = Path.Combine(pagesPath, SanitizeDirectoryName(ResolvePageId(page)));
-                Directory.CreateDirectory(pageFolderPath);
+                var pageFolderName = SanitizeDirectoryName(ResolvePageId(page));
+                var pageFolderPath = Path.Combine(pagesPath, pageFolderName); Directory.CreateDirectory(pageFolderPath);
                 File.WriteAllText(Path.Combine(pageFolderPath, "page.json"), BuildPageJson(document, page));
             }
             foreach (var theme in document.Themes)
@@ -98,38 +84,25 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 if (sourceThemePath is null || !File.Exists(sourceThemePath)) throw new InvalidOperationException($"Theme '{theme.Name}' references missing file '{theme.Path}'.");
                 File.Copy(sourceThemePath, Path.Combine(registeredResourcesPath, Path.GetFileName(sourceThemePath)), true);
             }
-            CopyAdditionalStaticResources(registeredResourcesPath, themeSourceRootPath);
-            ValidateGeneratedOutput(outputRootPath, document);
+            CopyAdditionalStaticResources(registeredResourcesPath, themeSourceRootPath); ValidateGeneratedOutput(outputRootPath, document);
         }
 
         private static void ReplaceDirectoryAtomically(string stagingPath, string targetPath)
         {
-            var backupPath = $"{targetPath}.bak-{Guid.NewGuid():N}";
-            var hasExistingTarget = Directory.Exists(targetPath);
+            var backupPath = $"{targetPath}.bak-{Guid.NewGuid():N}"; var hasExistingTarget = Directory.Exists(targetPath);
             if (hasExistingTarget) Directory.Move(targetPath, backupPath);
-            try
-            {
-                Directory.Move(stagingPath, targetPath);
-                if (hasExistingTarget) SafeDeleteDirectory(backupPath);
-            }
-            catch
-            {
-                if (Directory.Exists(targetPath)) SafeDeleteDirectory(targetPath);
-                if (hasExistingTarget && Directory.Exists(backupPath)) Directory.Move(backupPath, targetPath);
-                throw;
-            }
+            try { Directory.Move(stagingPath, targetPath); if (hasExistingTarget) SafeDeleteDirectory(backupPath); }
+            catch { if (Directory.Exists(targetPath)) SafeDeleteDirectory(targetPath); if (hasExistingTarget && Directory.Exists(backupPath)) Directory.Move(backupPath, targetPath); throw; }
         }
 
         private static void CopyDirectoryRecursively(string sourcePath, string destinationPath)
         {
             Directory.CreateDirectory(destinationPath);
-            foreach (var directoryPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories))
-                Directory.CreateDirectory(Path.Combine(destinationPath, Path.GetRelativePath(sourcePath, directoryPath)));
+            foreach (var directoryPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories)) Directory.CreateDirectory(Path.Combine(destinationPath, Path.GetRelativePath(sourcePath, directoryPath)));
             foreach (var sourceFilePath in Directory.GetFiles(sourcePath, "*", SearchOption.AllDirectories))
             {
-                var destinationFilePath = Path.Combine(destinationPath, Path.GetRelativePath(sourcePath, sourceFilePath));
-                Directory.CreateDirectory(Path.GetDirectoryName(destinationFilePath)!);
-                File.Copy(sourceFilePath, destinationFilePath, true);
+                var destinationFilePath = Path.Combine(destinationPath, Path.GetRelativePath(sourcePath, sourceFilePath)); var destinationDirectory = Path.GetDirectoryName(destinationFilePath);
+                if (!string.IsNullOrWhiteSpace(destinationDirectory)) Directory.CreateDirectory(destinationDirectory); File.Copy(sourceFilePath, destinationFilePath, true);
             }
         }
 
@@ -142,14 +115,9 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         private static string BuildPageJson(ReportDefinitionDocument document, ReportPageDefinition page)
         {
             var pageId = ResolvePageId(page);
-            var visualContainers = document.VisualPositions.Where(v => string.Equals(ResolveVisualPageId(v), pageId, StringComparison.OrdinalIgnoreCase)).Select((v, i) => (object)BuildVisualContainerFromPosition(v, i)).ToList();
-            visualContainers.AddRange(document.Slicers.Where(s => string.Equals(ResolveSlicerPageId(s), pageId, StringComparison.OrdinalIgnoreCase)).Select((s, i) => (object)BuildVisualContainerFromSlicer(s, i + visualContainers.Count)));
-            var pageDocument = new Dictionary<string, object?>
-            {
-                ["$schema"] = PageSchemaUrl, ["name"] = pageId, ["displayName"] = page.DisplayName,
-                ["displayOption"] = "FitToPage", ["height"] = page.Canvas.Height, ["width"] = page.Canvas.Width,
-                ["visualContainers"] = visualContainers
-            };
+            var visualContainers = document.VisualPositions.Where(visual => string.Equals(ResolveVisualPageId(visual), pageId, StringComparison.OrdinalIgnoreCase)).Select((visual, index) => (object)BuildVisualContainerFromPosition(visual, index)).ToList();
+            visualContainers.AddRange(document.Slicers.Where(slicer => string.Equals(ResolveSlicerPageId(slicer), pageId, StringComparison.OrdinalIgnoreCase)).Select((slicer, index) => (object)BuildVisualContainerFromSlicer(slicer, index + visualContainers.Count)));
+            var pageDocument = new Dictionary<string, object?> { ["$schema"] = PageSchemaUrl, ["name"] = pageId, ["displayName"] = page.DisplayName, ["displayOption"] = "FitToPage", ["height"] = page.Canvas.Height, ["width"] = page.Canvas.Width, ["visualContainers"] = visualContainers };
             return JsonSerializer.Serialize(pageDocument, JsonOptions);
         }
 
@@ -179,4 +147,122 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             return string.IsNullOrWhiteSpace(fieldPart) ? "Slicer" : $"Slicer{fieldPart}";
         }
 
-        // Existing validation/helpers remain unchanged below this point.
+        private static void ValidateReportDefinition(ReportDefinitionDocument document)
+        {
+            var pageIds = document.Pages.Select(ResolvePageId).Where(pageId => !string.IsNullOrWhiteSpace(pageId)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (pageIds.Count == 0) throw new InvalidOperationException("Report definition must contain at least one page with a valid Name.");
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(document.Name)) errors.Add("Report name is required.");
+            var duplicatePageNames = document.Pages.Select(ResolvePageId).Where(pageId => !string.IsNullOrWhiteSpace(pageId)).GroupBy(pageId => pageId, StringComparer.OrdinalIgnoreCase).Where(group => group.Count() > 1).Select(group => group.Key).ToArray();
+            if (duplicatePageNames.Length > 0) errors.Add("Duplicate page names found: " + string.Join(", ", duplicatePageNames) + ".");
+            var duplicateOrders = document.Pages.GroupBy(page => page.Order).Where(group => group.Count() > 1).Select(group => group.Key).ToArray();
+            if (duplicateOrders.Length > 0) errors.Add("Duplicate page order values found: " + string.Join(", ", duplicateOrders) + ".");
+            var duplicateSanitizedPageFolders = document.Pages.Select(page => SanitizeDirectoryName(ResolvePageId(page))).GroupBy(pageFolder => pageFolder, StringComparer.OrdinalIgnoreCase).Where(group => group.Count() > 1).Select(group => group.Key).ToArray();
+            if (duplicateSanitizedPageFolders.Length > 0) errors.Add("Duplicate sanitized page folder names found: " + string.Join(", ", duplicateSanitizedPageFolders) + ".");
+            foreach (var page in document.Pages)
+            {
+                if (string.IsNullOrWhiteSpace(page.Name)) errors.Add("Page name is required.");
+                if (string.IsNullOrWhiteSpace(page.PageId)) errors.Add($"Page '{page.Name}' must include PageId.");
+                if (string.IsNullOrWhiteSpace(page.DisplayName)) errors.Add($"Page '{page.Name}' must have a display name.");
+                if (page.Order < 0) errors.Add($"Page '{page.Name}' has negative order '{page.Order}'.");
+                if (page.Canvas.Width <= 0 || page.Canvas.Height <= 0) errors.Add($"Page '{page.Name}' has invalid canvas size {page.Canvas.Width}x{page.Canvas.Height}.");
+            }
+            foreach (var visual in document.VisualPositions)
+            {
+                var visualPageId = ResolveVisualPageId(visual); if (string.IsNullOrWhiteSpace(visualPageId) || !pageIds.Contains(visualPageId)) errors.Add($"VisualPosition '{visual.VisualId}' references missing page '{visualPageId}'.");
+                if (string.IsNullOrWhiteSpace(visual.VisualId)) errors.Add("VisualPosition must include a VisualId.");
+                if (visual.Width <= 0 || visual.Height <= 0) errors.Add($"VisualPosition '{visual.VisualId}' has invalid size {visual.Width}x{visual.Height}.");
+            }
+            var duplicateVisualIds = document.VisualPositions.Where(visual => !string.IsNullOrWhiteSpace(visual.VisualId)).GroupBy(visual => visual.VisualId, StringComparer.OrdinalIgnoreCase).Where(group => group.Count() > 1).Select(group => group.Key).ToArray();
+            if (duplicateVisualIds.Length > 0) errors.Add("Duplicate visual IDs found: " + string.Join(", ", duplicateVisualIds) + ".");
+            foreach (var slicer in document.Slicers)
+            {
+                var slicerPageId = ResolveSlicerPageId(slicer); if (string.IsNullOrWhiteSpace(slicerPageId) || !pageIds.Contains(slicerPageId)) errors.Add($"Slicer field '{slicer.Field}' references missing page '{slicerPageId}'.");
+                if (string.IsNullOrWhiteSpace(slicer.Field)) errors.Add("Slicer field is required.");
+                if (string.IsNullOrWhiteSpace(slicer.Type)) errors.Add($"Slicer field '{slicer.Field}' must specify a type.");
+                if (slicer.Width <= 0 || slicer.Height <= 0) errors.Add($"Slicer field '{slicer.Field}' has invalid size {slicer.Width}x{slicer.Height}.");
+            }
+            foreach (var bookmark in document.Bookmarks)
+            {
+                var bookmarkPageId = ResolveBookmarkPageId(bookmark); if (string.IsNullOrWhiteSpace(bookmarkPageId) || !pageIds.Contains(bookmarkPageId)) errors.Add($"Bookmark '{bookmark.Name}' references missing page '{bookmarkPageId}'.");
+                if (string.IsNullOrWhiteSpace(bookmark.BookmarkId)) errors.Add($"Bookmark '{bookmark.Name}' must include BookmarkId.");
+            }
+            var duplicateBookmarkIds = document.Bookmarks.Where(bookmark => !string.IsNullOrWhiteSpace(bookmark.BookmarkId)).GroupBy(bookmark => bookmark.BookmarkId, StringComparer.OrdinalIgnoreCase).Where(group => group.Count() > 1).Select(group => group.Key).ToArray();
+            if (duplicateBookmarkIds.Length > 0) errors.Add("Duplicate bookmark IDs found: " + string.Join(", ", duplicateBookmarkIds) + ".");
+            if (string.IsNullOrWhiteSpace(document.Navigation.DefaultPage) || !pageIds.Contains(document.Navigation.DefaultPage)) errors.Add($"Navigation.DefaultPage references missing page '{document.Navigation.DefaultPage}'.");
+            foreach (var menuPage in document.Navigation.Menu) if (string.IsNullOrWhiteSpace(menuPage) || !pageIds.Contains(menuPage)) errors.Add($"Navigation.Menu references missing page '{menuPage}'.");
+            foreach (var theme in document.Themes) if (string.IsNullOrWhiteSpace(theme.Path)) errors.Add($"Theme '{theme.Name}' must define a file path.");
+            if (errors.Count > 0) throw new InvalidOperationException("Invalid report definition:" + Environment.NewLine + string.Join(Environment.NewLine, errors.Select(error => " - " + error)));
+        }
+
+        private static string BuildNativeReportJson(ReportDefinitionDocument document)
+        {
+            var reportDocument = new { name = document.Name, version = ReportJsonVersion, pages = document.Pages.OrderBy(page => page.Order).Select(page => new { name = ResolvePageId(page), displayName = page.DisplayName, order = page.Order }).ToArray(), navigation = new { defaultPage = document.Navigation.DefaultPage, menu = document.Navigation.Menu }, bookmarks = document.Bookmarks.Select(bookmark => new { name = ResolveBookmarkId(bookmark), displayName = bookmark.Name, page = ResolveBookmarkPageId(bookmark), isDefault = bookmark.IsDefault }).ToArray() };
+            return JsonSerializer.Serialize(reportDocument, JsonOptions);
+        }
+
+        private static void ValidateGeneratedOutput(string outputRootPath, ReportDefinitionDocument document)
+        {
+            var requiredRootFiles = new[] { Path.Combine(outputRootPath, "definition.pbir"), Path.Combine(outputRootPath, "report.json"), Path.Combine(outputRootPath, "reportExtensions.json") };
+            foreach (var filePath in requiredRootFiles) { if (!File.Exists(filePath)) throw new InvalidOperationException($"Generated PBIP output is missing required file '{filePath}'."); ValidateJsonFile(filePath); }
+            var pagesPath = Path.Combine(outputRootPath, "pages");
+            foreach (var page in document.Pages) { var pageJsonPath = Path.Combine(pagesPath, SanitizeDirectoryName(ResolvePageId(page)), "page.json"); if (!File.Exists(pageJsonPath)) throw new InvalidOperationException($"Generated PBIP output is missing required page file '{pageJsonPath}'."); ValidateJsonFile(pageJsonPath); }
+        }
+
+        private static void ValidateTemplateOutput(string outputRootPath)
+        {
+            var requiredFiles = new[] { Path.Combine(outputRootPath, "definition.pbir"), Path.Combine(outputRootPath, "definition", "report.json"), Path.Combine(outputRootPath, "definition", "pages", "pages.json") };
+            foreach (var filePath in requiredFiles) { if (!File.Exists(filePath)) throw new InvalidOperationException($"Generated PBIP output is missing required template file '{filePath}'."); ValidateJsonFile(filePath); }
+        }
+
+        private static void ValidateJsonFile(string filePath)
+        {
+            var fileContents = File.ReadAllText(filePath);
+            try { using var _ = JsonDocument.Parse(fileContents); }
+            catch (JsonException jsonException) { throw new InvalidOperationException($"Generated JSON file '{filePath}' is invalid.", jsonException); }
+        }
+
+        private static string ResolvePageId(ReportPageDefinition page) => string.IsNullOrWhiteSpace(page.PageId) ? page.Name : page.PageId;
+        private static string ResolveVisualPageId(VisualPositionDefinition visual) => string.IsNullOrWhiteSpace(visual.PageId) ? visual.Page : visual.PageId;
+        private static string ResolveSlicerPageId(SlicerDefinition slicer) => string.IsNullOrWhiteSpace(slicer.PageId) ? slicer.Page : slicer.PageId;
+        private static string ResolveBookmarkPageId(BookmarkDefinition bookmark) => string.IsNullOrWhiteSpace(bookmark.PageId) ? bookmark.Page : bookmark.PageId;
+        private static string ResolveBookmarkId(BookmarkDefinition bookmark) => string.IsNullOrWhiteSpace(bookmark.BookmarkId) ? bookmark.Name : bookmark.BookmarkId;
+
+        private static string BuildReportExtensionsJson() => JsonSerializer.Serialize(new { entities = Array.Empty<object>() }, JsonOptions);
+
+        private static string? ResolveThemePath(string configuredPath, string reportRootPath, string? themeSourceRootPath)
+        {
+            if (Path.IsPathRooted(configuredPath)) return configuredPath;
+            var reportRelativeCandidate = Path.GetFullPath(Path.Combine(reportRootPath, configuredPath)); if (File.Exists(reportRelativeCandidate)) return reportRelativeCandidate;
+            if (!string.IsNullOrWhiteSpace(themeSourceRootPath))
+            {
+                var combinedCandidate = Path.GetFullPath(Path.Combine(themeSourceRootPath, configuredPath)); if (File.Exists(combinedCandidate)) return combinedCandidate;
+                var fileNameOnlyCandidate = Path.Combine(themeSourceRootPath, Path.GetFileName(configuredPath)); if (File.Exists(fileNameOnlyCandidate)) return fileNameOnlyCandidate;
+                var themeFolderCandidate = Path.Combine(themeSourceRootPath, "theme", Path.GetFileName(configuredPath)); if (File.Exists(themeFolderCandidate)) return themeFolderCandidate;
+            }
+            return null;
+        }
+
+        private static void CopyAdditionalStaticResources(string registeredResourcesPath, string? themeSourceRootPath)
+        {
+            if (string.IsNullOrWhiteSpace(themeSourceRootPath)) return;
+            var candidateDirectories = new[] { Path.Combine(themeSourceRootPath, "staticResources", "RegisteredResources"), Path.Combine(themeSourceRootPath, "RegisteredResources") };
+            foreach (var candidateDirectory in candidateDirectories)
+            {
+                if (!Directory.Exists(candidateDirectory)) continue;
+                foreach (var sourceFilePath in Directory.GetFiles(candidateDirectory)) { var destinationPath = Path.Combine(registeredResourcesPath, Path.GetFileName(sourceFilePath)); if (!File.Exists(destinationPath)) File.Copy(sourceFilePath, destinationPath, false); }
+            }
+        }
+
+        private static string SanitizeDirectoryName(string value)
+        {
+            var invalidChars = Path.GetInvalidFileNameChars(); var cleaned = new string(value.Trim().ToCharArray()); foreach (var invalidChar in invalidChars) cleaned = cleaned.Replace(invalidChar, '_'); return string.IsNullOrWhiteSpace(cleaned) ? "Page" : cleaned;
+        }
+
+        private static void SafeDeleteDirectory(string path)
+        {
+            if (!Directory.Exists(path)) return;
+            try { Directory.Delete(path, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+}
