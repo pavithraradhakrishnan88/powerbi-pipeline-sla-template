@@ -4,9 +4,11 @@
 # Responsibilities
 # - Remove unsupported orphaned PBIP local date variation output
 # - Run validation
-# - Update semantic model
-# - Generate/publish PBIP output
-# - Validate PBIR definition envelope and artifact shape
+# - Regenerate/update PBIP report and semantic model through the existing .NET pipeline
+# - Normalize measure bindings
+# - Validate source and published PBIR/PBIP definition shape
+# - Publish the regenerated PBIP output
+# - Validate published visual.json inventory and JSON syntax
 # - Create build artifacts
 # =====================================
 
@@ -18,6 +20,7 @@ $repoRoot = Split-Path $PSScriptRoot -Parent
 $pbipSourceRoot = Join-Path $repoRoot "pbip"
 $pbipOutputRoot = Join-Path $repoRoot "BuildResult\PBIP"
 $pbipName = "Pipeline_SLA_Tracker"
+$projectPath = Join-Path $repoRoot "src\PowerBiPipelineSlaTemplate.Core"
 
 function Assert-PbirDefinition {
     param(
@@ -46,32 +49,41 @@ function Assert-PbirDefinition {
     Write-Host "PBIR definition validated: $definitionPath"
 }
 
-$pbipSemanticModelRoots = @(
-    Join-Path $pbipSourceRoot "$pbipName.SemanticModel",
-    Join-Path $pbipOutputRoot "$pbipName.SemanticModel"
-)
-foreach ($semanticModelRoot in $pbipSemanticModelRoots) {
-    if (!(Test-Path $semanticModelRoot)) { continue }
-    $localDateTables = Get-ChildItem -Path $semanticModelRoot -Recurse -Filter "LocalDateTable_*.tmdl" -File -ErrorAction SilentlyContinue
-    foreach ($localDateTable in $localDateTables) {
-        Remove-Item -Path $localDateTable.FullName -Force
-        Write-Host "Removed unsupported PBIP local date variation table: $($localDateTable.FullName)"
-    }
+function Get-VisualJsonRelativePaths {
+    param([Parameter(Mandatory = $true)][string]$ReportRoot)
+
+    $definitionRoot = Join-Path $ReportRoot "definition"
+    if (!(Test-Path $definitionRoot -PathType Container)) { throw "Visual validation failed: missing report definition folder '$definitionRoot'." }
+
+    return @(Get-ChildItem -Path $definitionRoot -Recurse -Filter "visual.json" -File |
+        ForEach-Object { [System.IO.Path]::GetRelativePath($definitionRoot, $_.FullName).Replace('\', '/') } |
+        Sort-Object)
 }
 
-Write-Host "Running validation..."
-& "$PSScriptRoot\validate.ps1"
-if (-not $?) { throw "Validation failed. Build stopped." }
-Write-Host "Validation succeeded. Continuing build..."
+function Assert-VisualJsonFiles {
+    param(
+        [Parameter(Mandatory = $true)][string]$ReportRoot,
+        [Parameter(Mandatory = $true)][string[]]$ExpectedRelativePaths
+    )
 
-$sourceReportRoot = Join-Path $pbipSourceRoot "$pbipName.Report"
-$sourceSemanticModelRoot = Join-Path $pbipSourceRoot "$pbipName.SemanticModel"
+    $definitionRoot = Join-Path $ReportRoot "definition"
+    $actualRelativePaths = @(Get-VisualJsonRelativePaths -ReportRoot $ReportRoot)
 
-# Power BI measures live in the dedicated _Measures table. Some legacy PBIP
-# visual definitions contain measure bindings that incorrectly point at the
-# fact table. Normalize only the Measure.Expression.SourceRef.Entity field.
-# Never rewrite column queryRef or metadata merely because they contain the
-# fact-table name.
+    $missing = @($ExpectedRelativePaths | Where-Object { $_ -notin $actualRelativePaths })
+    $unexpected = @($actualRelativePaths | Where-Object { $_ -notin $ExpectedRelativePaths })
+    if ($missing.Count -gt 0 -or $unexpected.Count -gt 0) {
+        throw "Visual validation failed: published visual.json set differs from expected. Missing: [$($missing -join ', ')]; Unexpected: [$($unexpected -join ', ')]."
+    }
+
+    foreach ($relativePath in $actualRelativePaths) {
+        $visualPath = Join-Path $definitionRoot ($relativePath -replace '/', '\')
+        try { Get-Content -Raw -Path $visualPath | ConvertFrom-Json | Out-Null }
+        catch { throw "Visual validation failed: '$visualPath' is not valid JSON. $($_.Exception.Message)" }
+    }
+
+    Write-Host "Validated $($actualRelativePaths.Count) visual.json files and JSON syntax under '$ReportRoot'."
+}
+
 function Normalize-PbipMeasureBindings {
     param([Parameter(Mandatory = $true)][string]$ReportRoot)
 
@@ -95,9 +107,43 @@ function Normalize-PbipMeasureBindings {
     Write-Host "PBIP measure binding normalization complete. Visuals updated: $updated"
 }
 
+$pbipSemanticModelRoots = @(
+    Join-Path $pbipSourceRoot "$pbipName.SemanticModel",
+    Join-Path $pbipOutputRoot "$pbipName.SemanticModel"
+)
+foreach ($semanticModelRoot in $pbipSemanticModelRoots) {
+    if (!(Test-Path $semanticModelRoot)) { continue }
+    $localDateTables = Get-ChildItem -Path $semanticModelRoot -Recurse -Filter "LocalDateTable_*.tmdl" -File -ErrorAction SilentlyContinue
+    foreach ($localDateTable in $localDateTables) {
+        Remove-Item -Path $localDateTable.FullName -Force
+        Write-Host "Removed unsupported PBIP local date variation table: $($localDateTable.FullName)"
+    }
+}
+
+Write-Host "Running validation..."
+& "$PSScriptRoot\validate.ps1"
+if (-not $?) { throw "Validation failed. Build stopped." }
+Write-Host "Validation succeeded. Continuing build..."
+
+$sourceReportRoot = Join-Path $pbipSourceRoot "$pbipName.Report"
+$sourceSemanticModelRoot = Join-Path $pbipSourceRoot "$pbipName.SemanticModel"
+
+Write-Host "Regenerating PBIP/report through the existing .NET pipeline before robocopy..."
+& dotnet run --project $projectPath --configuration Release
+if ($LASTEXITCODE -ne 0) { throw "PBIP/report regeneration failed with exit code $LASTEXITCODE" }
+Write-Host "Existing .NET PBIP/report regeneration completed."
+
+# Power BI measures live in the dedicated _Measures table. Normalize only the
+# Measure.Expression.SourceRef.Entity field. Never rewrite column queryRef or
+# metadata merely because they contain the fact-table name.
 Normalize-PbipMeasureBindings -ReportRoot $sourceReportRoot
 
 Assert-PbirDefinition -ReportRoot $sourceReportRoot -SemanticModelRoot $sourceSemanticModelRoot
+
+$expectedVisualJsonPaths = @(Get-VisualJsonRelativePaths -ReportRoot $sourceReportRoot)
+if ($expectedVisualJsonPaths.Count -eq 0) { throw "Visual validation failed: regenerated source report contains no visual.json files." }
+Assert-VisualJsonFiles -ReportRoot $sourceReportRoot -ExpectedRelativePaths $expectedVisualJsonPaths
+Write-Host "Regenerated source report visual.json inventory captured: $($expectedVisualJsonPaths.Count) files."
 
 $artifactPath = Join-Path $repoRoot "artifacts"
 if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
@@ -125,7 +171,6 @@ foreach ($entry in $releaseEntries) {
 }
 
 Write-Host "Generating metadata..."
-$projectPath = Join-Path $repoRoot "src\PowerBiPipelineSlaTemplate.Core"
 $outputPath = Join-Path $repoRoot "metadata\metadata.json"
 if (Test-Path $projectPath) {
     & dotnet run --project $projectPath --extract-metadata --output $outputPath
@@ -163,10 +208,16 @@ if (!(Test-Path $pbipSourceSemanticModel -PathType Container)) { throw "Missing 
 cmd /c copy /Y "$pbipSourceFile" "$pbipOutputRoot\" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "PBIP file copy failed with exit code $LASTEXITCODE" }
 
-robocopy $pbipSourceReport (Join-Path $pbipOutputRoot "$pbipName.Report") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
+Write-Host "Publishing regenerated report with robocopy..."
+$publishedReport = Join-Path $pbipOutputRoot "$pbipName.Report"
+robocopy $pbipSourceReport $publishedReport /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
 $robocopyExitCode = $LASTEXITCODE
 if ($robocopyExitCode -gt 7) { throw "robocopy failed for report folder with exit code $robocopyExitCode" }
 Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
+
+Assert-PbirDefinition -ReportRoot $publishedReport -SemanticModelRoot (Join-Path $pbipOutputRoot "$pbipName.SemanticModel")
+Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
+Write-Host "Published report visual.json inventory matches regenerated source."
 
 robocopy $pbipSourceSemanticModel (Join-Path $pbipOutputRoot "$pbipName.SemanticModel") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
 $robocopyExitCode = $LASTEXITCODE
@@ -180,8 +231,8 @@ foreach ($localDateTable in $publishedLocalDateTables) {
     Write-Host "Removed stale published PBIP local date variation table: $($localDateTable.FullName)"
 }
 
-$publishedReport = Join-Path $pbipOutputRoot "$pbipName.Report"
 Assert-PbirDefinition -ReportRoot $publishedReport -SemanticModelRoot $publishedSemanticModel
+Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
 
 $global:LASTEXITCODE = 0
-Write-Host "Build complete. PBIP output is structurally validated."
+Write-Host "Build complete. Regenerated PBIP output and published visual.json inventory are structurally validated."
