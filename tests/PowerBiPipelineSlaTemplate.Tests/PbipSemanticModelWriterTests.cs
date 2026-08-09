@@ -67,11 +67,14 @@ public class PbipSemanticModelWriterTests
             root.Should().NotBeNull();
             root.Should().BeOfType<JsonObject>();
 
-            var visualContainerObjects = root!["visualContainerObjects"] as JsonObject
-                ?? root["visual"]?["visualContainerObjects"] as JsonObject;
+            var visual = root!["visual"] as JsonObject;
+            visual.Should().NotBeNull();
+            visual!["visualContainerObjects"]?.Should().BeOfType<JsonObject>();
 
-            if (visualContainerObjects?["title"] is JsonNode title)
+            if (visual["visualContainerObjects"]?["title"] is JsonNode title)
                 title.Should().BeOfType<JsonArray>();
+
+            root["visualContainerObjects"].Should().BeNull();
         }
 
         var kpiVisual = Array.Find(visualFiles, file => file.EndsWith("d3f7987300602011509c\\visual.json", StringComparison.OrdinalIgnoreCase));
@@ -79,13 +82,14 @@ public class PbipSemanticModelWriterTests
 
         var kpiRoot = JsonNode.Parse(File.ReadAllText(kpiVisual!));
         kpiRoot.Should().NotBeNull();
-        var kpiTitle = kpiRoot!["visualContainerObjects"]?["title"] as JsonArray
-            ?? kpiRoot["visual"]?["visualContainerObjects"]?["title"] as JsonArray;
+        var kpiVisualNode = kpiRoot!["visual"] as JsonObject;
+        kpiVisualNode.Should().NotBeNull();
+        var kpiTitle = kpiVisualNode!["visualContainerObjects"]?["title"] as JsonArray;
 
         kpiTitle.Should().NotBeNull();
         kpiTitle!.Count.Should().Be(1);
-        kpiTitle[0]?["properties"]?["show"]?["expr"]?["Literal"]?["Value"]?.GetValue<string>()
-            .Should().Be("false");
+        kpiTitle[0]?["properties"]?["text"]?["expr"]?["Literal"]?["Value"]?.GetValue<string>()
+            .Should().Be("'Pipeline SLA Tracker'");
     }
 
     [Fact]
