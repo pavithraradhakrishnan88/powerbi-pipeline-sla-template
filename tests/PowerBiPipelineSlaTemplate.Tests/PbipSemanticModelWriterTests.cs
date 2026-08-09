@@ -31,6 +31,29 @@ public class PbipSemanticModelWriterTests
     }
 
     [Fact]
+    public void WriteSemanticModel_ShouldGenerateDataFolderParameterAndUseItForPartitions()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var pbipRoot = workspace.CreateDirectory("pbip");
+        var semanticModelPath = Path.Combine(pbipRoot, "Pipeline SLA.SemanticModel");
+
+        var writer = new PbipSemanticModelWriter();
+        writer.WriteSemanticModel(SampleModel.Normal(), semanticModelPath);
+
+        var expressions = File.ReadAllText(Path.Combine(semanticModelPath, "definition", "expressions.tmdl"));
+        expressions.Should().Contain("expression DataFolder =");
+        expressions.Should().Contain("IsParameterQuery=true");
+        expressions.Should().Contain("IsParameterQueryRequired=true");
+
+        foreach (var table in new[] { "Fact_Pipeline_SampleData", "Dim_Category" })
+        {
+            var tmdl = File.ReadAllText(Path.Combine(semanticModelPath, "definition", "tables", $"{table}.tmdl"));
+            tmdl.Should().Contain($"File.Contents(DataFolder & \\\"\\\\{table}.csv\\\")");
+            tmdl.Should().NotContain("C:\\\\Users\\\\");
+        }
+    }
+
+    [Fact]
     public void Write_ShouldGenerateReport_WhenTemplateExists()
     {
         using var workspace = new TemporaryWorkspace();
