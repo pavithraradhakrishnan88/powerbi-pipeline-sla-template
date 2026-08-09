@@ -2,6 +2,7 @@
 # build.ps1
 #
 # Responsibilities
+# - Remove unsupported orphaned PBIP local date variation output
 # - Run validation
 # - Update semantic model
 # - Run Tabular Editor
@@ -11,8 +12,32 @@
 
 Write-Host "Starting build..."
 
+# The repository owns its date semantics explicitly. Power BI auto-generated
+# LocalDateTable_* artifacts are not generated with variation target metadata
+# by this pipeline and can make the PBIP fail to load in Power BI Desktop.
+# Remove them before validation and before publishing BuildResult.
+$pbipSemanticModelRoots = @(
+    Join-Path $PSScriptRoot "..\pbip\Pipeline_SLA_Tracker.SemanticModel",
+    Join-Path $PSScriptRoot "..\BuildResult\PBIP\Pipeline_SLA_Tracker.SemanticModel"
+)
+
+foreach ($semanticModelRoot in $pbipSemanticModelRoots) {
+    if (!(Test-Path $semanticModelRoot)) {
+        continue
+    }
+
+    $localDateTables = Get-ChildItem -Path $semanticModelRoot -Recurse -Filter "LocalDateTable_*.tmdl" -File -ErrorAction SilentlyContinue
+    foreach ($localDateTable in $localDateTables) {
+        Remove-Item -Path $localDateTable.FullName -Force
+        Write-Host "Removed unsupported PBIP local date variation table: $($localDateTable.FullName)"
+    }
+}
+
 # Run validation
 & "$PSScriptRoot\validate.ps1"
+if ($LASTEXITCODE -ne 0) {
+    throw "Validation failed. Build stopped."
+}
 
 # Create artifacts folder
 $artifactPath = Join-Path $PSScriptRoot "..\artifacts"
@@ -108,5 +133,13 @@ if (Test-Path $pbipSourceSemanticModel) {
     Write-Host "Missing semantic model folder: $pbipSourceSemanticModel"
 }
 
-$global:LASTEXITCODE = 0
+# Re-run the output guard after the PBIP copy so BuildResult cannot retain
+# stale LocalDateTable_* files from an earlier build.
+$publishedSemanticModel = Join-Path $pbipOutputRoot "$pbipName.SemanticModel"
+$publishedLocalDateTables = Get-ChildItem -Path $publishedSemanticModel -Recurse -Filter "LocalDateTable_*.tmdl" -File -ErrorAction SilentlyContinue
+foreach ($localDateTable in $publishedLocalDateTables) {
+    Remove-Item -Path $localDateTable.FullName -Force
+    Write-Host "Removed stale published PBIP local date variation table: $($localDateTable.FullName)"
+}
+
 Write-Host "Build complete."
