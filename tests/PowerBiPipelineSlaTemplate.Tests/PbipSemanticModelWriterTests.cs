@@ -72,7 +72,8 @@ public class PbipSemanticModelWriterTests
 
         foreach (var visualFile in visualFiles)
         {
-            var root = JsonNode.Parse(File.ReadAllText(visualFile)).Should().NotBeNull();
+            var root = JsonNode.Parse(File.ReadAllText(visualFile));
+            root.Should().NotBeNull();
             root.Should().BeOfType<JsonObject>();
 
             var visualContainerObjects = root!["visual"]?["visualContainerObjects"] as JsonObject
@@ -89,7 +90,8 @@ public class PbipSemanticModelWriterTests
             file => file.EndsWith("9258a26561818de46b08\\visual.json", StringComparison.OrdinalIgnoreCase));
 
         kpiVisual.Should().NotBeNull();
-        var kpiRoot = JsonNode.Parse(File.ReadAllText(kpiVisual!)).Should().NotBeNull();
+        var kpiRoot = JsonNode.Parse(File.ReadAllText(kpiVisual!));
+        kpiRoot.Should().NotBeNull();
         var kpiTitle = kpiRoot!["visual"]?["visualContainerObjects"]?["title"] as JsonArray
             ?? kpiRoot["visualContainerObjects"]?["title"] as JsonArray;
 
