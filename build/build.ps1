@@ -51,71 +51,48 @@ function Assert-PbirDefinition {
 
 function Get-VisualJsonRelativePaths {
     param([Parameter(Mandatory = $true)][string]$ReportRoot)
-
     $definitionRoot = Join-Path $ReportRoot "definition"
-    if (!(Test-Path $definitionRoot -PathType Container)) {
-        throw "Visual validation failed: missing report definition folder '$definitionRoot'."
-    }
-
-    return @(Get-ChildItem -Path $definitionRoot -Recurse -Filter "visual.json" -File |
-    ForEach-Object {
+    if (!(Test-Path $definitionRoot -PathType Container)) { throw "Visual validation failed: missing report definition folder '$definitionRoot'." }
+    return @(Get-ChildItem -Path $definitionRoot -Recurse -Filter "visual.json" -File | ForEach-Object {
         $baseUri = [System.Uri]((Resolve-Path $definitionRoot).Path.TrimEnd('\') + '\')
         $fileUri = [System.Uri]((Resolve-Path $_.FullName).Path)
-
-        [System.Uri]::UnescapeDataString(
-            $baseUri.MakeRelativeUri($fileUri).ToString()
-        )
-    } |
-    Sort-Object)
+        [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($fileUri).ToString())
+    } | Sort-Object)
 }
+
 function Assert-VisualJsonFiles {
     param(
         [Parameter(Mandatory = $true)][string]$ReportRoot,
         [Parameter(Mandatory = $true)][string[]]$ExpectedRelativePaths
     )
-
     $definitionRoot = Join-Path $ReportRoot "definition"
     $actualRelativePaths = @(Get-VisualJsonRelativePaths -ReportRoot $ReportRoot)
-
     $missing = @($ExpectedRelativePaths | Where-Object { $_ -notin $actualRelativePaths })
     $unexpected = @($actualRelativePaths | Where-Object { $_ -notin $ExpectedRelativePaths })
-    if ($missing.Count -gt 0 -or $unexpected.Count -gt 0) {
-        throw "Visual validation failed: published visual.json set differs from expected. Missing: [$($missing -join ', ')]; Unexpected: [$($unexpected -join ', ')]."
-    }
-
+    if ($missing.Count -gt 0 -or $unexpected.Count -gt 0) { throw "Visual validation failed: published visual.json set differs from expected. Missing: [$($missing -join ', ')]; Unexpected: [$($unexpected -join ', ')]." }
     foreach ($relativePath in $actualRelativePaths) {
         $visualPath = Join-Path $definitionRoot ($relativePath -replace '/', '\')
         try { Get-Content -Raw -Path $visualPath | ConvertFrom-Json | Out-Null }
         catch { throw "Visual validation failed: '$visualPath' is not valid JSON. $($_.Exception.Message)" }
     }
-
     Write-Host "Validated $($actualRelativePaths.Count) visual.json files and JSON syntax under '$ReportRoot'."
 }
 
 function Normalize-PbipMeasureBindings {
     param([Parameter(Mandatory = $true)][string]$ReportRoot)
-
     $visualRoot = Join-Path $ReportRoot "definition\pages"
     if (!(Test-Path $visualRoot -PathType Container)) { return }
-
     $updated = 0
     foreach ($visualPath in Get-ChildItem -Path $visualRoot -Recurse -Filter "visual.json" -File) {
         $json = Get-Content -Raw -Path $visualPath.FullName
         $original = $json
-
         $json = [regex]::Replace($json, '(?<="Measure"\s*:\s*\{\s*"Expression"\s*:\s*\{\s*"SourceRef"\s*:\s*\{\s*"Entity"\s*:\s*")Fact_Pipeline_SampleData(?=")', '_Measures')
-
         if ($json -ne $original) {
-            [System.IO.File]::WriteAllText(
-    $visualPath.FullName,
-    $json,
-    [System.Text.UTF8Encoding]::new($false)
-    )
+            [System.IO.File]::WriteAllText($visualPath.FullName, $json, [System.Text.UTF8Encoding]::new($false))
             $updated++
             Write-Host "Normalized measure bindings: $($visualPath.FullName)"
         }
     }
-
     Write-Host "PBIP measure binding normalization complete. Visuals updated: $updated"
 }
 
@@ -132,13 +109,9 @@ function Ensure-PbirDefinitionSchema {
   `"datasetReference`": $datasetReferenceJson
 }
 "@
-    [System.IO.File]::WriteAllText(
-    $DefinitionPath,
-    $json,
-    [System.Text.UTF8Encoding]::new($false)
-)
+    [System.IO.File]::WriteAllText($DefinitionPath, $json, [System.Text.UTF8Encoding]::new($false))
     Write-Host "Normalized PBIR definitionProperties schema: $DefinitionPath"
-    }
+}
 
 $pbipSemanticModelRoots = @(
     Join-Path -Path $pbipSourceRoot -ChildPath "$pbipName.SemanticModel"
@@ -175,9 +148,7 @@ if (Test-Path $projectPath) {
 
 $generatedDefinitionPath = Join-Path $sourceReportRoot "definition.pbir"
 Ensure-PbirDefinitionSchema -DefinitionPath $generatedDefinitionPath
-
 Normalize-PbipMeasureBindings -ReportRoot $sourceReportRoot
-
 Assert-PbirDefinition -ReportRoot $sourceReportRoot -SemanticModelRoot $sourceSemanticModelRoot
 
 $expectedVisualJsonPaths = @(Get-VisualJsonRelativePaths -ReportRoot $sourceReportRoot)
@@ -190,16 +161,7 @@ if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
 New-Item -ItemType Directory -Path $artifactPath | Out-Null
 Write-Host "Artifacts folder created."
 
-$releaseEntries = @(
-    "pbip",
-    "docs",
-    "data",
-    "scripts",
-    "theme",
-    "LICENSE",
-    "CHANGELOG.md",
-    "README.md"
-)
+$releaseEntries = @("pbip", "docs", "data", "scripts", "theme", "LICENSE", "CHANGELOG.md", "README.md")
 foreach ($entry in $releaseEntries) {
     $sourcePath = Join-Path $repoRoot $entry
     $destinationPath = Join-Path $artifactPath (Split-Path $entry -Leaf)
@@ -222,11 +184,6 @@ if (!(Test-Path $pbipSourceSemanticModel -PathType Container)) { throw "Missing 
 
 cmd /c copy /Y "$pbipSourceFile" "$pbipOutputRoot\" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "PBIP file copy failed with exit code $LASTEXITCODE" }
-$sourceVisual = Join-Path $pbipSourceReport "definition\pages\063f222ecdba50ec0537\visuals\5136be115c10b283c98c\visual.json"
-
-$sourceBytes = [System.IO.File]::ReadAllBytes($sourceVisual)
-
-Write-Host "SOURCE BEFORE ROBOCOPY: $($sourceBytes[0].ToString('X2')) $($sourceBytes[1].ToString('X2')) $($sourceBytes[2].ToString('X2'))"
 
 Write-Host "Publishing regenerated report with robocopy..."
 $publishedReport = Join-Path $pbipOutputRoot "$pbipName.Report"
@@ -234,19 +191,6 @@ robocopy $pbipSourceReport $publishedReport /MIR /IS /NFL /NDL /NJH /NJS /NC /NS
 $robocopyExitCode = $LASTEXITCODE
 if ($robocopyExitCode -gt 7) { throw "robocopy failed for report folder with exit code $robocopyExitCode" }
 Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
-
-$publishedVisual = Join-Path $publishedReport "definition\pages\063f222ecdba50ec0537\visuals\5136be115c10b283c98c\visual.json"
-
-$publishedBytes = [System.IO.File]::ReadAllBytes($publishedVisual)
-
-Write-Host "PUBLISHED AFTER ROBOCOPY: $($publishedBytes[0].ToString('X2')) $($publishedBytes[1].ToString('X2')) $($publishedBytes[2].ToString('X2'))"
-# Refresh the published definition byte-for-byte from the already validated
-# normalized source. Do not deserialize/reserialize here; that can lose the
-# literal $schema property.
-$publishedDefinitionPath = Join-Path $publishedReport "definition.pbir"
-[System.IO.File]::WriteAllBytes($publishedDefinitionPath, [System.IO.File]::ReadAllBytes($generatedDefinitionPath))
-if (!(Test-Path $publishedDefinitionPath -PathType Leaf)) { throw "PBIR publication failed: missing '$publishedDefinitionPath' after authoritative definition copy." }
-Write-Host "Published definition.pbir refreshed byte-for-byte from normalized source."
 
 Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
 Write-Host "Published report visual.json inventory matches regenerated source."
@@ -261,18 +205,6 @@ $publishedLocalDateTables = Get-ChildItem -Path $publishedSemanticModel -Recurse
 foreach ($localDateTable in $publishedLocalDateTables) {
     Remove-Item -Path $localDateTable.FullName -Force
     Write-Host "Removed stale published PBIP local date variation table: $($localDateTable.FullName)"
-}
-
-# Diagnostic-only logging for the published PBIR envelope. Keep Assert-PbirDefinition strict.
-Write-Host "Published definition.pbir content:"
-Get-Content -Raw $publishedDefinitionPath | Write-Host
-try {
-    $publishedDefinition = Get-Content -Raw $publishedDefinitionPath | ConvertFrom-Json
-    Write-Host "Published schema value: [$($publishedDefinition.'$schema')]"
-    Write-Host "Published version: [$($publishedDefinition.version)]"
-}
-catch {
-    Write-Host "Published definition.pbir diagnostic parse failed: $($_.Exception.Message)"
 }
 
 Assert-PbirDefinition -ReportRoot $publishedReport -SemanticModelRoot $publishedSemanticModel
