@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json.Nodes;
 using System.Text.Json;
+using System.Text;
 
 namespace PowerBiPipelineSlaTemplate.Core.Pbip
 {
@@ -29,7 +30,8 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
             if (changed)
             {
-                File.WriteAllText(visualPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+                File.WriteAllText(visualPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }),
+            new System.Text.UTF8Encoding(false));
             }
         }
 

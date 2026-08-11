@@ -58,10 +58,15 @@ function Get-VisualJsonRelativePaths {
     }
 
     return @(Get-ChildItem -Path $definitionRoot -Recurse -Filter "visual.json" -File |
-        ForEach-Object {
-            [System.IO.Path]::GetRelativePath($definitionRoot, $_.FullName).Replace('\', '/')
-        } |
-        Sort-Object)
+    ForEach-Object {
+        $baseUri = [System.Uri]((Resolve-Path $definitionRoot).Path.TrimEnd('\') + '\')
+        $fileUri = [System.Uri]((Resolve-Path $_.FullName).Path)
+
+        [System.Uri]::UnescapeDataString(
+            $baseUri.MakeRelativeUri($fileUri).ToString()
+        )
+    } |
+    Sort-Object)
 }
 function Assert-VisualJsonFiles {
     param(
@@ -101,7 +106,11 @@ function Normalize-PbipMeasureBindings {
         $json = [regex]::Replace($json, '(?<="Measure"\s*:\s*\{\s*"Expression"\s*:\s*\{\s*"SourceRef"\s*:\s*\{\s*"Entity"\s*:\s*")Fact_Pipeline_SampleData(?=")', '_Measures')
 
         if ($json -ne $original) {
-            [System.IO.File]::WriteAllText($visualPath.FullName, $json)
+            [System.IO.File]::WriteAllText(
+    $visualPath.FullName,
+    $json,
+    [System.Text.UTF8Encoding]::new($false)
+    )
             $updated++
             Write-Host "Normalized measure bindings: $($visualPath.FullName)"
         }
@@ -123,9 +132,13 @@ function Ensure-PbirDefinitionSchema {
   `"datasetReference`": $datasetReferenceJson
 }
 "@
-    [System.IO.File]::WriteAllText($DefinitionPath, $json)
+    [System.IO.File]::WriteAllText(
+    $DefinitionPath,
+    $json,
+    [System.Text.UTF8Encoding]::new($false)
+)
     Write-Host "Normalized PBIR definitionProperties schema: $DefinitionPath"
-}
+    }
 
 $pbipSemanticModelRoots = @(
     Join-Path -Path $pbipSourceRoot -ChildPath "$pbipName.SemanticModel"
@@ -209,6 +222,11 @@ if (!(Test-Path $pbipSourceSemanticModel -PathType Container)) { throw "Missing 
 
 cmd /c copy /Y "$pbipSourceFile" "$pbipOutputRoot\" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "PBIP file copy failed with exit code $LASTEXITCODE" }
+$sourceVisual = Join-Path $pbipSourceReport "definition\pages\063f222ecdba50ec0537\visuals\5136be115c10b283c98c\visual.json"
+
+$sourceBytes = [System.IO.File]::ReadAllBytes($sourceVisual)
+
+Write-Host "SOURCE BEFORE ROBOCOPY: $($sourceBytes[0].ToString('X2')) $($sourceBytes[1].ToString('X2')) $($sourceBytes[2].ToString('X2'))"
 
 Write-Host "Publishing regenerated report with robocopy..."
 $publishedReport = Join-Path $pbipOutputRoot "$pbipName.Report"
@@ -217,6 +235,11 @@ $robocopyExitCode = $LASTEXITCODE
 if ($robocopyExitCode -gt 7) { throw "robocopy failed for report folder with exit code $robocopyExitCode" }
 Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
 
+$publishedVisual = Join-Path $publishedReport "definition\pages\063f222ecdba50ec0537\visuals\5136be115c10b283c98c\visual.json"
+
+$publishedBytes = [System.IO.File]::ReadAllBytes($publishedVisual)
+
+Write-Host "PUBLISHED AFTER ROBOCOPY: $($publishedBytes[0].ToString('X2')) $($publishedBytes[1].ToString('X2')) $($publishedBytes[2].ToString('X2'))"
 # Refresh the published definition byte-for-byte from the already validated
 # normalized source. Do not deserialize/reserialize here; that can lose the
 # literal $schema property.
