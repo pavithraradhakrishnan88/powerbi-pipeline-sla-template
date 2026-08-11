@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "5136be115c10b283c98c",
   "position": {
@@ -39,7 +39,7 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Fact_Pipeline_SampleData"
+                      "Entity": "_Measures"
                     }
                   },
                   "Property": "Timeline Base"
@@ -53,7 +53,7 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Fact_Pipeline_SampleData"
+                      "Entity": "_Measures"
                     }
                   },
                   "Property": "Floating Bar Duration"
@@ -72,7 +72,7 @@
               "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "Fact_Pipeline_SampleData"
+                    "Entity": "_Measures"
                   }
                 },
                 "Property": "Timeline Base"

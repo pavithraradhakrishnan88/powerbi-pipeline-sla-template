@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "72a1336d0b5ed00253e5",
   "position": {
@@ -78,7 +78,7 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Fact_Pipeline_SampleData"
+                      "Entity": "_Measures"
                     }
                   },
                   "Property": "Last Refresh"

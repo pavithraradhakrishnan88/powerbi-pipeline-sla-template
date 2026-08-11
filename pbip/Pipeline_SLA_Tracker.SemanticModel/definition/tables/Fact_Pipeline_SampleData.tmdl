@@ -85,6 +85,7 @@ table Fact_Pipeline_SampleData
 		dataType: int64
 		summarizeBy: sum
 		sourceColumn: EndDelayMinutes
+		displayFolder: 'Measures'
 		annotation Description = 'Enddelayminutes in Fact Pipeline Sampledata.'
 
 	column SLAStatus
@@ -112,6 +113,7 @@ table Fact_Pipeline_SampleData
 		dataType: string
 		summarizeBy: none
 		sourceColumn: Region
+		displayFolder: 'Measures'
 		annotation Description = 'Region in Fact Pipeline Sampledata.'
 
 	column RetryCount

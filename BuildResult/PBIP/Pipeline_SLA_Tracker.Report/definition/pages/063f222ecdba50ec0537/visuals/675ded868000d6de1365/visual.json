@@ -1,9 +1,9 @@
-{
+﻿{
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "675ded868000d6de1365",
   "position": {
-    "x": 31.369294605809131,
-    "y": 425.72614107883822,
+    "x": 31.36929460580913,
+    "y": 425.7261410788382,
     "z": 6011,
     "height": 104.56431535269711,
     "width": 131.45228215767636,
@@ -20,13 +20,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Fact_Pipeline_SampleData"
+                      "Entity": "_Measures"
                     }
                   },
                   "Property": "SLA Breach %"
                 }
               },
-              "queryRef": "Fact_Pipeline_SampleData.SLA Breach %",
+              "queryRef": "_Measures.SLA Breach %",
               "nativeQueryRef": "SLA Breach %"
             }
           ]
@@ -39,7 +39,7 @@
               "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "Fact_Pipeline_SampleData"
+                    "Entity": "_Measures"
                   }
                 },
                 "Property": "SLA Breach %"
@@ -181,7 +181,7 @@
           "Measure": {
             "Expression": {
               "SourceRef": {
-                "Entity": "Fact_Pipeline_SampleData"
+                "Entity": "_Measures"
               }
             },
             "Property": "SLA Breach %"

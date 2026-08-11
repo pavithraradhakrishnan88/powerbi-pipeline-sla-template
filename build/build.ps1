@@ -53,13 +53,16 @@ function Get-VisualJsonRelativePaths {
     param([Parameter(Mandatory = $true)][string]$ReportRoot)
 
     $definitionRoot = Join-Path $ReportRoot "definition"
-    if (!(Test-Path $definitionRoot -PathType Container)) { throw "Visual validation failed: missing report definition folder '$definitionRoot'." }
+    if (!(Test-Path $definitionRoot -PathType Container)) {
+        throw "Visual validation failed: missing report definition folder '$definitionRoot'."
+    }
 
     return @(Get-ChildItem -Path $definitionRoot -Recurse -Filter "visual.json" -File |
-        ForEach-Object { [System.IO.Path]::GetRelativePath($definitionRoot, $_.FullName).Replace('\', '/') } |
+        ForEach-Object {
+            [System.IO.Path]::GetRelativePath($definitionRoot, $_.FullName).Replace('\', '/')
+        } |
         Sort-Object)
 }
-
 function Assert-VisualJsonFiles {
     param(
         [Parameter(Mandatory = $true)][string]$ReportRoot,
