@@ -101,7 +101,7 @@ function Normalize-PbipMeasureBindings {
         $json = [regex]::Replace($json, '(?<="Measure"\s*:\s*\{\s*"Expression"\s*:\s*\{\s*"SourceRef"\s*:\s*\{\s*"Entity"\s*:\s*")Fact_Pipeline_SampleData(?=")', '_Measures')
 
         if ($json -ne $original) {
-            Set-Content -Path $visualPath.FullName -Value $json -Encoding utf8
+            [System.IO.File]::WriteAllText($visualPath.FullName, $json)
             $updated++
             Write-Host "Normalized measure bindings: $($visualPath.FullName)"
         }
@@ -123,7 +123,7 @@ function Ensure-PbirDefinitionSchema {
   `"datasetReference`": $datasetReferenceJson
 }
 "@
-    Set-Content -Path $DefinitionPath -Value $json -Encoding utf8
+    [System.IO.File]::WriteAllText($DefinitionPath, $json)
     Write-Host "Normalized PBIR definitionProperties schema: $DefinitionPath"
 }
 
