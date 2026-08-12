@@ -28,11 +28,12 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var changed = NormalizeMeasureSourceRefs(root);
             ValidateVisual(root, visualPath);
 
-            if (changed)
-            {
-                File.WriteAllText(visualPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }),
-            new System.Text.UTF8Encoding(false));
-            }
+            // Every authoritative visual.json must be rewritten as UTF-8 without BOM,
+            // even when no semantic normalization was required.
+            File.WriteAllText(
+                visualPath,
+                root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }),
+                new UTF8Encoding(false));
         }
 
         private static bool NormalizeMeasureSourceRefs(JsonNode node)
