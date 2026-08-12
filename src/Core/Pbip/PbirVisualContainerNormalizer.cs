@@ -22,18 +22,40 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
         private static void NormalizeVisual(string visualPath)
         {
-            var root = JsonNode.Parse(File.ReadAllText(visualPath)) as JsonObject
+            var originalBytes = File.ReadAllBytes(visualPath);
+            var hadUtf8Bom = HasUtf8Bom(originalBytes);
+            var jsonBytes = hadUtf8Bom ? originalBytes[3..] : originalBytes;
+            var json = new UTF8Encoding(false, true).GetString(jsonBytes);
+
+            var root = JsonNode.Parse(json) as JsonObject
                 ?? throw new InvalidOperationException($"PBIR visual '{visualPath}' must contain a JSON object.");
 
             var changed = NormalizeMeasureSourceRefs(root);
             ValidateVisual(root, visualPath);
 
-            // Every authoritative visual.json must be rewritten as UTF-8 without BOM,
-            // even when no semantic normalization was required.
-            File.WriteAllText(
-                visualPath,
-                root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }),
-                new UTF8Encoding(false));
+            if (changed)
+            {
+                // Only semantically changed visuals are reserialized. This preserves the
+                // existing report content/layout for visuals that need no normalization.
+                File.WriteAllText(
+                    visualPath,
+                    root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }),
+                    new UTF8Encoding(false));
+            }
+            else if (hadUtf8Bom)
+            {
+                // Remove only the BOM when the visual itself does not require a semantic change.
+                // Do not deserialize/reserialize unchanged visuals.
+                File.WriteAllBytes(visualPath, jsonBytes);
+            }
+        }
+
+        private static bool HasUtf8Bom(byte[] bytes)
+        {
+            return bytes.Length >= 3 &&
+                   bytes[0] == 0xEF &&
+                   bytes[1] == 0xBB &&
+                   bytes[2] == 0xBF;
         }
 
         private static bool NormalizeMeasureSourceRefs(JsonNode node)
