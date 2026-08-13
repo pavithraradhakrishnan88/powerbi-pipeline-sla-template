@@ -65,10 +65,10 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         public string PageId { get; set; } = string.Empty;
         public string Page { get; set; } = string.Empty;
         public string VisualId { get; set; } = string.Empty;
-        public int X { get; set; }
-        public int Y { get; set; }
-        public int Width { get; set; }
-        public int Height { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
 
         // When rebuilding page.json from an existing PBIR report, retain the
         // complete authoritative visual container instead of synthesizing a new visual.
