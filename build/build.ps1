@@ -204,8 +204,15 @@ $robocopyExitCode = $LASTEXITCODE
 if ($robocopyExitCode -gt 7) { throw "robocopy failed for report folder with exit code $robocopyExitCode" }
 Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
 
+<<<<<<< ours
 $publishedDefinitionPath = Join-Path $publishedReport "definition.pbir"
 [System.IO.File]::WriteAllBytes($publishedDefinitionPath,[System.IO.File]::ReadAllBytes($generatedDefinitionPath))
+=======
+# Refresh the published definition byte-for-byte from the already validated
+# normalized source. Do not deserialize/reserialize here; that can lose the
+# literal $schema property.
+
+>>>>>>> theirs
 if (!(Test-Path $publishedDefinitionPath -PathType Leaf)) { throw "PBIR publication failed: missing '$publishedDefinitionPath' after authoritative definition copy." }
 Write-Host "Published definition.pbir refreshed byte-for-byte from normalized source."
 

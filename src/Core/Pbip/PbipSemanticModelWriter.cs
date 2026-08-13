@@ -271,38 +271,80 @@ Directory.CreateDirectory(culturesPath);
                         "MeasureDefinitions.json must contain a 'measures' array.");
                 }
 
-                var measures = measuresElement
-                    .EnumerateArray()
-                    .Select(measure => new
-                    {
-                        Id = GetJsonString(measure, "MeasureID"),
-                        Name = GetJsonString(measure, "Name"),
-                        Folder = GetJsonString(measure, "Folder"),
-                        DisplayOrder = measure.TryGetProperty("DisplayOrder", out var order) && order.ValueKind == JsonValueKind.Number ? order.GetInt32() : int.MaxValue,
-                        Expression = GetJsonString(measure, "Expression"),
-                        Format = GetJsonString(measure, "Format"),
-                        Description = GetJsonString(measure, "Description"),
-                        Hidden = measure.TryGetProperty("Hidden", out var hidden) && hidden.ValueKind == JsonValueKind.True && hidden.GetBoolean()
-                    })
-                    .Where(measure =>
-                        !string.IsNullOrWhiteSpace(measure.Id) &&
-                        !string.IsNullOrWhiteSpace(measure.Name) &&
-                        !string.IsNullOrWhiteSpace(measure.Expression))
-                    .OrderBy(measure => measure.DisplayOrder)
-                    .ThenBy(measure => measure.Id, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
+                var measureDefinitions = measuresElement
+    .EnumerateArray()
+    .ToList();
 
-                if (measures.Count != 20)
-                {
-                    throw new InvalidDataException(
-                        $"Expected 20 metadata-defined measures, but found {measures.Count}.");
-                }
+var measures = measureDefinitions
+    .Select(measure =>
+    {
+        var id = GetJsonString(measure, "MeasureID");
+        var name = GetJsonString(measure, "Name");
+        var expression = GetJsonString(measure, "Expression");
 
-                var expectedMeasureIds = Enumerable
-                    .Range(1, 12)
-                    .Concat(Enumerable.Range(16, 8))
-                    .Select(i => $"M{i:000}")
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(id))
+            throw new InvalidDataException(
+                "Measure definition has an empty MeasureID.");
+
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidDataException(
+                $"Measure '{id}' has an empty Name.");
+
+        if (string.IsNullOrWhiteSpace(expression))
+            throw new InvalidDataException(
+                $"Measure '{id}' ({name}) has an empty Expression.");
+
+        return new
+        {
+            Id = id,
+            Name = name,
+            Folder = GetJsonString(measure, "Folder"),
+            DisplayOrder =
+                measure.TryGetProperty("DisplayOrder", out var order) &&
+                order.ValueKind == JsonValueKind.Number
+                    ? order.GetInt32()
+                    : int.MaxValue,
+            Expression = expression,
+            Format = GetJsonString(measure, "Format"),
+            Description = GetJsonString(measure, "Description"),
+            Hidden =
+                measure.TryGetProperty("Hidden", out var hidden) &&
+                hidden.ValueKind == JsonValueKind.True &&
+                hidden.GetBoolean()
+        };
+    })
+    .ToList();
+
+var duplicateIds = measures
+    .GroupBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
+    .Where(g => g.Count() > 1)
+    .Select(g => g.Key)
+    .ToList();
+
+if (duplicateIds.Count > 0)
+    throw new InvalidDataException(
+        $"Duplicate MeasureID values: {string.Join(", ", duplicateIds)}.");
+
+var duplicateNames = measures
+    .GroupBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
+    .Where(g => g.Count() > 1)
+    .Select(g => g.Key)
+    .ToList();
+
+if (duplicateNames.Count > 0)
+    throw new InvalidDataException(
+        $"Duplicate measure names: {string.Join(", ", duplicateNames)}.");
+
+if (measures.Count != measureDefinitions.Count)
+    throw new InvalidDataException(
+        $"Expected {measureDefinitions.Count} measures from " +
+        $"MeasureDefinitions.json, but wrote {measures.Count}. " +
+        "Check for skipped/filtered entries.");
+
+                var expectedMeasureIds = measureDefinitions
+    .Select(m => GetJsonString(m, "MeasureID"))
+    .Where(id => !string.IsNullOrWhiteSpace(id))
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
                 var actualMeasureIds = measures
                     .Select(m => m.Id)
