@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace PowerBiPipelineSlaTemplate.Core.Pbip
 {
@@ -50,6 +51,12 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                     CopyDirectoryRecursively(currentPages, stagedPages);
                     Console.WriteLine($"Preserved authoritative report pages/visuals from '{currentPages}'.");
                 }
+
+                // Rebuild each page.json from the authoritative visual.json definitions.
+                // The visual.json files remain byte/content authoritative; only page-level
+                // visualContainers are regenerated from their actual names and positions.
+                RebuildPageDefinitionsFromAuthoritativeVisuals(stagedPages);
+
                 PbirVisualContainerNormalizer.NormalizeReport(staging);
                 File.WriteAllText(Path.Combine(staging, "definition.pbir"), BuildDefinitionPbir(semanticModelRelativePath));
                 File.WriteAllText(Path.Combine(staging, "definition", "reportExtensions.json"), BuildReportExtensionsJson());
@@ -57,6 +64,63 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 ReplaceDirectoryAtomically(staging, reportRootPath);
             }
             finally { SafeDeleteDirectory(staging); }
+        }
+
+        private static void RebuildPageDefinitionsFromAuthoritativeVisuals(string pagesRoot)
+        {
+            if (!Directory.Exists(pagesRoot)) throw new InvalidOperationException($"Authoritative pages directory '{pagesRoot}' does not exist.");
+
+            foreach (var pageDirectory in Directory.GetDirectories(pagesRoot))
+            {
+                var pageJsonPath = Path.Combine(pageDirectory, "page.json");
+                if (!File.Exists(pageJsonPath)) throw new InvalidOperationException($"Authoritative page is missing page.json: '{pageJsonPath}'.");
+
+                var page = JsonNode.Parse(File.ReadAllText(pageJsonPath)) as JsonObject
+                    ?? throw new InvalidOperationException($"Page definition '{pageJsonPath}' must contain a JSON object.");
+
+                var pageId = page["name"]?.GetValue<string>() ?? Path.GetFileName(pageDirectory);
+                var pageDefinition = new ReportPageDefinition
+                {
+                    PageId = pageId,
+                    Name = pageId,
+                    DisplayName = page["displayName"]?.GetValue<string>() ?? pageId,
+                    Canvas = new CanvasDefinition
+                    {
+                        Width = page["width"]?.GetValue<int>() ?? 1280,
+                        Height = page["height"]?.GetValue<int>() ?? 720
+                    }
+                };
+
+                var document = new ReportDefinitionDocument { Pages = new List<ReportPageDefinition> { pageDefinition } };
+                var visualFiles = Directory.Exists(Path.Combine(pageDirectory, "visuals"))
+                    ? Directory.GetFiles(Path.Combine(pageDirectory, "visuals"), "visual.json", SearchOption.AllDirectories)
+                    : Array.Empty<string>();
+
+                foreach (var visualFile in visualFiles.OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
+                {
+                    var visual = JsonNode.Parse(File.ReadAllText(visualFile)) as JsonObject
+                        ?? throw new InvalidOperationException($"Authoritative visual '{visualFile}' must contain a JSON object.");
+                    var visualId = visual["name"]?.GetValue<string>() ?? Path.GetFileName(Path.GetDirectoryName(visualFile));
+                    var position = visual["position"] as JsonObject;
+                    if (position is null) throw new InvalidOperationException($"Authoritative visual '{visualFile}' is missing position.");
+
+                    document.VisualPositions.Add(new VisualPositionDefinition
+                    {
+                        PageId = pageId,
+                        VisualId = visualId,
+                        X = position["x"]?.GetValue<double>() ?? 0,
+                        Y = position["y"]?.GetValue<double>() ?? 0,
+                        Width = position["width"]?.GetValue<double>() ?? 0,
+                        Height = position["height"]?.GetValue<double>() ?? 0,
+                        VisualContainer = visual
+                    });
+                }
+
+                var rebuilt = JsonNode.Parse(BuildPageJson(document, pageDefinition))?.ToJsonString(new JsonSerializerOptions { WriteIndented = true })
+                    ?? throw new InvalidOperationException($"Unable to rebuild page definition '{pageJsonPath}'.");
+                File.WriteAllText(pageJsonPath, rebuilt, new System.Text.UTF8Encoding(false));
+                Console.WriteLine($"Rebuilt page.json '{pageJsonPath}' with {document.VisualPositions.Count} authoritative visualContainers.");
+            }
         }
 
         private static void WriteToDirectory(ReportDefinitionDocument document, string root, string semanticModelRelativePath, string? themeSourceRootPath)
@@ -99,7 +163,12 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             return JsonSerializer.Serialize(new Dictionary<string, object?> { ["$schema"] = PageSchemaUrl, ["name"] = pageId, ["displayName"] = page.DisplayName, ["displayOption"] = "FitToPage", ["height"] = page.Canvas.Height, ["width"] = page.Canvas.Width, ["visualContainers"] = containers }, JsonOptions);
         }
 
-        private static object BuildVisualContainerFromPosition(VisualPositionDefinition v, int i) => new Dictionary<string, object?> { ["$schema"] = VisualContainerSchemaUrl, ["name"] = v.VisualId, ["position"] = new Dictionary<string, object?> { ["x"] = v.X, ["y"] = v.Y, ["z"] = 1000 + i, ["height"] = v.Height, ["width"] = v.Width, ["tabOrder"] = i + 1 }, ["visual"] = new Dictionary<string, object?> { ["visualType"] = "shape", ["drillFilterOtherVisuals"] = true } };
+        private static object BuildVisualContainerFromPosition(VisualPositionDefinition v, int i)
+        {
+            if (v.VisualContainer is not null) return v.VisualContainer;
+            return new Dictionary<string, object?> { ["$schema"] = VisualContainerSchemaUrl, ["name"] = v.VisualId, ["position"] = new Dictionary<string, object?> { ["x"] = v.X, ["y"] = v.Y, ["z"] = 1000 + i, ["height"] = v.Height, ["width"] = v.Width, ["tabOrder"] = i + 1 }, ["visual"] = new Dictionary<string, object?> { ["visualType"] = "shape", ["drillFilterOtherVisuals"] = true } };
+        }
+
         private static object BuildVisualContainerFromSlicer(SlicerDefinition s, int i) => new Dictionary<string, object?> { ["$schema"] = VisualContainerSchemaUrl, ["name"] = BuildSlicerVisualName(s), ["position"] = new Dictionary<string, object?> { ["x"] = s.X, ["y"] = s.Y, ["z"] = 2000 + i, ["height"] = s.Height, ["width"] = s.Width, ["tabOrder"] = i + 1 }, ["visual"] = new Dictionary<string, object?> { ["visualType"] = "slicer", ["query"] = new Dictionary<string, object?> { ["queryState"] = new Dictionary<string, object?> { ["Values"] = new Dictionary<string, object?> { ["projections"] = new[] { new Dictionary<string, object?> { ["queryRef"] = s.Field, ["nativeQueryRef"] = s.Field, ["active"] = true } } } } }, ["objects"] = new Dictionary<string, object?> { ["data"] = new[] { new Dictionary<string, object?> { ["properties"] = new Dictionary<string, object?> { ["mode"] = new Dictionary<string, object?> { ["expr"] = new Dictionary<string, object?> { ["Literal"] = new Dictionary<string, object?> { ["Value"] = $"'{s.Type}'" } } } } } } }, ["drillFilterOtherVisuals"] = true } };
         private static string BuildSlicerVisualName(SlicerDefinition s) { var p = string.IsNullOrWhiteSpace(s.Field) ? "Slicer" : new string(s.Field.Where(char.IsLetterOrDigit).ToArray()); return string.IsNullOrWhiteSpace(p) ? "Slicer" : $"Slicer{p}"; }
 
