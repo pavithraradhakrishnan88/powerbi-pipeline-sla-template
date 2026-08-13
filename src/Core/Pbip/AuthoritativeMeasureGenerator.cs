@@ -12,12 +12,12 @@ internal static class AuthoritativeMeasureGenerator
     public static void Write(string repositoryRootPath, string measuresTablePath)
     {
         var source = Path.Combine(repositoryRootPath, "model", "tables", "_Measure Table", "measures");
-        var definitions = new[]
-        {
-            ("M013", "Total Runs.json", 130),
-            ("M014", "SLA Compliance %.json", 140),
-            ("M015", "Breached Count.json", 150)
-        };
+       var definitions = new[]
+{
+    ("M013", "Total Runs.json", 130),
+    ("M014", "Breached Count.json", 140),
+    ("M015", "SLA Compliance %.json", 150)
+};
 
         var text = File.ReadAllText(measuresTablePath);
         foreach (var (id, file, order) in definitions)
@@ -32,7 +32,7 @@ internal static class AuthoritativeMeasureGenerator
                 : expression.GetString() ?? "";
             var folder = root.TryGetProperty("displayFolder", out var f) ? f.GetString() : null;
             var format = root.TryGetProperty("formatString", out var fmt) ? fmt.GetString() : null;
-            var block = $"\tmeasure '{name.Replace("'", "''")}' = {Regex.Replace(dax.Trim(), @\"\\s*\\r?\\n\\s*\", \" \")}\n"
+            var block = $"\tmeasure '{name.Replace("'", "''")}' = {Regex.Replace(dax.Trim(), @"\s*\r?\n\s*", " ")}\n"
                 + (string.IsNullOrWhiteSpace(folder) ? "" : $"\t\tdisplayFolder: '{folder!.Replace("'", "''")}'\n")
                 + (string.IsNullOrWhiteSpace(format) ? "" : $"\t\tformatString: '{format!.Replace("'", "''")}'\n") + "\n";
             text += block;
