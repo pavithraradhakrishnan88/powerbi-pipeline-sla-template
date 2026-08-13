@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 
 namespace PowerBiPipelineSlaTemplate.Core.Pbip
 {
@@ -14,91 +15,23 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 Name = projectBaseName + " Report",
                 Pages = new List<ReportPageDefinition>
                 {
-                    new ReportPageDefinition
-                    {
-                        PageId = "pipeline-overview",
-                        Name = "PipelineOverview",
-                        DisplayName = "Pipeline Overview",
-                        Order = 0,
-                        Canvas = new CanvasDefinition
-                        {
-                            Width = 1280,
-                            Height = 720
-                        }
-                    },
-                    new ReportPageDefinition
-                    {
-                        PageId = "sla-analysis",
-                        Name = "SLAAnalysis",
-                        DisplayName = "SLA Analysis",
-                        Order = 1,
-                        Canvas = new CanvasDefinition
-                        {
-                            Width = 1280,
-                            Height = 720
-                        }
-                    }
+                    new ReportPageDefinition { PageId = "pipeline-overview", Name = "PipelineOverview", DisplayName = "Pipeline Overview", Order = 0, Canvas = new CanvasDefinition { Width = 1280, Height = 720 } },
+                    new ReportPageDefinition { PageId = "sla-analysis", Name = "SLAAnalysis", DisplayName = "SLA Analysis", Order = 1, Canvas = new CanvasDefinition { Width = 1280, Height = 720 } }
                 },
                 VisualPositions = new List<VisualPositionDefinition>
                 {
-                    new VisualPositionDefinition
-                    {
-                        PageId = "pipeline-overview",
-                        VisualId = "KpiCardTotal",
-                        X = 40,
-                        Y = 40,
-                        Width = 280,
-                        Height = 130
-                    },
-                    new VisualPositionDefinition
-                    {
-                        PageId = "sla-analysis",
-                        VisualId = "TrendLine",
-                        X = 40,
-                        Y = 200,
-                        Width = 900,
-                        Height = 420
-                    }
+                    new VisualPositionDefinition { PageId = "pipeline-overview", VisualId = "KpiCardTotal", X = 40, Y = 40, Width = 280, Height = 130 },
+                    new VisualPositionDefinition { PageId = "sla-analysis", VisualId = "TrendLine", X = 40, Y = 200, Width = 900, Height = 420 }
                 },
                 Slicers = new List<SlicerDefinition>
                 {
-                    new SlicerDefinition
-                    {
-                        PageId = "pipeline-overview",
-                        Field = "Fact_Pipeline_SampleData[Status]",
-                        Type = "dropdown",
-                        X = 980,
-                        Y = 40,
-                        Width = 240,
-                        Height = 60
-                    }
+                    new SlicerDefinition { PageId = "pipeline-overview", Field = "Fact_Pipeline_SampleData[Status]", Type = "dropdown", X = 980, Y = 40, Width = 240, Height = 60 }
                 },
-                Themes = new List<ThemeDefinition>
-                {
-                    new ThemeDefinition
-                    {
-                        Name = "Pipeline Theme",
-                        Path = "PipelineTheme.json"
-                    }
-                },
-                Navigation = new NavigationDefinition
-                {
-                    DefaultPage = "pipeline-overview",
-                    Menu = new List<string> { "pipeline-overview", "sla-analysis" }
-                },
-                Bookmarks = new List<BookmarkDefinition>
-                {
-                    new BookmarkDefinition
-                    {
-                        BookmarkId = "default-view",
-                        Name = "Default View",
-                        PageId = "pipeline-overview",
-                        IsDefault = true
-                    }
-                }
+                Themes = new List<ThemeDefinition> { new ThemeDefinition { Name = "Pipeline Theme", Path = "PipelineTheme.json" } },
+                Navigation = new NavigationDefinition { DefaultPage = "pipeline-overview", Menu = new List<string> { "pipeline-overview", "sla-analysis" } },
+                Bookmarks = new List<BookmarkDefinition> { new BookmarkDefinition { BookmarkId = "default-view", Name = "Default View", PageId = "pipeline-overview", IsDefault = true } }
             };
         }
-
     }
 
     public sealed class ReportDefinitionDocument
@@ -136,6 +69,10 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         public int Y { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
+
+        // When rebuilding page.json from an existing PBIR report, retain the
+        // complete authoritative visual container instead of synthesizing a new visual.
+        public JsonObject? VisualContainer { get; set; }
     }
 
     public sealed class SlicerDefinition
