@@ -152,8 +152,11 @@ Normalize-PbipMeasureBindings -ReportRoot $sourceReportRoot
 Assert-PbirDefinition -ReportRoot $sourceReportRoot -SemanticModelRoot $sourceSemanticModelRoot
 
 $expectedVisualJsonPaths = @(Get-VisualJsonRelativePaths -ReportRoot $sourceReportRoot)
-if ($expectedVisualJsonPaths.Count -eq 0) { throw "Visual validation failed: regenerated source report contains no visual.json files." }
+if ($expectedVisualJsonPaths.Count -ne 28) {
+    throw "Authoritative visual inventory validation failed before robocopy: expected exactly 28 visual.json files, found $($expectedVisualJsonPaths.Count)."
+}
 Assert-VisualJsonFiles -ReportRoot $sourceReportRoot -ExpectedRelativePaths $expectedVisualJsonPaths
+Write-Host "Authoritative regenerated source report contains exactly 28 visual.json files."
 Write-Host "Regenerated source report visual.json inventory captured: $($expectedVisualJsonPaths.Count) files."
 
 $artifactPath = Join-Path $repoRoot "artifacts"
