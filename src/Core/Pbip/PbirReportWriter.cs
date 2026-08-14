@@ -51,15 +51,11 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                     CopyDirectoryRecursively(currentPages, stagedPages);
                     Console.WriteLine($"Preserved authoritative report pages/visuals from '{currentPages}'.");
                 }
-
-                // Rebuild each page.json from the authoritative visual.json definitions.
-                // The visual.json files remain byte/content authoritative; only page-level
-                // visualContainers are regenerated from their actual names and positions.
                 RebuildPageDefinitionsFromAuthoritativeVisuals(stagedPages);
-
                 PbirVisualContainerNormalizer.NormalizeReport(staging);
                 File.WriteAllText(Path.Combine(staging, "definition.pbir"), BuildDefinitionPbir(semanticModelRelativePath));
                 File.WriteAllText(Path.Combine(staging, "definition", "reportExtensions.json"), BuildReportExtensionsJson());
+                RegisterStaticResourceImages(staging);
                 ValidateTemplateOutput(staging);
                 ReplaceDirectoryAtomically(staging, reportRootPath);
             }
@@ -69,55 +65,34 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         private static void RebuildPageDefinitionsFromAuthoritativeVisuals(string pagesRoot)
         {
             if (!Directory.Exists(pagesRoot)) throw new InvalidOperationException($"Authoritative pages directory '{pagesRoot}' does not exist.");
-
             foreach (var pageDirectory in Directory.GetDirectories(pagesRoot))
             {
                 var pageJsonPath = Path.Combine(pageDirectory, "page.json");
                 if (!File.Exists(pageJsonPath)) throw new InvalidOperationException($"Authoritative page is missing page.json: '{pageJsonPath}'.");
-
-                var page = JsonNode.Parse(File.ReadAllText(pageJsonPath)) as JsonObject
-                    ?? throw new InvalidOperationException($"Page definition '{pageJsonPath}' must contain a JSON object.");
-
+                var page = JsonNode.Parse(File.ReadAllText(pageJsonPath)) as JsonObject ?? throw new InvalidOperationException($"Page definition '{pageJsonPath}' must contain a JSON object.");
                 var pageId = page["name"]?.GetValue<string>() ?? Path.GetFileName(pageDirectory);
                 var pageDefinition = new ReportPageDefinition
                 {
-                    PageId = pageId,
-                    Name = pageId,
-                    DisplayName = page["displayName"]?.GetValue<string>() ?? pageId,
-                    Canvas = new CanvasDefinition
-                    {
-                        Width = page["width"]?.GetValue<int>() ?? 1280,
-                        Height = page["height"]?.GetValue<int>() ?? 720
-                    }
+                    PageId = pageId, Name = pageId, DisplayName = page["displayName"]?.GetValue<string>() ?? pageId,
+                    Canvas = new CanvasDefinition { Width = page["width"]?.GetValue<int>() ?? 1280, Height = page["height"]?.GetValue<int>() ?? 720 }
                 };
-
                 var document = new ReportDefinitionDocument { Pages = new List<ReportPageDefinition> { pageDefinition } };
-                var visualFiles = Directory.Exists(Path.Combine(pageDirectory, "visuals"))
-                    ? Directory.GetFiles(Path.Combine(pageDirectory, "visuals"), "visual.json", SearchOption.AllDirectories)
-                    : Array.Empty<string>();
-
+                var visualRoot = Path.Combine(pageDirectory, "visuals");
+                var visualFiles = Directory.Exists(visualRoot) ? Directory.GetFiles(visualRoot, "visual.json", SearchOption.AllDirectories) : Array.Empty<string>();
                 foreach (var visualFile in visualFiles.OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
                 {
-                    var visual = JsonNode.Parse(File.ReadAllText(visualFile)) as JsonObject
-                        ?? throw new InvalidOperationException($"Authoritative visual '{visualFile}' must contain a JSON object.");
+                    var visual = JsonNode.Parse(File.ReadAllText(visualFile)) as JsonObject ?? throw new InvalidOperationException($"Authoritative visual '{visualFile}' must contain a JSON object.");
                     var visualId = visual["name"]?.GetValue<string>() ?? Path.GetFileName(Path.GetDirectoryName(visualFile));
-                    var position = visual["position"] as JsonObject;
-                    if (position is null) throw new InvalidOperationException($"Authoritative visual '{visualFile}' is missing position.");
-
+                    var position = visual["position"] as JsonObject ?? throw new InvalidOperationException($"Authoritative visual '{visualFile}' is missing position.");
                     document.VisualPositions.Add(new VisualPositionDefinition
                     {
-                        PageId = pageId,
-                        VisualId = visualId,
-                        X = position["x"]?.GetValue<double>() ?? 0,
-                        Y = position["y"]?.GetValue<double>() ?? 0,
-                        Width = position["width"]?.GetValue<double>() ?? 0,
-                        Height = position["height"]?.GetValue<double>() ?? 0,
+                        PageId = pageId, VisualId = visualId,
+                        X = position["x"]?.GetValue<double>() ?? 0, Y = position["y"]?.GetValue<double>() ?? 0,
+                        Width = position["width"]?.GetValue<double>() ?? 0, Height = position["height"]?.GetValue<double>() ?? 0,
                         VisualContainer = visual
                     });
                 }
-
-                var rebuilt = JsonNode.Parse(BuildPageJson(document, pageDefinition))?.ToJsonString(new JsonSerializerOptions { WriteIndented = true })
-                    ?? throw new InvalidOperationException($"Unable to rebuild page definition '{pageJsonPath}'.");
+                var rebuilt = JsonNode.Parse(BuildPageJson(document, pageDefinition))?.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) ?? throw new InvalidOperationException($"Unable to rebuild page definition '{pageJsonPath}'.");
                 File.WriteAllText(pageJsonPath, rebuilt, new System.Text.UTF8Encoding(false));
                 Console.WriteLine($"Rebuilt page.json '{pageJsonPath}' with {document.VisualPositions.Count} authoritative visualContainers.");
             }
@@ -125,18 +100,108 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
         private static void WriteToDirectory(ReportDefinitionDocument document, string root, string semanticModelRelativePath, string? themeSourceRootPath)
         {
-            Directory.CreateDirectory(root); var pages = Path.Combine(root, "pages"); var registered = Path.Combine(root, "staticResources", "RegisteredResources");
+            Directory.CreateDirectory(root);
+            var pages = Path.Combine(root, "pages");
+            var registered = Path.Combine(root, "staticResources", "RegisteredResources");
             Directory.CreateDirectory(pages); Directory.CreateDirectory(registered);
             File.WriteAllText(Path.Combine(root, "definition.pbir"), BuildDefinitionPbir(semanticModelRelativePath));
             File.WriteAllText(Path.Combine(root, "report.json"), BuildNativeReportJson(document));
             File.WriteAllText(Path.Combine(root, "reportExtensions.json"), BuildReportExtensionsJson());
-            foreach (var page in document.Pages) { var folder = Path.Combine(pages, SanitizeDirectoryName(ResolvePageId(page))); Directory.CreateDirectory(folder); File.WriteAllText(Path.Combine(folder, "page.json"), BuildPageJson(document, page)); }
+            foreach (var page in document.Pages)
+            {
+                var folder = Path.Combine(pages, SanitizeDirectoryName(ResolvePageId(page)));
+                Directory.CreateDirectory(folder);
+                File.WriteAllText(Path.Combine(folder, "page.json"), BuildPageJson(document, page));
+            }
             foreach (var theme in document.Themes)
             {
-                var source = ResolveThemePath(theme.Path, root, themeSourceRootPath); if (source is null || !File.Exists(source)) throw new InvalidOperationException($"Theme '{theme.Name}' references missing file '{theme.Path}'.");
+                var source = ResolveThemePath(theme.Path, root, themeSourceRootPath);
+                if (source is null || !File.Exists(source)) throw new InvalidOperationException($"Theme '{theme.Name}' references missing file '{theme.Path}'.");
                 File.Copy(source, Path.Combine(registered, Path.GetFileName(source)), true);
             }
-            CopyAdditionalStaticResources(registered, themeSourceRootPath); ValidateGeneratedOutput(root, document);
+            CopyAdditionalStaticResources(registered, themeSourceRootPath);
+            RegisterStaticResourceImages(root);
+            ValidateGeneratedOutput(root, document);
+        }
+
+        private static void RegisterStaticResourceImages(string reportRoot)
+        {
+            var reportJsonPath = ResolveReportJsonPath(reportRoot);
+            var registeredRoot = ResolveRegisteredResourcesPath(reportRoot);
+            if (!File.Exists(reportJsonPath) || !Directory.Exists(registeredRoot)) return;
+
+            var report = JsonNode.Parse(File.ReadAllText(reportJsonPath)) as JsonObject
+                ?? throw new InvalidOperationException($"Report definition '{reportJsonPath}' must contain a JSON object.");
+            var packages = report["resourcePackages"] as JsonArray;
+            if (packages is null)
+            {
+                packages = new JsonArray();
+                report["resourcePackages"] = packages;
+            }
+
+            JsonObject? registeredPackage = packages
+                .OfType<JsonObject>()
+                .FirstOrDefault(p => string.Equals(p["name"]?.GetValue<string>(), "RegisteredResources", StringComparison.OrdinalIgnoreCase)
+                                  && string.Equals(p["type"]?.GetValue<string>(), "RegisteredResources", StringComparison.OrdinalIgnoreCase));
+            if (registeredPackage is null)
+            {
+                registeredPackage = new JsonObject
+                {
+                    ["name"] = "RegisteredResources",
+                    ["type"] = "RegisteredResources",
+                    ["items"] = new JsonArray()
+                };
+                packages.Add(registeredPackage);
+            }
+
+            var items = registeredPackage["items"] as JsonArray ?? new JsonArray();
+            registeredPackage["items"] = items;
+            var registeredNames = items.OfType<JsonObject>()
+                .Select(i => i["name"]?.GetValue<string>())
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var imageExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp" };
+            var imageFiles = Directory.GetFiles(registeredRoot, "*", SearchOption.AllDirectories)
+                .Where(f => imageExtensions.Contains(Path.GetExtension(f)))
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var imageFile in imageFiles)
+            {
+                var itemName = Path.GetRelativePath(registeredRoot, imageFile).Replace('\\', '/');
+                if (!registeredNames.Add(itemName)) continue;
+                items.Add(new JsonObject
+                {
+                    ["name"] = itemName,
+                    ["path"] = itemName,
+                    ["type"] = "Image"
+                });
+                Console.WriteLine($"Registered StaticResources image: {itemName}");
+            }
+
+            File.WriteAllText(reportJsonPath, report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), new System.Text.UTF8Encoding(false));
+        }
+
+        private static string ResolveReportJsonPath(string reportRoot)
+        {
+            var legacy = Path.Combine(reportRoot, "report.json");
+            if (File.Exists(legacy)) return legacy;
+            var pbir = Path.Combine(reportRoot, "definition", "report.json");
+            if (File.Exists(pbir)) return pbir;
+            throw new InvalidOperationException($"Unable to locate report.json under '{reportRoot}'.");
+        }
+
+        private static string ResolveRegisteredResourcesPath(string reportRoot)
+        {
+            foreach (var candidate in new[]
+            {
+                Path.Combine(reportRoot, "StaticResources", "RegisteredResources"),
+                Path.Combine(reportRoot, "staticResources", "RegisteredResources")
+            })
+            {
+                if (Directory.Exists(candidate)) return candidate;
+            }
+            throw new InvalidOperationException($"Unable to locate StaticResources/RegisteredResources under '{reportRoot}'.");
         }
 
         private static void ReplaceDirectoryAtomically(string staging, string target)
@@ -158,7 +223,8 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
         private static string BuildPageJson(ReportDefinitionDocument document, ReportPageDefinition page)
         {
-            var pageId = ResolvePageId(page); var containers = document.VisualPositions.Where(v => string.Equals(ResolveVisualPageId(v), pageId, StringComparison.OrdinalIgnoreCase)).Select((v, i) => (object)BuildVisualContainerFromPosition(v, i)).ToList();
+            var pageId = ResolvePageId(page);
+            var containers = document.VisualPositions.Where(v => string.Equals(ResolveVisualPageId(v), pageId, StringComparison.OrdinalIgnoreCase)).Select((v, i) => (object)BuildVisualContainerFromPosition(v, i)).ToList();
             containers.AddRange(document.Slicers.Where(s => string.Equals(ResolveSlicerPageId(s), pageId, StringComparison.OrdinalIgnoreCase)).Select((s, i) => (object)BuildVisualContainerFromSlicer(s, i + containers.Count)));
             return JsonSerializer.Serialize(new Dictionary<string, object?> { ["$schema"] = PageSchemaUrl, ["name"] = pageId, ["displayName"] = page.DisplayName, ["displayOption"] = "FitToPage", ["height"] = page.Canvas.Height, ["width"] = page.Canvas.Width, ["visualContainers"] = containers }, JsonOptions);
         }
