@@ -22,6 +22,36 @@ $pbipOutputRoot = Join-Path $repoRoot "BuildResult\PBIP"
 $pbipName = "Pipeline_SLA_Tracker"
 $projectPath = Join-Path $repoRoot "src\PowerBiPipelineSlaTemplate.Core"
 
+function Write-VisualBomDiagnostics {
+    param(
+        [Parameter(Mandatory = $true)][string]$Stage,
+        [Parameter(Mandatory = $true)][string]$ReportRoot
+    )
+
+    $definitionRoot = Join-Path $ReportRoot "definition"
+    if (!(Test-Path $definitionRoot -PathType Container)) {
+        Write-Host "BOM-DIAG|Stage=$Stage|ReportRoot=$ReportRoot|Status=SKIPPED|Reason=definition-folder-missing"
+        return
+    }
+
+    $visualFiles = @(Get-ChildItem -Path $definitionRoot -Recurse -Filter "visual.json" -File | Sort-Object FullName)
+    Write-Host "BOM-DIAG|Stage=$Stage|ReportRoot=$ReportRoot|VisualCount=$($visualFiles.Count)"
+
+    foreach ($visualFile in $visualFiles) {
+        $bytes = [System.IO.File]::ReadAllBytes($visualFile.FullName)
+        $first3 = if ($bytes.Length -ge 3) {
+            (($bytes[0..2] | ForEach-Object { $_.ToString('X2') }) -join ' ')
+        } elseif ($bytes.Length -gt 0) {
+            (($bytes | ForEach-Object { $_.ToString('X2') }) -join ' ')
+        } else {
+            '<EMPTY>'
+        }
+        $hasUtf8Bom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+        $relativePath = [System.IO.Path]::GetRelativePath($definitionRoot, $visualFile.FullName)
+        Write-Host "BOM-DIAG|Stage=$Stage|File=$relativePath|Length=$($bytes.Length)|First3=$first3|UTF8BOM=$hasUtf8Bom"
+    }
+}
+
 function Assert-PbirDefinition {
     param([Parameter(Mandatory = $true)][string]$ReportRoot,[Parameter(Mandatory = $true)][string]$SemanticModelRoot)
     $definitionPath = Join-Path $ReportRoot "definition.pbir"
@@ -85,7 +115,7 @@ function Assert-PageVisualContainers {
         if ($null -eq $page.PSObject.Properties['visualContainers']) { throw "Page validation failed: '$pageJsonPath' is missing visualContainers." }
         $containers = @($page.visualContainers)
         $visualDirectory = Join-Path $pageDirectory.FullName "visuals"
-        $visualFiles = if (Test-Path $visualDirectory -PathType Container) { @(Get-ChildItem -Path $visualDirectory -Recurse -Filter "visual.json" -File) } else { @() }
+        $visualFiles = if (Test-Path $visualDirectory -PathType Container) { @(Get-ChildItem $visualDirectory -Recurse -Filter "visual.json" -File) } else { @() }
         if ($containers.Count -ne $visualFiles.Count) { throw "Page validation failed: '$($pageDirectory.Name)' has $($containers.Count) visualContainers but $($visualFiles.Count) visual.json files." }
         $totalContainers += $containers.Count
         $totalVisualFiles += $visualFiles.Count
@@ -106,7 +136,11 @@ function Normalize-PbipMeasureBindings {
         $original = $json
         $json = [regex]::Replace($json, '(?<="Measure"\s*:\s*\{\s*"Expression"\s*:\s*\{\s*"SourceRef"\s*:\s*\{\s*"Entity"\s*:\s*")Fact_Pipeline_SampleData(?=")', '_Measures')
         if ($json -ne $original) {
+            Write-Host "BOM-DIAG|Stage=before-measure-normalization|File=$($visualPath.FullName)"
+            Write-VisualBomDiagnostics -Stage "before-measure-normalization" -ReportRoot $ReportRoot
             [System.IO.File]::WriteAllText($visualPath.FullName, $json, [System.Text.UTF8Encoding]::new($false))
+            Write-Host "BOM-DIAG|Stage=after-measure-normalization|File=$($visualPath.FullName)"
+            Write-VisualBomDiagnostics -Stage "after-measure-normalization" -ReportRoot $ReportRoot
             $updated++
             Write-Host "Normalized measure bindings: $($visualPath.FullName)"
         }
@@ -153,6 +187,7 @@ Write-Host "Regenerating PBIP/report through the existing .NET pipeline before r
 & dotnet run --project $projectPath --configuration Release
 if ($LASTEXITCODE -ne 0) { throw "PBIP/report regeneration failed with exit code $LASTEXITCODE" }
 Write-Host "Existing .NET PBIP/report regeneration completed."
+Write-VisualBomDiagnostics -Stage "after-dotnet-regeneration" -ReportRoot $sourceReportRoot
 
 Write-Host "Generating metadata..."
 $outputPath = Join-Path $repoRoot "metadata\metadata.json"
@@ -163,13 +198,16 @@ if (Test-Path $projectPath) {
 
 $generatedDefinitionPath = Join-Path $sourceReportRoot "definition.pbir"
 Ensure-PbirDefinitionSchema -DefinitionPath $generatedDefinitionPath
+Write-VisualBomDiagnostics -Stage "after-definition-schema-normalization" -ReportRoot $sourceReportRoot
 Normalize-PbipMeasureBindings -ReportRoot $sourceReportRoot
+Write-VisualBomDiagnostics -Stage "after-measure-binding-normalization" -ReportRoot $sourceReportRoot
 Assert-PbirDefinition -ReportRoot $sourceReportRoot -SemanticModelRoot $sourceSemanticModelRoot
 
 $expectedVisualJsonPaths = @(Get-VisualJsonRelativePaths -ReportRoot $sourceReportRoot)
 if ($expectedVisualJsonPaths.Count -ne 28) { throw "Authoritative visual inventory validation failed before robocopy: expected exactly 28 visual.json files, found $($expectedVisualJsonPaths.Count)." }
 Assert-PageVisualContainers -ReportRoot $sourceReportRoot
 Assert-VisualJsonFiles -ReportRoot $sourceReportRoot -ExpectedRelativePaths $expectedVisualJsonPaths
+Write-VisualBomDiagnostics -Stage "source-after-validation-before-robocopy" -ReportRoot $sourceReportRoot
 Write-Host "Authoritative regenerated source report contains exactly 28 visual.json files and matching page visualContainers."
 
 $artifactPath = Join-Path $repoRoot "artifacts"
@@ -203,6 +241,7 @@ robocopy $pbipSourceReport $publishedReport /MIR /IS /NFL /NDL /NJH /NJS /NC /NS
 $robocopyExitCode = $LASTEXITCODE
 if ($robocopyExitCode -gt 7) { throw "robocopy failed for report folder with exit code $robocopyExitCode" }
 Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
+Write-VisualBomDiagnostics -Stage "after-report-robocopy" -ReportRoot $publishedReport
 
 # Refresh the published definition byte-for-byte from the already validated
 # normalized source. Do not deserialize/reserialize here; that can lose the
@@ -212,6 +251,7 @@ $publishedDefinitionPath = Join-Path $publishedReport "definition.pbir"
 [System.IO.File]::WriteAllBytes($publishedDefinitionPath,[System.IO.File]::ReadAllBytes($generatedDefinitionPath))
 if (!(Test-Path $publishedDefinitionPath -PathType Leaf)) { throw "PBIR publication failed: missing '$publishedDefinitionPath' after authoritative definition copy." }
 Write-Host "Published definition.pbir refreshed byte-for-byte from normalized source."
+Write-VisualBomDiagnostics -Stage "after-published-definition-refresh" -ReportRoot $publishedReport
 
 Assert-PageVisualContainers -ReportRoot $publishedReport
 Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
@@ -229,6 +269,7 @@ foreach ($localDateTable in $publishedLocalDateTables) { Remove-Item -Path $loca
 Assert-PbirDefinition -ReportRoot $publishedReport -SemanticModelRoot $publishedSemanticModel
 Assert-PageVisualContainers -ReportRoot $publishedReport
 Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
+Write-VisualBomDiagnostics -Stage "final-buildresult" -ReportRoot $publishedReport
 
 $global:LASTEXITCODE = 0
 Write-Host "Build complete. Regenerated PBIP output and published page/visual definitions are structurally validated."
