@@ -58,7 +58,8 @@ function Normalize-DefinitionSchema {
 
 Write-Host "Running validation..."
 & "$PSScriptRoot\validate.ps1"
-if ($LASTEXITCODE -ne 0) { throw "Validation failed." }
+$validationExitCode = $LASTEXITCODE
+if ($validationExitCode -ne 0) { throw "Validation failed with exit code $validationExitCode." }
 
 if (!(Test-Path $templateSemanticModelRoot -PathType Container)) { throw "Missing authoritative semantic-model template: $templateSemanticModelRoot" }
 if (!(Test-Path $templateReportRoot -PathType Container)) { throw "Missing authoritative report template: $templateReportRoot" }
@@ -67,7 +68,8 @@ New-Item $pbipOutputRoot -ItemType Directory -Force | Out-Null
 
 Write-Host "Generating PBIP from authoritative templates..."
 & dotnet run --project $projectPath --configuration Release
-if ($LASTEXITCODE -ne 0) { throw "Template-first .NET pipeline failed with exit code $LASTEXITCODE." }
+$dotnetExitCode = $LASTEXITCODE
+if ($dotnetExitCode -ne 0) { throw "Template-first .NET pipeline failed with exit code $dotnetExitCode." }
 
 if (!(Test-Path $generatedSemanticModelRoot -PathType Container)) { throw "Generated semantic model missing: $generatedSemanticModelRoot" }
 if (!(Test-Path $generatedReportRoot -PathType Container)) { throw "Generated report missing: $generatedReportRoot" }
