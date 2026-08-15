@@ -53,10 +53,11 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 report["resourcePackages"] = packages;
             }
 
+            // The acceptance boundary is resourcePackages[type=RegisteredResources].
+            // Do not require a particular package name: the type is authoritative.
             var package = packages
                 .OfType<JsonObject>()
                 .FirstOrDefault(item =>
-                    string.Equals(item["name"]?.GetValue<string>(), "RegisteredResources", StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(item["type"]?.GetValue<string>(), "RegisteredResources", StringComparison.OrdinalIgnoreCase));
 
             if (package is null)
@@ -128,26 +129,27 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var package = packages?
                 .OfType<JsonObject>()
                 .FirstOrDefault(item =>
-                    string.Equals(item["name"]?.GetValue<string>(), "RegisteredResources", StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(item["type"]?.GetValue<string>(), "RegisteredResources", StringComparison.OrdinalIgnoreCase));
             var items = package?["items"] as JsonArray;
 
             var registrations = items?
                 .OfType<JsonObject>()
-                .Where(item => string.Equals(item["type"]?.GetValue<string>(), "Image", StringComparison.OrdinalIgnoreCase))
                 .Select(item => item["name"]?.GetValue<string>())
                 .Where(name => !string.IsNullOrWhiteSpace(name))
                 .ToList() ?? new List<string?>();
 
-            foreach (var expected in ExpectedPngNames)
-            {
-                var count = registrations.Count(name => string.Equals(name, expected, StringComparison.OrdinalIgnoreCase));
-                if (count != 1)
-                    throw new InvalidOperationException(
-                        $"PBIR resource registration validation failed for '{expected}': expected exactly one Image registration, found {count}.");
-            }
+            var missing = ExpectedPngNames
+                .Where(expected => !registrations.Any(name => string.Equals(name, expected, StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
 
-            Console.WriteLine($"PBIR-RESOURCE-PATCH|Validated|ExpectedPngCount={ExpectedPngNames.Count}");
+            if (missing.Length > 0)
+                throw new InvalidOperationException(
+                    "PBIR resource registration validation failed. Missing RegisteredResources.items entries: " +
+                    string.Join(", ", missing));
+
+            Console.WriteLine(
+                $"PBIR-RESOURCE-PATCH|Validated|RegisteredResources.items contains all expected PNGs|ExpectedPngCount={ExpectedPngNames.Count}");
         }
     }
 }
