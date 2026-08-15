@@ -68,6 +68,12 @@ jobs:
           $ErrorActionPreference = "Stop"
           ./build/build.ps1
 
+      - name: Semantic-model KPI and slicer/filter UAT
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          ./build/Assert-SemanticModelUat.ps1
+
       - name: Verify Artifacts
         shell: pwsh
         run: |
