@@ -125,4 +125,11 @@ foreach ($entry in @('docs','data','scripts','theme','LICENSE','CHANGELOG.md','R
     if (Test-Path $source) { Copy-Item $source $destination -Recurse -Force }
 }
 
+# Hard gate the exact Step-1 artifact that will be uploaded/published.
+# Do not allow PBIR autosave/UAT publication to proceed unless the published
+# artifact itself contains exactly 28 visual.json files and every one passes
+# the JSON/BOM/orphan checks.
+& "$PSScriptRoot\Assert-VisualArtifactGate.ps1" -BuildRoot $artifactPath
+if ($LASTEXITCODE -ne 0) { throw "Published visual artifact gate failed with exit code $LASTEXITCODE." }
+
 Write-Host "Build complete. Template was preserved; generated semantic model was copied wholesale and only environment-dependent values were patched."
