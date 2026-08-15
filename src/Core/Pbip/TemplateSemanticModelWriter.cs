@@ -12,7 +12,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
     public sealed class TemplateSemanticModelWriter
     {
         private static readonly Regex DataFolderExpressionRegex = new(
-            @"(?m)(expression\s+DataFolder\s*=\s*\")([^\"]*)(\"\s+meta\b)",
+            @"(?m)(expression\s+DataFolder\s*=\s*"")([^""]*)(""\s+meta\b)",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private static readonly Regex RelationshipRegex = new(
