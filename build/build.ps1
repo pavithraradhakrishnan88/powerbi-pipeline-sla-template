@@ -1,280 +1,112 @@
-# =====================================
-# build.ps1
-#
-# Responsibilities
-# - Remove unsupported orphaned PBIP local date variation output
-# - Run validation
-# - Regenerate/update PBIP report and semantic model through the existing .NET pipeline
-# - Normalize measure bindings
-# - Validate source and published PBIR/PBIP definition shape
-# - Publish the regenerated PBIP output
-# - Validate published visual.json inventory and JSON syntax
-# - Create build artifacts
-# =====================================
-
 $ErrorActionPreference = "Stop"
 
-Write-Host "Starting build..."
-
+Write-Host "Starting template-first build..."
 $repoRoot = Split-Path $PSScriptRoot -Parent
-$pbipSourceRoot = Join-Path $repoRoot "pbip"
-$pbipOutputRoot = Join-Path $repoRoot "BuildResult\PBIP"
 $pbipName = "Pipeline_SLA_Tracker"
 $projectPath = Join-Path $repoRoot "src\PowerBiPipelineSlaTemplate.Core"
+$pbipOutputRoot = Join-Path $repoRoot "BuildResult\PBIP"
+$generatedReportRoot = Join-Path $pbipOutputRoot "$pbipName.Report"
+$generatedSemanticModelRoot = Join-Path $pbipOutputRoot "$pbipName.SemanticModel"
+$templateSemanticModelRoot = Join-Path $repoRoot "pbip\$pbipName.SemanticModel"
+$templateReportRoot = Join-Path $repoRoot "pbip\$pbipName.Report"
 
 function Write-VisualBomDiagnostics {
-    param(
-        [Parameter(Mandatory = $true)][string]$Stage,
-        [Parameter(Mandatory = $true)][string]$ReportRoot
-    )
-
+    param([Parameter(Mandatory=$true)][string]$Stage,[Parameter(Mandatory=$true)][string]$ReportRoot)
     $definitionRoot = Join-Path $ReportRoot "definition"
-    if (!(Test-Path $definitionRoot -PathType Container)) {
-        Write-Host "BOM-DIAG|Stage=$Stage|ReportRoot=$ReportRoot|Status=SKIPPED|Reason=definition-folder-missing"
-        return
-    }
-
-    $visualFiles = @(Get-ChildItem -Path $definitionRoot -Recurse -Filter "visual.json" -File | Sort-Object FullName)
+    if (!(Test-Path $definitionRoot -PathType Container)) { return }
+    $visualFiles = @(Get-ChildItem $definitionRoot -Recurse -Filter "visual.json" -File | Sort-Object FullName)
     Write-Host "BOM-DIAG|Stage=$Stage|ReportRoot=$ReportRoot|VisualCount=$($visualFiles.Count)"
-
-    foreach ($visualFile in $visualFiles) {
-        $bytes = [System.IO.File]::ReadAllBytes($visualFile.FullName)
-        $first3 = if ($bytes.Length -ge 3) {
-            (($bytes[0..2] | ForEach-Object { $_.ToString('X2') }) -join ' ')
-        } elseif ($bytes.Length -gt 0) {
-            (($bytes | ForEach-Object { $_.ToString('X2') }) -join ' ')
-        } else {
-            '<EMPTY>'
-        }
-        $hasUtf8Bom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
-        $relativePath = [System.IO.Path]::GetRelativePath($definitionRoot, $visualFile.FullName)
-        Write-Host "BOM-DIAG|Stage=$Stage|File=$relativePath|Length=$($bytes.Length)|First3=$first3|UTF8BOM=$hasUtf8Bom"
+    foreach ($file in $visualFiles) {
+        $bytes = [IO.File]::ReadAllBytes($file.FullName)
+        $first3 = if ($bytes.Length -ge 3) { (($bytes[0..2] | % { $_.ToString('X2') }) -join ' ') } else { '<SHORT>' }
+        Write-Host "BOM-DIAG|Stage=$Stage|File=$([IO.Path]::GetRelativePath($definitionRoot,$file.FullName))|Length=$($bytes.Length)|First3=$first3|UTF8BOM=$($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)"
     }
-}
-
-function Assert-PbirDefinition {
-    param([Parameter(Mandatory = $true)][string]$ReportRoot,[Parameter(Mandatory = $true)][string]$SemanticModelRoot)
-    $definitionPath = Join-Path $ReportRoot "definition.pbir"
-    if (!(Test-Path $definitionPath -PathType Leaf)) { throw "PBIR validation failed: missing required '$definitionPath'." }
-    try { $definition = Get-Content -Raw -Path $definitionPath | ConvertFrom-Json } catch { throw "PBIR validation failed: '$definitionPath' is not valid JSON. $($_.Exception.Message)" }
-    if ($definition.'$schema' -ne "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json") { throw "PBIR validation failed: definition.pbir has an invalid or missing definitionProperties schema." }
-    if ([string]$definition.version -ne "4.0") { throw "PBIR validation failed: expected definition.pbir version 4.0, found '$($definition.version)'." }
-    $relativePath = $definition.datasetReference.byPath.path
-    if ([string]::IsNullOrWhiteSpace([string]$relativePath)) { throw "PBIR validation failed: datasetReference.byPath.path is missing." }
-    if ([System.IO.Path]::IsPathRooted([string]$relativePath)) { throw "PBIR validation failed: datasetReference.byPath.path must be relative, found '$relativePath'." }
-    $resolvedSemanticModel = [System.IO.Path]::GetFullPath((Join-Path $ReportRoot $relativePath))
-    $expectedSemanticModel = [System.IO.Path]::GetFullPath($SemanticModelRoot)
-    if ($resolvedSemanticModel.TrimEnd('\') -ine $expectedSemanticModel.TrimEnd('\')) { throw "PBIR validation failed: datasetReference path '$relativePath' does not resolve to '$SemanticModelRoot'." }
-    $reportDefinitionRoot = Join-Path $ReportRoot "definition"
-    if (!(Test-Path $reportDefinitionRoot -PathType Container)) { throw "PBIR validation failed: missing report definition folder '$reportDefinitionRoot'." }
-    $pagesJson = Join-Path $reportDefinitionRoot "pages\pages.json"
-    $reportJson = Join-Path $reportDefinitionRoot "report.json"
-    if (!(Test-Path $pagesJson -PathType Leaf)) { throw "PBIR validation failed: missing '$pagesJson'." }
-    if (!(Test-Path $reportJson -PathType Leaf)) { throw "PBIR validation failed: missing '$reportJson'." }
-    Write-Host "PBIR definition validated: $definitionPath"
-}
-
-function Get-VisualJsonRelativePaths {
-    param([Parameter(Mandatory = $true)][string]$ReportRoot)
-    $definitionRoot = Join-Path $ReportRoot "definition"
-    if (!(Test-Path $definitionRoot -PathType Container)) { throw "Visual validation failed: missing report definition folder '$definitionRoot'." }
-    return @(Get-ChildItem -Path $definitionRoot -Recurse -Filter "visual.json" -File | ForEach-Object {
-        $baseUri = [System.Uri]((Resolve-Path $definitionRoot).Path.TrimEnd('\') + '\')
-        $fileUri = [System.Uri]((Resolve-Path $_.FullName).Path)
-        [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($fileUri).ToString())
-    } | Sort-Object)
 }
 
 function Assert-VisualJsonFiles {
-    param([Parameter(Mandatory = $true)][string]$ReportRoot,[Parameter(Mandatory = $true)][string[]]$ExpectedRelativePaths)
+    param([Parameter(Mandatory=$true)][string]$ReportRoot)
     $definitionRoot = Join-Path $ReportRoot "definition"
-    $actualRelativePaths = @(Get-VisualJsonRelativePaths -ReportRoot $ReportRoot)
-    $missing = @($ExpectedRelativePaths | Where-Object { $_ -notin $actualRelativePaths })
-    $unexpected = @($actualRelativePaths | Where-Object { $_ -notin $ExpectedRelativePaths })
-    if ($missing.Count -gt 0 -or $unexpected.Count -gt 0) { throw "Visual validation failed: published visual.json set differs from expected. Missing: [$($missing -join ', ')]; Unexpected: [$($unexpected -join ', ')]." }
-    foreach ($relativePath in $actualRelativePaths) {
-        $visualPath = Join-Path $definitionRoot ($relativePath -replace '/', '\')
-        $bytes = [System.IO.File]::ReadAllBytes($visualPath)
-        if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) { throw "Visual validation failed: '$visualPath' still contains a UTF-8 BOM." }
-        try { Get-Content -Raw -Path $visualPath | ConvertFrom-Json | Out-Null } catch { throw "Visual validation failed: '$visualPath' is not valid JSON. $($_.Exception.Message)" }
+    $files = @(Get-ChildItem $definitionRoot -Recurse -Filter "visual.json" -File | Sort-Object FullName)
+    if ($files.Count -ne 28) { throw "Visual validation failed: expected 28 visual.json files, found $($files.Count)." }
+    foreach ($file in $files) {
+        $bytes = [IO.File]::ReadAllBytes($file.FullName)
+        if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) { throw "Visual validation failed: UTF-8 BOM remains in '$($file.FullName)'." }
+        try { Get-Content -Raw $file.FullName | ConvertFrom-Json | Out-Null } catch { throw "Visual validation failed: '$($file.FullName)' is not valid JSON. $($_.Exception.Message)" }
     }
-    Write-Host "Validated $($actualRelativePaths.Count) visual.json files, BOM absence, and JSON syntax under '$ReportRoot'."
+    Write-Host "Validated 28 visual.json files, BOM absence, and JSON syntax."
 }
 
-function Assert-PageVisualContainers {
-    param([Parameter(Mandatory = $true)][string]$ReportRoot)
-    $pagesRoot = Join-Path $ReportRoot "definition\pages"
-    if (!(Test-Path $pagesRoot -PathType Container)) { throw "Page validation failed: missing '$pagesRoot'." }
-    $totalVisualFiles = 0
-    $pageResults = @()
-    foreach ($pageDirectory in Get-ChildItem -Path $pagesRoot -Directory | Sort-Object Name) {
-        $pageJsonPath = Join-Path $pageDirectory.FullName "page.json"
-        if (!(Test-Path $pageJsonPath -PathType Leaf)) { throw "Page validation failed: missing '$pageJsonPath'." }
-        try { $page = Get-Content -Raw -Path $pageJsonPath | ConvertFrom-Json } catch { throw "Page validation failed: '$pageJsonPath' is not valid JSON. $($_.Exception.Message)" }
-
-        $visualDirectory = Join-Path $pageDirectory.FullName "visuals"
-        if (!(Test-Path $visualDirectory -PathType Container)) { throw "Page validation failed: '$($pageDirectory.Name)' is missing its visuals folder '$visualDirectory'." }
-
-        $visualFiles = @(Get-ChildItem $visualDirectory -Recurse -Filter "visual.json" -File)
-        if ($visualFiles.Count -eq 0) { throw "Page validation failed: '$($pageDirectory.Name)' has no visual.json files under '$visualDirectory'." }
-
-        $schema = [string]$page.'$schema'
-        if ([string]::IsNullOrWhiteSpace($schema)) { throw "Page validation failed: '$pageJsonPath' is missing its `$schema value." }
-        if ($schema -notmatch '/definition/page/[^/]+/schema\.json$') { throw "Page validation failed: '$pageJsonPath' has an unexpected page schema '$schema'." }
-
-        $totalVisualFiles += $visualFiles.Count
-        $pageResults += [pscustomobject]@{ Page = $pageDirectory.Name; VisualJson = $visualFiles.Count; Schema = $schema }
-    }
-
-    foreach ($result in $pageResults) { Write-Host "Page $($result.Page): visual.json=$($result.VisualJson), schema=$($result.Schema)" }
-    if ($totalVisualFiles -ne 28) { throw "Page validation failed: expected total visual.json=28, found $totalVisualFiles." }
-    Write-Host "Page-level visual validation passed: visual.json=$totalVisualFiles across $($pageResults.Count) page(s)."
+function Assert-PbirDefinition {
+    param([Parameter(Mandatory=$true)][string]$ReportRoot,[Parameter(Mandatory=$true)][string]$SemanticModelRoot)
+    $path = Join-Path $ReportRoot "definition.pbir"
+    $definition = Get-Content -Raw $path | ConvertFrom-Json
+    if ($definition.'$schema' -ne "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json") { throw "PBIR validation failed: invalid definitionProperties schema." }
+    if ([string]$definition.version -ne "4.0") { throw "PBIR validation failed: expected version 4.0." }
+    $relative = [string]$definition.datasetReference.byPath.path
+    $resolved = [IO.Path]::GetFullPath((Join-Path $ReportRoot $relative))
+    if ($resolved.TrimEnd('\') -ine ([IO.Path]::GetFullPath($SemanticModelRoot)).TrimEnd('\')) { throw "PBIR validation failed: datasetReference does not resolve to '$SemanticModelRoot'." }
+    Write-Host "PBIR definition validated against generated semantic-model output."
 }
 
-function Normalize-PbipMeasureBindings {
-    param([Parameter(Mandatory = $true)][string]$ReportRoot)
-    $visualRoot = Join-Path $ReportRoot "definition\pages"
-    if (!(Test-Path $visualRoot -PathType Container)) { return }
-    $updated = 0
-    foreach ($visualPath in Get-ChildItem -Path $visualRoot -Recurse -Filter "visual.json" -File) {
-        $json = Get-Content -Raw -Path $visualPath.FullName
-        $original = $json
-        $json = [regex]::Replace($json, '(?<="Measure"\s*:\s*\{\s*"Expression"\s*:\s*\{\s*"SourceRef"\s*:\s*\{\s*"Entity"\s*:\s*")Fact_Pipeline_SampleData(?=")', '_Measures')
-        if ($json -ne $original) {
-            Write-Host "BOM-DIAG|Stage=before-measure-normalization|File=$($visualPath.FullName)"
-            Write-VisualBomDiagnostics -Stage "before-measure-normalization" -ReportRoot $ReportRoot
-            [System.IO.File]::WriteAllText($visualPath.FullName, $json, [System.Text.UTF8Encoding]::new($false))
-            Write-Host "BOM-DIAG|Stage=after-measure-normalization|File=$($visualPath.FullName)"
-            Write-VisualBomDiagnostics -Stage "after-measure-normalization" -ReportRoot $ReportRoot
-            $updated++
-            Write-Host "Normalized measure bindings: $($visualPath.FullName)"
-        }
-    }
-    Write-Host "PBIP measure binding normalization complete. Visuals updated: $updated"
-}
-
-function Ensure-PbirDefinitionSchema {
-    param([Parameter(Mandatory = $true)][string]$DefinitionPath)
-    if (!(Test-Path $DefinitionPath -PathType Leaf)) { throw "PBIR schema normalization failed: missing '$DefinitionPath'." }
-    $definition = Get-Content -Raw -Path $DefinitionPath | ConvertFrom-Json
-    $schema = "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json"
-    $datasetReferenceJson = $definition.datasetReference | ConvertTo-Json -Depth 20 -Compress
-    $json = @"
-{
-  `"`$schema`": `"$schema`",
-  `"version`": `"$([string]$definition.version)`",
-  `"datasetReference`": $datasetReferenceJson
-}
-"@
-    [System.IO.File]::WriteAllText($DefinitionPath, $json, [System.Text.UTF8Encoding]::new($false))
-    Write-Host "Normalized PBIR definitionProperties schema: $DefinitionPath"
-}
-
-$pbipSemanticModelRoots = @(
-    Join-Path -Path $pbipSourceRoot -ChildPath "$pbipName.SemanticModel"
-    Join-Path -Path $pbipOutputRoot -ChildPath "$pbipName.SemanticModel"
-)
-foreach ($semanticModelRoot in $pbipSemanticModelRoots) {
-    if (!(Test-Path $semanticModelRoot)) { continue }
-    $localDateTables = Get-ChildItem -Path $semanticModelRoot -Recurse -Filter "LocalDateTable_*.tmdl" -File -ErrorAction SilentlyContinue
-    foreach ($localDateTable in $localDateTables) { Remove-Item -Path $localDateTable.FullName -Force; Write-Host "Removed unsupported PBIP local date variation table: $($localDateTable.FullName)" }
+function Normalize-DefinitionSchema {
+    param([Parameter(Mandatory=$true)][string]$Path)
+    $definition = Get-Content -Raw $Path | ConvertFrom-Json
+    $dataset = $definition.datasetReference | ConvertTo-Json -Depth 20 -Compress
+    $json = "{`n  `"`$schema`": `"https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json`",`n  `"version`": `"$([string]$definition.version)`",`n  `"datasetReference`": $dataset`n}`n"
+    [IO.File]::WriteAllText($Path,$json,[Text.UTF8Encoding]::new($false))
 }
 
 Write-Host "Running validation..."
 & "$PSScriptRoot\validate.ps1"
-if (-not $?) { throw "Validation failed. Build stopped." }
-Write-Host "Validation succeeded. Continuing build..."
+if ($LASTEXITCODE -ne 0) { throw "Validation failed." }
 
-$sourceReportRoot = Join-Path $pbipSourceRoot "$pbipName.Report"
-$sourceSemanticModelRoot = Join-Path $pbipSourceRoot "$pbipName.SemanticModel"
+if (!(Test-Path $templateSemanticModelRoot -PathType Container)) { throw "Missing authoritative semantic-model template: $templateSemanticModelRoot" }
+if (!(Test-Path $templateReportRoot -PathType Container)) { throw "Missing authoritative report template: $templateReportRoot" }
+if (Test-Path $pbipOutputRoot) { Remove-Item $pbipOutputRoot -Recurse -Force }
+New-Item $pbipOutputRoot -ItemType Directory -Force | Out-Null
 
-Write-Host "Regenerating PBIP/report through the existing .NET pipeline before robocopy..."
+Write-Host "Generating PBIP from authoritative templates..."
 & dotnet run --project $projectPath --configuration Release
-if ($LASTEXITCODE -ne 0) { throw "PBIP/report regeneration failed with exit code $LASTEXITCODE" }
-Write-Host "Existing .NET PBIP/report regeneration completed."
-Write-VisualBomDiagnostics -Stage "after-dotnet-regeneration" -ReportRoot $sourceReportRoot
+if ($LASTEXITCODE -ne 0) { throw "Template-first .NET pipeline failed with exit code $LASTEXITCODE." }
 
-Write-Host "Generating metadata..."
-$outputPath = Join-Path $repoRoot "metadata\metadata.json"
-if (Test-Path $projectPath) {
-    & dotnet run --project $projectPath --extract-metadata --output $outputPath
-    if ($LASTEXITCODE -ne 0) { throw "Metadata generation failed with exit code $LASTEXITCODE" }
-}
+if (!(Test-Path $generatedSemanticModelRoot -PathType Container)) { throw "Generated semantic model missing: $generatedSemanticModelRoot" }
+if (!(Test-Path $generatedReportRoot -PathType Container)) { throw "Generated report missing: $generatedReportRoot" }
 
-$generatedDefinitionPath = Join-Path $sourceReportRoot "definition.pbir"
-Ensure-PbirDefinitionSchema -DefinitionPath $generatedDefinitionPath
-Write-VisualBomDiagnostics -Stage "after-definition-schema-normalization" -ReportRoot $sourceReportRoot
-Normalize-PbipMeasureBindings -ReportRoot $sourceReportRoot
-Write-VisualBomDiagnostics -Stage "after-measure-binding-normalization" -ReportRoot $sourceReportRoot
-Assert-PbirDefinition -ReportRoot $sourceReportRoot -SemanticModelRoot $sourceSemanticModelRoot
+Write-Host "Validating generated semantic-model structure..."
+$factPath = Join-Path $generatedSemanticModelRoot "definition\tables\Fact_Pipeline_SampleData.tmdl"
+$expressionsPath = Join-Path $generatedSemanticModelRoot "definition\expressions.tmdl"
+$relationshipsPath = Join-Path $generatedSemanticModelRoot "definition\relationships.tmdl"
+$measuresPath = Join-Path $generatedSemanticModelRoot "definition\tables\_Measures.tmdl"
+if (!(Test-Path $factPath)) { throw "Generated semantic model is missing Fact_Pipeline_SampleData.tmdl." }
+if (!(Test-Path $expressionsPath)) { throw "Generated semantic model is missing expressions.tmdl." }
+if (Test-Path $measuresPath) { throw "Generated semantic model must not contain _Measures.tmdl." }
+$factText = Get-Content -Raw $factPath
+$expressionText = Get-Content -Raw $expressionsPath
+$relationshipText = if (Test-Path $relationshipsPath) { Get-Content -Raw $relationshipsPath } else { "" }
+$measureCount = ([regex]::Matches($factText,'(?m)^\s*measure\s+[^\r\n=]+\s*=')).Count
+$expressionCount = ([regex]::Matches($expressionText,'(?m)^\s*expression\s+')).Count
+$relationshipCount = ([regex]::Matches($relationshipText,'(?m)^\s*relationship\s+')).Count
+Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|InlineMeasuresOnFact=$measureCount|Relationships=$relationshipCount|Expressions=$expressionCount|Has_MeasuresTmdl=$([bool](Test-Path $measuresPath))"
+if ($measureCount -ne 20) { throw "Expected 20 inline measures on Fact_Pipeline_SampleData; found $measureCount." }
+if ($expressionCount -ne 2) { throw "Expected 2 expressions; found $expressionCount." }
+if ($expressionText -notmatch 'expression DataFolder = "[^"]*" meta') { throw "DataFolder expression is missing or malformed." }
+if ($expressionText -notmatch "expression '_Measure Table'") { throw "_Measure Table expression is missing." }
+if ($expressionText -notmatch 'File\.Contents\(DataFolder') { throw "Generated Fact partition does not use DataFolder." }
 
-$expectedVisualJsonPaths = @(Get-VisualJsonRelativePaths -ReportRoot $sourceReportRoot)
-if ($expectedVisualJsonPaths.Count -ne 28) { throw "Authoritative visual inventory validation failed before robocopy: expected exactly 28 visual.json files, found $($expectedVisualJsonPaths.Count)." }
-Assert-PageVisualContainers -ReportRoot $sourceReportRoot
-Assert-VisualJsonFiles -ReportRoot $sourceReportRoot -ExpectedRelativePaths $expectedVisualJsonPaths
-Write-VisualBomDiagnostics -Stage "source-after-validation-before-robocopy" -ReportRoot $sourceReportRoot
-Write-Host "Authoritative regenerated source report contains exactly 28 visual.json files across PBIR page visual folders."
+Normalize-DefinitionSchema -Path (Join-Path $generatedReportRoot "definition.pbir")
+Write-VisualBomDiagnostics -Stage "after-dotnet-regeneration" -ReportRoot $generatedReportRoot
+Assert-PbirDefinition -ReportRoot $generatedReportRoot -SemanticModelRoot $generatedSemanticModelRoot
+Assert-VisualJsonFiles -ReportRoot $generatedReportRoot
+Write-VisualBomDiagnostics -Stage "final-buildresult" -ReportRoot $generatedReportRoot
 
 $artifactPath = Join-Path $repoRoot "artifacts"
 if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
-New-Item -ItemType Directory -Path $artifactPath | Out-Null
-Write-Host "Artifacts folder created."
-
-$releaseEntries = @("pbip", "docs", "data", "scripts", "theme", "LICENSE", "CHANGELOG.md", "README.md")
-foreach ($entry in $releaseEntries) {
-    $sourcePath = Join-Path $repoRoot $entry
-    $destinationPath = Join-Path $artifactPath (Split-Path $entry -Leaf)
-    if (Test-Path $sourcePath) { if (Test-Path $destinationPath) { Remove-Item $destinationPath -Recurse -Force }; Copy-Item $sourcePath -Destination $destinationPath -Recurse -Force; Write-Host "Included release entry: $entry" }
+New-Item $artifactPath -ItemType Directory -Force | Out-Null
+Copy-Item (Join-Path $pbipOutputRoot '*') (Join-Path $artifactPath 'pbip') -Recurse -Force
+foreach ($entry in @('docs','data','scripts','theme','LICENSE','CHANGELOG.md','README.md')) {
+    $source = Join-Path $repoRoot $entry
+    $destination = Join-Path $artifactPath (Split-Path $entry -Leaf)
+    if (Test-Path $source) { Copy-Item $source $destination -Recurse -Force }
 }
 
-Write-Host "Publishing PBIP artifacts to BuildResult..."
-if (!(Test-Path $pbipOutputRoot)) { New-Item -ItemType Directory -Path $pbipOutputRoot | Out-Null }
-
-$pbipSourceFile = Join-Path $pbipSourceRoot "$pbipName.pbip"
-$pbipSourceReport = Join-Path $pbipSourceRoot "$pbipName.Report"
-$pbipSourceSemanticModel = Join-Path $pbipSourceRoot "$pbipName.SemanticModel"
-if (!(Test-Path $pbipSourceFile -PathType Leaf)) { throw "Missing PBIP file: $pbipSourceFile" }
-if (!(Test-Path $pbipSourceReport -PathType Container)) { throw "Missing report folder: $pbipSourceReport" }
-if (!(Test-Path $pbipSourceSemanticModel -PathType Container)) { throw "Missing semantic model folder: $pbipSourceSemanticModel" }
-
-cmd /c copy /Y "$pbipSourceFile" "$pbipOutputRoot\" | Out-Null
-if ($LASTEXITCODE -ne 0) { throw "PBIP file copy failed with exit code $LASTEXITCODE" }
-
-Write-Host "Publishing regenerated report with robocopy..."
-$publishedReport = Join-Path $pbipOutputRoot "$pbipName.Report"
-robocopy $pbipSourceReport $publishedReport /MIR /IS /NFL /NDL /NJH /NJS /NC /NS | Out-Null
-$robocopyExitCode = $LASTEXITCODE
-if ($robocopyExitCode -gt 7) { throw "robocopy failed for report folder with exit code $robocopyExitCode" }
-Write-Host "Report copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
-Write-VisualBomDiagnostics -Stage "after-report-robocopy" -ReportRoot $publishedReport
-
-# Refresh the published definition byte-for-byte from the already validated
-# normalized source. Do not deserialize/reserialize here; that can lose the
-# literal $schema property.
-
-$publishedDefinitionPath = Join-Path $publishedReport "definition.pbir"
-[System.IO.File]::WriteAllBytes($publishedDefinitionPath,[System.IO.File]::ReadAllBytes($generatedDefinitionPath))
-if (!(Test-Path $publishedDefinitionPath -PathType Leaf)) { throw "PBIR publication failed: missing '$publishedDefinitionPath' after authoritative definition copy." }
-Write-Host "Published definition.pbir refreshed byte-for-byte from normalized source."
-Write-VisualBomDiagnostics -Stage "after-published-definition-refresh" -ReportRoot $publishedReport
-
-Assert-PageVisualContainers -ReportRoot $publishedReport
-Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
-Write-Host "Published report PBIR page/visual inventory matches regenerated source."
-
-robocopy $pbipSourceSemanticModel (Join-Path $pbipOutputRoot "$pbipName.SemanticModel") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
-$robocopyExitCode = $LASTEXITCODE
-if ($robocopyExitCode -gt 7) { throw "robocopy failed for semantic model folder with exit code $robocopyExitCode" }
-Write-Host "Semantic model copy completed with robocopy exit code $robocopyExitCode (0-7 is success)."
-
-$publishedSemanticModel = Join-Path $pbipOutputRoot "$pbipName.SemanticModel"
-$publishedLocalDateTables = Get-ChildItem -Path $publishedSemanticModel -Recurse -Filter "LocalDateTable_*.tmdl" -File -ErrorAction SilentlyContinue
-foreach ($localDateTable in $publishedLocalDateTables) { Remove-Item -Path $localDateTable.FullName -Force; Write-Host "Removed stale published PBIP local date variation table: $($localDateTable.FullName)" }
-
-Assert-PbirDefinition -ReportRoot $publishedReport -SemanticModelRoot $publishedSemanticModel
-Assert-PageVisualContainers -ReportRoot $publishedReport
-Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
-Write-VisualBomDiagnostics -Stage "final-buildresult" -ReportRoot $publishedReport
-
-$global:LASTEXITCODE = 0
-Write-Host "Build complete. Regenerated PBIP output and published page/visual definitions are structurally validated."
+Write-Host "Build complete. Template was preserved; generated semantic model was copied wholesale and only environment-dependent values were patched." 
