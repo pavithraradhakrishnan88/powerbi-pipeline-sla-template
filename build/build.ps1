@@ -113,8 +113,6 @@ Write-VisualBomDiagnostics -Stage "final-buildresult" -ReportRoot $generatedRepo
 $artifactPath = Join-Path $repoRoot "artifacts"
 if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $artifactPath | Out-Null
-$artifactPbipPath = Join-Path $artifactPath 'pbip'
-New-Item -ItemType Directory -Force -Path $artifactPbipPath | Out-Null
 Copy-Item (Join-Path $pbipOutputRoot '*') $artifactPath -Recurse -Force
 foreach ($entry in @('docs','data','scripts','theme','LICENSE','CHANGELOG.md','README.md')) {
     $source = Join-Path $repoRoot $entry
