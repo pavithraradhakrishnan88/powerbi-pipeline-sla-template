@@ -29,6 +29,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var factPath = Path.Combine(tables, $"{FactTable}.tmdl");
             var modelPath = Path.Combine(definition, "model.tmdl");
             var relationshipsPath = Path.Combine(definition, "relationships.tmdl");
+            var expressionsPath = Path.Combine(definition, "expressions.tmdl");
             var measureDefinitionsPath = Path.Combine(repositoryRootPath, "scripts", "metadata", "MeasureDefinitions.json");
 
             if (!File.Exists(factPath)) throw new FileNotFoundException("Fact table template is missing.", factPath);
@@ -38,6 +39,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             PatchMeasures(factPath, measureDefinitionsPath, logger);
             PatchCategoryRelationship(relationshipsPath, logger);
             RemoveLegacyMeasuresTable(tables, modelPath, logger);
+            RemoveDanglingMeasureTableAnnotation(modelPath, expressionsPath, logger);
         }
 
         private static void PatchMeasures(string factPath, string definitionsPath, Action<string>? logger)
@@ -137,6 +139,33 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 File.WriteAllText(modelPath, filtered, new UTF8Encoding(false));
                 logger?.Invoke("SEMANTIC-MODEL-PATCH|Removed _Measures model reference");
             }
+        }
+
+        private static void RemoveDanglingMeasureTableAnnotation(string modelPath, string expressionsPath, Action<string>? logger)
+        {
+            if (File.Exists(modelPath))
+            {
+                var model = File.ReadAllText(modelPath, Encoding.UTF8);
+                var filtered = string.Join(Environment.NewLine,
+                    model.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None)
+                        .Where(line => !line.Trim().Equals("annotation PBI_QueryOrder = [\"Dim_Category\",\"_Measure Table\",\"Fact_Pipeline_SampleData\"]", StringComparison.OrdinalIgnoreCase)));
+                if (!string.Equals(model, filtered, StringComparison.Ordinal))
+                {
+                    File.WriteAllText(modelPath, filtered, new UTF8Encoding(false));
+                    logger?.Invoke("SEMANTIC-MODEL-PATCH|Removed dangling _Measure Table query-order annotation");
+                }
+            }
+
+            if (!File.Exists(expressionsPath)) return;
+            var expressions = File.ReadAllText(expressionsPath, Encoding.UTF8);
+            const string start = "expression '_Measure Table' =";
+            var startIndex = expressions.IndexOf(start, StringComparison.Ordinal);
+            if (startIndex < 0) return;
+            var nextExpression = expressions.IndexOf("expression ", startIndex + start.Length, StringComparison.Ordinal);
+            var endIndex = nextExpression >= 0 ? nextExpression : expressions.Length;
+            var cleaned = expressions.Remove(startIndex, endIndex - startIndex).TrimStart('\r', '\n');
+            File.WriteAllText(expressionsPath, cleaned, new UTF8Encoding(false));
+            logger?.Invoke("SEMANTIC-MODEL-PATCH|Removed dangling _Measure Table expression");
         }
 
         private static string GetString(JsonElement element, string property)
