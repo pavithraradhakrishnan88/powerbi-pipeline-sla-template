@@ -1,8 +1,8 @@
-$ErrorActionPreference = "Stop"
-
 param(
     [string]$RepoRoot = (Split-Path $PSScriptRoot -Parent)
 )
+
+$ErrorActionPreference = "Stop"
 
 $pbipRoot = Join-Path $RepoRoot "BuildResult\PBIP"
 $semanticRoot = Join-Path $pbipRoot "Pipeline_SLA_Tracker.SemanticModel"
