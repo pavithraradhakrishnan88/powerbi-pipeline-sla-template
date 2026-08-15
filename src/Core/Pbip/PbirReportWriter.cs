@@ -35,67 +35,33 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
         public void WriteFromTemplate(string templateReportRootPath, string reportRootPath, string semanticModelRelativePath)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(templateReportRootPath); ArgumentException.ThrowIfNullOrWhiteSpace(reportRootPath); ArgumentException.ThrowIfNullOrWhiteSpace(semanticModelRelativePath);
+            ArgumentException.ThrowIfNullOrWhiteSpace(templateReportRootPath);
+            ArgumentException.ThrowIfNullOrWhiteSpace(reportRootPath);
+            ArgumentException.ThrowIfNullOrWhiteSpace(semanticModelRelativePath);
             if (!Directory.Exists(templateReportRootPath)) throw new InvalidOperationException($"Report template directory '{templateReportRootPath}' does not exist.");
+
             var parent = Path.GetDirectoryName(reportRootPath) ?? throw new InvalidOperationException($"Unable to determine parent directory for '{reportRootPath}'.");
             Directory.CreateDirectory(parent);
             var staging = Path.Combine(parent, $"{Path.GetFileName(reportRootPath)}.tmp-{Guid.NewGuid():N}");
+
             try
             {
+                // The real template is the authoritative report structure. Copy it first and
+                // deliberately do not reconstruct pages, visuals, resources, or extensions.
                 CopyDirectoryRecursively(templateReportRootPath, staging);
-                var currentPages = Path.Combine(reportRootPath, "definition", "pages");
-                var stagedPages = Path.Combine(staging, "definition", "pages");
-                if (Directory.Exists(currentPages))
-                {
-                    SafeDeleteDirectory(stagedPages);
-                    CopyDirectoryRecursively(currentPages, stagedPages);
-                    Console.WriteLine($"Preserved authoritative report pages/visuals from '{currentPages}'.");
-                }
-                RebuildPageDefinitionsFromAuthoritativeVisuals(stagedPages);
-                PbirVisualContainerNormalizer.NormalizeReport(staging);
-                File.WriteAllText(Path.Combine(staging, "definition.pbir"), BuildDefinitionPbir(semanticModelRelativePath));
-                File.WriteAllText(Path.Combine(staging, "definition", "reportExtensions.json"), BuildReportExtensionsJson());
-                RegisterStaticResourceImages(staging);
+                Console.WriteLine($"Established generated PBIP from authoritative report template '{templateReportRootPath}'.");
+
+                // The dataset pointer is the only report-level field intentionally regenerated.
+                // Everything else in the copied definition remains exactly as supplied by the template.
+                var definitionPbirPath = Path.Combine(staging, "definition.pbir");
+                if (!File.Exists(definitionPbirPath))
+                    throw new InvalidOperationException($"Template is missing required file '{definitionPbirPath}'.");
+                File.WriteAllText(definitionPbirPath, BuildDefinitionPbir(semanticModelRelativePath), new System.Text.UTF8Encoding(false));
+
                 ValidateTemplateOutput(staging);
                 ReplaceDirectoryAtomically(staging, reportRootPath);
             }
             finally { SafeDeleteDirectory(staging); }
-        }
-
-        private static void RebuildPageDefinitionsFromAuthoritativeVisuals(string pagesRoot)
-        {
-            if (!Directory.Exists(pagesRoot)) throw new InvalidOperationException($"Authoritative pages directory '{pagesRoot}' does not exist.");
-            foreach (var pageDirectory in Directory.GetDirectories(pagesRoot))
-            {
-                var pageJsonPath = Path.Combine(pageDirectory, "page.json");
-                if (!File.Exists(pageJsonPath)) throw new InvalidOperationException($"Authoritative page is missing page.json: '{pageJsonPath}'.");
-                var page = JsonNode.Parse(File.ReadAllText(pageJsonPath)) as JsonObject ?? throw new InvalidOperationException($"Page definition '{pageJsonPath}' must contain a JSON object.");
-                var pageId = page["name"]?.GetValue<string>() ?? Path.GetFileName(pageDirectory);
-                var pageDefinition = new ReportPageDefinition
-                {
-                    PageId = pageId, Name = pageId, DisplayName = page["displayName"]?.GetValue<string>() ?? pageId,
-                    Canvas = new CanvasDefinition { Width = page["width"]?.GetValue<int>() ?? 1280, Height = page["height"]?.GetValue<int>() ?? 720 }
-                };
-                var document = new ReportDefinitionDocument { Pages = new List<ReportPageDefinition> { pageDefinition } };
-                var visualRoot = Path.Combine(pageDirectory, "visuals");
-                var visualFiles = Directory.Exists(visualRoot) ? Directory.GetFiles(visualRoot, "visual.json", SearchOption.AllDirectories) : Array.Empty<string>();
-                foreach (var visualFile in visualFiles.OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
-                {
-                    var visual = JsonNode.Parse(File.ReadAllText(visualFile)) as JsonObject ?? throw new InvalidOperationException($"Authoritative visual '{visualFile}' must contain a JSON object.");
-                    var visualId = visual["name"]?.GetValue<string>() ?? Path.GetFileName(Path.GetDirectoryName(visualFile));
-                    var position = visual["position"] as JsonObject ?? throw new InvalidOperationException($"Authoritative visual '{visualFile}' is missing position.");
-                    document.VisualPositions.Add(new VisualPositionDefinition
-                    {
-                        PageId = pageId, VisualId = visualId,
-                        X = position["x"]?.GetValue<double>() ?? 0, Y = position["y"]?.GetValue<double>() ?? 0,
-                        Width = position["width"]?.GetValue<double>() ?? 0, Height = position["height"]?.GetValue<double>() ?? 0,
-                        VisualContainer = visual
-                    });
-                }
-                var rebuilt = JsonNode.Parse(BuildPageJson(document, pageDefinition))?.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) ?? throw new InvalidOperationException($"Unable to rebuild page definition '{pageJsonPath}'.");
-                File.WriteAllText(pageJsonPath, rebuilt, new System.Text.UTF8Encoding(false));
-                Console.WriteLine($"Rebuilt page.json '{pageJsonPath}' with {document.VisualPositions.Count} authoritative visualContainers.");
-            }
         }
 
         private static void WriteToDirectory(ReportDefinitionDocument document, string root, string semanticModelRelativePath, string? themeSourceRootPath)
@@ -261,7 +227,14 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             foreach (var f in new[] { Path.Combine(root, "definition.pbir"), Path.Combine(root, "report.json"), Path.Combine(root, "reportExtensions.json") }) { if (!File.Exists(f)) throw new InvalidOperationException($"Generated PBIP output is missing required file '{f}'."); ValidateJsonFile(f); }
             foreach (var p in d.Pages) { var f = Path.Combine(root, "pages", SanitizeDirectoryName(ResolvePageId(p)), "page.json"); if (!File.Exists(f)) throw new InvalidOperationException($"Generated PBIP output is missing required page file '{f}'."); ValidateJsonFile(f); }
         }
-        private static void ValidateTemplateOutput(string root) { foreach (var f in new[] { Path.Combine(root, "definition.pbir"), Path.Combine(root, "definition", "report.json"), Path.Combine(root, "definition", "reportExtensions.json"), Path.Combine(root, "definition", "pages", "pages.json") }) { if (!File.Exists(f)) throw new InvalidOperationException($"Generated PBIP output is missing required template file '{f}'."); ValidateJsonFile(f); } }
+        private static void ValidateTemplateOutput(string root)
+        {
+            foreach (var f in new[] { Path.Combine(root, "definition.pbir"), Path.Combine(root, "definition", "report.json"), Path.Combine(root, "definition", "reportExtensions.json"), Path.Combine(root, "definition", "pages", "pages.json") })
+            {
+                if (!File.Exists(f)) throw new InvalidOperationException($"Generated PBIP output is missing required template file '{f}'.");
+                ValidateJsonFile(f);
+            }
+        }
         private static void ValidateJsonFile(string file) { try { using var _ = JsonDocument.Parse(File.ReadAllText(file)); } catch (JsonException e) { throw new InvalidOperationException($"Generated JSON file '{file}' is invalid.", e); } }
         private static string ResolvePageId(ReportPageDefinition p) => string.IsNullOrWhiteSpace(p.PageId) ? p.Name : p.PageId;
         private static string ResolveVisualPageId(VisualPositionDefinition v) => string.IsNullOrWhiteSpace(v.PageId) ? v.Page : v.PageId;
