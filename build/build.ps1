@@ -93,7 +93,16 @@ if ($measureCount -ne 20) { throw "Expected 20 inline measures on Fact_Pipeline_
 if ($expressionCount -ne 2) { throw "Expected 2 expressions; found $expressionCount." }
 if ($expressionText -notmatch 'expression DataFolder = "[^"]*" meta') { throw "DataFolder expression is missing or malformed." }
 if ($expressionText -notmatch "expression '_Measure Table'") { throw "_Measure Table expression is missing." }
-if ($expressionText -notmatch 'File\.Contents\(DataFolder') { throw "Generated Fact partition does not use DataFolder." }
+if ($factText -notmatch 'File\.Contents\(DataFolder') {
+    $fileContentsLines = @($factText -split "`r?`n" | Where-Object { $_ -match 'File\.Contents\(' })
+    $actualFileContents = if ($fileContentsLines.Count -gt 0) { $fileContentsLines -join ' || ' } else { '<no File.Contents(...) line found>' }
+    $expectedPattern = 'File\.Contents\(DataFolder'
+    Write-Host "DATAFOLDER-CHECK|FactPath=$factPath"
+    Write-Host "DATAFOLDER-CHECK|ActualFileContents=$actualFileContents"
+    Write-Host "DATAFOLDER-CHECK|ExpectedRegex=$expectedPattern"
+    Write-Host "DATAFOLDER-CHECK|RegexMatches=$($factText -match $expectedPattern)"
+    throw "Generated Fact partition does not use DataFolder."
+}
 
 Normalize-DefinitionSchema -Path (Join-Path $generatedReportRoot "definition.pbir")
 Write-VisualBomDiagnostics -Stage "after-dotnet-regeneration" -ReportRoot $generatedReportRoot
@@ -103,12 +112,14 @@ Write-VisualBomDiagnostics -Stage "final-buildresult" -ReportRoot $generatedRepo
 
 $artifactPath = Join-Path $repoRoot "artifacts"
 if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
-New-Item $artifactPath -ItemType Directory -Force | Out-Null
-Copy-Item (Join-Path $pbipOutputRoot '*') (Join-Path $artifactPath 'pbip') -Recurse -Force
+New-Item -ItemType Directory -Force -Path $artifactPath | Out-Null
+$artifactPbipPath = Join-Path $artifactPath 'pbip'
+New-Item -ItemType Directory -Force -Path $artifactPbipPath | Out-Null
+Copy-Item (Join-Path $pbipOutputRoot '*') $artifactPath -Recurse -Force
 foreach ($entry in @('docs','data','scripts','theme','LICENSE','CHANGELOG.md','README.md')) {
     $source = Join-Path $repoRoot $entry
     $destination = Join-Path $artifactPath (Split-Path $entry -Leaf)
     if (Test-Path $source) { Copy-Item $source $destination -Recurse -Force }
 }
 
-Write-Host "Build complete. Template was preserved; generated semantic model was copied wholesale and only environment-dependent values were patched." 
+Write-Host "Build complete. Template was preserved; generated semantic model was copied wholesale and only environment-dependent values were patched."
