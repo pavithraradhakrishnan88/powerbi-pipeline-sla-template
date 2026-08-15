@@ -79,17 +79,22 @@ $factPath = Join-Path $generatedSemanticModelRoot "definition\tables\Fact_Pipeli
 $expressionsPath = Join-Path $generatedSemanticModelRoot "definition\expressions.tmdl"
 $relationshipsPath = Join-Path $generatedSemanticModelRoot "definition\relationships.tmdl"
 $measuresPath = Join-Path $generatedSemanticModelRoot "definition\tables\_Measures.tmdl"
+$measureDefinitionsPath = Join-Path $repoRoot "scripts\metadata\MeasureDefinitions.json"
 if (!(Test-Path $factPath)) { throw "Generated semantic model is missing Fact_Pipeline_SampleData.tmdl." }
 if (!(Test-Path $expressionsPath)) { throw "Generated semantic model is missing expressions.tmdl." }
+if (!(Test-Path $measureDefinitionsPath)) { throw "Authoritative MeasureDefinitions.json is missing: $measureDefinitionsPath" }
 if (Test-Path $measuresPath) { throw "Generated semantic model must not contain _Measures.tmdl." }
 $factText = Get-Content -Raw $factPath
 $expressionText = Get-Content -Raw $expressionsPath
 $relationshipText = if (Test-Path $relationshipsPath) { Get-Content -Raw $relationshipsPath } else { "" }
+$measureMetadata = @(Get-Content -Raw $measureDefinitionsPath | ConvertFrom-Json).measures
+$expectedMeasureCount = $measureMetadata.Count
 $measureCount = ([regex]::Matches($factText,'(?m)^\s*measure\s+[^\r\n=]+\s*=')).Count
 $expressionCount = ([regex]::Matches($expressionText,'(?m)^\s*expression\s+')).Count
 $relationshipCount = ([regex]::Matches($relationshipText,'(?m)^\s*relationship\s+')).Count
-Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|InlineMeasuresOnFact=$measureCount|Relationships=$relationshipCount|Expressions=$expressionCount|Has_MeasuresTmdl=$([bool](Test-Path $measuresPath))"
-if ($measureCount -ne 20) { throw "Expected 20 inline measures on Fact_Pipeline_SampleData; found $measureCount." }
+Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|InlineMeasuresOnFact=$measureCount|ExpectedInlineMeasures=$expectedMeasureCount|Relationships=$relationshipCount|Expressions=$expressionCount|Has_MeasuresTmdl=$([bool](Test-Path $measuresPath))"
+if ($measureCount -ne $expectedMeasureCount) { throw "Expected $expectedMeasureCount inline measures on Fact_Pipeline_SampleData from MeasureDefinitions.json; found $measureCount." }
+if ($relationshipText -notmatch '(?s)relationship\s+[^\r\n]+\r?\n\s*fromColumn:\s*Fact_Pipeline_SampleData\.Category\r?\n\s*toColumn:\s*Dim_Category\.CategoryName') { throw "Expected Dim_Category[CategoryName] -> Fact_Pipeline_SampleData[Category] relationship is missing." }
 if ($expressionCount -ne 2) { throw "Expected 2 expressions; found $expressionCount." }
 if ($expressionText -notmatch 'expression DataFolder = "[^"]*" meta') { throw "DataFolder expression is missing or malformed." }
 if ($expressionText -notmatch "expression '_Measure Table'") { throw "_Measure Table expression is missing." }
