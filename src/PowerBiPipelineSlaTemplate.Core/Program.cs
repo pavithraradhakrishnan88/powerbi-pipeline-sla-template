@@ -43,3 +43,4 @@ Console.WriteLine("Pipeline completed successfully.");
 Console.WriteLine($"Semantic Model Template: {options.SemanticModelTemplateRootPath}");
 Console.WriteLine($"Semantic Model Output: {result.SemanticModelRootPath}");
 Console.WriteLine($"Report Output: {result.ReportRootPath}");
+Console.WriteLine($"PBIP Project File: {result.PbipFilePath}");
