@@ -17,6 +17,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             WriteMetadata(model, options);
             WriteSemanticModel(options);
             WriteReport(options);
+            MigrateAndValidateReportMeasures(options);
             var pbipFilePath = WritePbipProjectFile(options);
             ValidateOutput(options, pbipFilePath);
             return new PipelineResult(metadata, model, options.SemanticModelRootPath, options.ReportRootPath, pbipFilePath);
@@ -64,6 +65,11 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         }
 
         private static void WriteReport(PipelineOptions options) => new PbirReportWriter().WriteFromTemplate(options.ReportTemplateRootPath, options.ReportRootPath, options.SemanticModelRelativePath);
+
+        private static void MigrateAndValidateReportMeasures(PipelineOptions options)
+        {
+            PbirMeasureReferenceMigrator.MigrateAndValidate(options.ReportRootPath, options.SemanticModelRootPath);
+        }
 
         private static string WritePbipProjectFile(PipelineOptions options)
         {
