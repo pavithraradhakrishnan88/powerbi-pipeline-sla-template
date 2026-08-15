@@ -16,28 +16,36 @@ public sealed class PipelineTestFixture : IDisposable
         DataDirectoryPath = _workspace.CreateDirectory("data");
         SampleCsvGenerator.CopyScenarioToWorkspace(scenarioName, DataDirectoryPath);
 
-var pbipRoot = _workspace.CreateDirectory("pbip");
-var repoRoot = WorkspacePaths.FindRepoRoot();
+        var pbipRoot = _workspace.CreateDirectory("pbip");
+        var repoRoot = WorkspacePaths.FindRepoRoot();
 
-var sourceMeasureDefinitionsPath = Path.Combine(
-    repoRoot,
-    "scripts",
-    "metadata",
-    "MeasureDefinitions.json");
+        var sourceMeasureDefinitionsPath = Path.Combine(
+            repoRoot,
+            "scripts",
+            "metadata",
+            "MeasureDefinitions.json");
 
-var destinationMeasureDefinitionsPath = _workspace.GetPath(
-    Path.Combine("scripts", "metadata", "MeasureDefinitions.json"));
+        var destinationMeasureDefinitionsPath = _workspace.GetPath(
+            Path.Combine("scripts", "metadata", "MeasureDefinitions.json"));
 
-Directory.CreateDirectory(Path.GetDirectoryName(destinationMeasureDefinitionsPath)!);
-File.Copy(sourceMeasureDefinitionsPath, destinationMeasureDefinitionsPath, overwrite: true);
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationMeasureDefinitionsPath)!);
+        File.Copy(sourceMeasureDefinitionsPath, destinationMeasureDefinitionsPath, overwrite: true);
 
-var sourceTemplatePath = Path.Combine(
-    repoRoot,
-    "pbip",
-    "Pipeline_SLA_Tracker.Report");
+        var sourceReportTemplatePath = Path.Combine(
+            repoRoot,
+            "pbip",
+            "Pipeline_SLA_Tracker.Report");
 
         ReportTemplateRootPath = Path.Combine(pbipRoot, "Pipeline_SLA_Tracker.Report");
-        CopyDirectory(sourceTemplatePath, ReportTemplateRootPath);
+        CopyDirectory(sourceReportTemplatePath, ReportTemplateRootPath);
+
+        var sourceSemanticModelTemplatePath = Path.Combine(
+            repoRoot,
+            "pbip",
+            "Pipeline_SLA_Tracker.SemanticModel");
+
+        SemanticModelTemplateRootPath = Path.Combine(pbipRoot, "Pipeline_SLA_Tracker.SemanticModel");
+        CopyDirectory(sourceSemanticModelTemplatePath, SemanticModelTemplateRootPath);
 
         SemanticModelRootPath = Path.Combine(pbipRoot, "Pipeline SLA.SemanticModel");
         ReportRootPath = Path.Combine(pbipRoot, "Pipeline SLA.Report");
@@ -46,6 +54,7 @@ var sourceTemplatePath = Path.Combine(
         Options = new PipelineOptions
         {
             DataDirectoryPath = DataDirectoryPath,
+            SemanticModelTemplateRootPath = SemanticModelTemplateRootPath,
             SemanticModelRootPath = SemanticModelRootPath,
             ReportRootPath = ReportRootPath,
             ReportTemplateRootPath = ReportTemplateRootPath,
@@ -57,6 +66,7 @@ var sourceTemplatePath = Path.Combine(
 
     public PipelineOptions Options { get; }
     public string DataDirectoryPath { get; }
+    public string SemanticModelTemplateRootPath { get; }
     public string SemanticModelRootPath { get; }
     public string ReportRootPath { get; }
     public string ReportTemplateRootPath { get; }
