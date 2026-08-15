@@ -1,26 +1,69 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Text.Json.Nodes;
+using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace PowerBiPipelineSlaTemplate.Core.Pbip
 {
     internal static class PbirVisualContainerNormalizer
     {
+        private const string LegacyMeasuresTable = "_Measures";
+        private const string GeneratedMeasuresTable = "Fact_Pipeline_SampleData";
+
+        private static readonly IReadOnlyDictionary<string, string> MeasureNameMap =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Active Pipelines"] = "Active Pipelines",
+                ["Successful Runs"] = "Successful Runs",
+                ["Failed Runs"] = "Failed Runs",
+                ["Running Pipelines"] = "Running Pipelines",
+                ["Queued Pipelines"] = "Queued Pipelines",
+                ["Success Rate %"] = "Success Rate %",
+                ["Failure Rate %"] = "Failure Rate %",
+                ["SLA Breach %"] = "SLA Breach %",
+                ["Average Runtime"] = "Average Runtime",
+                ["Total Runtime"] = "Total Runtime",
+                ["Maximum Runtime"] = "Maximum Runtime",
+                ["Minimum Runtime"] = "Minimum Runtime",
+                ["Total Runs"] = "Total Runs",
+                ["Breached Count"] = "Breached Count",
+                ["SLA Compliance %"] = "SLA Compliance %",
+                ["Timeline Base"] = "Timeline Base",
+                ["Floating Bar Duration"] = "Floating Bar Duration",
+                ["Floating Bar Status"] = "Floating Bar Status",
+                ["SLA Breach Color"] = "SLA Breach Color",
+                ["Average Start Delay"] = "Average Start Delay",
+                ["Average End Delay"] = "Average End Delay",
+                ["Success Rate KPI"] = "Success Rate KPI",
+                ["Last Refresh"] = "Last Refresh"
+            };
+
         public static void NormalizeReport(string reportRootPath)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(reportRootPath);
             var definitionPath = Path.Combine(reportRootPath, "definition", "pages");
             if (!Directory.Exists(definitionPath)) return;
 
+            var semanticModelRoot = Path.Combine(
+                Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(reportRootPath)) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(Path.TrimEndingDirectorySeparator(reportRootPath)) + ".SemanticModel");
+            var measures = Directory.Exists(semanticModelRoot)
+                ? ReadGeneratedMeasures(semanticModelRoot)
+                : new HashSet<(string Table, string Measure)>();
+
+            var errors = new List<string>();
             foreach (var visualPath in Directory.EnumerateFiles(definitionPath, "visual.json", SearchOption.AllDirectories))
-            {
-                NormalizeVisual(visualPath);
-            }
+                NormalizeVisual(visualPath, measures, errors);
+
+            if (errors.Count > 0)
+                throw new InvalidOperationException("PBIR measure-reference validation failed:" + Environment.NewLine + string.Join(Environment.NewLine, errors.Select(e => " - " + e)));
         }
 
-        private static void NormalizeVisual(string visualPath)
+        private static void NormalizeVisual(string visualPath, HashSet<(string Table, string Measure)> measures, List<string> errors)
         {
             var originalBytes = File.ReadAllBytes(visualPath);
             var hadUtf8Bom = HasUtf8Bom(originalBytes);
@@ -30,80 +73,99 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var root = JsonNode.Parse(json) as JsonObject
                 ?? throw new InvalidOperationException($"PBIR visual '{visualPath}' must contain a JSON object.");
 
-            var changed = NormalizeMeasureSourceRefs(root);
+            var changed = NormalizeMeasureSourceRefs(root, visualPath, measures, errors);
             ValidateVisual(root, visualPath);
 
             if (changed)
             {
-                // Only semantically changed visuals are reserialized. This preserves the
-                // existing report content/layout for visuals that need no normalization.
-                File.WriteAllText(
-                    visualPath,
-                    root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }),
-                    new UTF8Encoding(false));
+                File.WriteAllText(visualPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), new UTF8Encoding(false));
             }
             else if (hadUtf8Bom)
             {
-                // Remove only the BOM when the visual itself does not require a semantic change.
-                // Do not deserialize/reserialize unchanged visuals.
                 File.WriteAllBytes(visualPath, jsonBytes);
             }
         }
 
-        private static bool HasUtf8Bom(byte[] bytes)
-        {
-            return bytes.Length >= 3 &&
-                   bytes[0] == 0xEF &&
-                   bytes[1] == 0xBB &&
-                   bytes[2] == 0xBF;
-        }
+        private static bool HasUtf8Bom(byte[] bytes) => bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
 
-        private static bool NormalizeMeasureSourceRefs(JsonNode node)
+        private static bool NormalizeMeasureSourceRefs(JsonNode node, string visualPath, HashSet<(string Table, string Measure)> measures, List<string> errors)
         {
             var changed = false;
-
             if (node is JsonObject obj)
             {
-                if (obj["Measure"] is JsonObject measure &&
-                    measure["Expression"] is JsonObject expression &&
-                    expression["SourceRef"] is JsonObject sourceRef &&
-                    sourceRef["Entity"] is JsonValue entityValue &&
-                    entityValue.TryGetValue<string>(out var entity) &&
-                    string.Equals(entity, "Fact_Pipeline_SampleData", StringComparison.Ordinal))
+                if (obj["Measure"] is JsonObject measure && measure["Expression"] is JsonObject expression && expression["SourceRef"] is JsonObject sourceRef)
                 {
-                    sourceRef["Entity"] = "_Measures";
-                    changed = true;
+                    var entity = sourceRef["Entity"]?.GetValue<string>();
+                    var property = measure["Property"]?.GetValue<string>();
+                    if (!string.IsNullOrWhiteSpace(entity) && !string.IsNullOrWhiteSpace(property))
+                    {
+                        var mapped = MeasureNameMap.TryGetValue(property!, out var mappedName) ? mappedName : property!;
+                        if (string.Equals(entity, LegacyMeasuresTable, StringComparison.OrdinalIgnoreCase))
+                        {
+                            sourceRef["Entity"] = GeneratedMeasuresTable;
+                            measure["Property"] = mapped;
+                            changed = true;
+                        }
+                        else if (string.Equals(entity, GeneratedMeasuresTable, StringComparison.OrdinalIgnoreCase))
+                        {
+                            measure["Property"] = mapped;
+                            changed |= !string.Equals(property, mapped, StringComparison.Ordinal);
+                            if (measures.Count > 0 && !measures.Contains((GeneratedMeasuresTable, mapped)))
+                                errors.Add($"{visualPath}: Measure reference '{GeneratedMeasuresTable}.{mapped}' does not resolve to a generated measure.");
+                        }
+                    }
                 }
 
-                foreach (var property in obj)
+                foreach (var property in obj.ToList())
                 {
-                    if (property.Value is not null && NormalizeMeasureSourceRefs(property.Value)) changed = true;
+                    if (property.Value is null) continue;
+                    if (property.Key is "queryRef" or "nativeQueryRef" or "metadata")
+                    {
+                        var text = property.Value.GetValueKind() == JsonValueKind.String ? property.Value.GetValue<string>() : null;
+                        if (!string.IsNullOrWhiteSpace(text) && text.StartsWith(LegacyMeasuresTable + ".", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var oldName = text[(LegacyMeasuresTable.Length + 1)..];
+                            var mapped = MeasureNameMap.TryGetValue(oldName, out var mappedName) ? mappedName : oldName;
+                            property.Value = $"{GeneratedMeasuresTable}.{mapped}";
+                            changed = true;
+                            continue;
+                        }
+                    }
+                    if (NormalizeMeasureSourceRefs(property.Value, visualPath, measures, errors)) changed = true;
                 }
             }
             else if (node is JsonArray array)
             {
                 foreach (var item in array)
+                    if (item is not null && NormalizeMeasureSourceRefs(item, visualPath, measures, errors)) changed = true;
+            }
+            return changed;
+        }
+
+        private static HashSet<(string Table, string Measure)> ReadGeneratedMeasures(string semanticModelRoot)
+        {
+            var result = new HashSet<(string Table, string Measure)>();
+            string? currentTable = null;
+            var tablePattern = new Regex(@"^\s*table\s+(.+?)\s*$", RegexOptions.Compiled);
+            var measurePattern = new Regex(@"^\s*measure\s+'((?:''|[^'])+)'\s*=", RegexOptions.Compiled);
+            foreach (var file in Directory.GetFiles(semanticModelRoot, "*.tmdl", SearchOption.AllDirectories))
+            {
+                foreach (var line in File.ReadLines(file))
                 {
-                    if (item is not null && NormalizeMeasureSourceRefs(item)) changed = true;
+                    var table = tablePattern.Match(line);
+                    if (table.Success) { currentTable = table.Groups[1].Value.Trim().Trim('\'').Replace("''", "'", StringComparison.Ordinal); continue; }
+                    var measure = measurePattern.Match(line);
+                    if (measure.Success && !string.IsNullOrWhiteSpace(currentTable)) result.Add((currentTable!, measure.Groups[1].Value.Replace("''", "'", StringComparison.Ordinal)));
                 }
             }
-
-            return changed;
+            return result;
         }
 
         private static void ValidateVisual(JsonObject root, string visualPath)
         {
-            if (root["visual"] is not JsonObject visual ||
-                visual["visualContainerObjects"] is not JsonObject containerObjects)
-            {
-                return;
-            }
-
+            if (root["visual"] is not JsonObject visual || visual["visualContainerObjects"] is not JsonObject containerObjects) return;
             if (containerObjects["title"] is JsonNode title && title is not JsonArray)
-            {
-                throw new InvalidOperationException(
-                    $"PBIR visual '{visualPath}' has an invalid visualContainerObjects.title value. The generator must serialize title as a JSON array.");
-            }
+                throw new InvalidOperationException($"PBIR visual '{visualPath}' has an invalid visualContainerObjects.title value. The generator must serialize title as a JSON array.");
         }
     }
 }
