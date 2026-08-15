@@ -102,6 +102,6 @@ public class PipelineOrchestratorTests
         Action act = () => orchestrator.Run(options);
 
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*SemanticModelTemplateRootPath and SemanticModelRootPath must be different*");
+            .WithMessage("*cannot equal SemanticModelTemplateRootPath*");
     }
 }
