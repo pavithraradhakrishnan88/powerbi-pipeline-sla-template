@@ -54,15 +54,50 @@ foreach ($semanticModelRoot in $pbipSemanticModelRoots) {
         continue
     }
 
-    $orphanedLocalDateTables = Get-ChildItem -Path $semanticModelRoot -Recurse -Filter "LocalDateTable_*.tmdl" -File -ErrorAction SilentlyContinue
+    $tablesRoot = Join-Path $semanticModelRoot "definition/tables"
 
-    if ($orphanedLocalDateTables.Count -gt 0) {
-        $paths = $orphanedLocalDateTables | ForEach-Object { $_.FullName }
-        throw "PBIP validation failed: orphaned LocalDateTable variation tables were found under '$semanticModelRoot':`n - $($paths -join "`n - ")"
+    $localDateTables = @(
+        Get-ChildItem `
+            -Path $tablesRoot `
+            -Filter "LocalDateTable_*.tmdl" `
+            -File `
+            -ErrorAction SilentlyContinue
+    )
+
+    if ($localDateTables.Count -eq 0) {
+        Write-Host "Validated PBIP semantic model: no LocalDateTable variations in $semanticModelRoot"
+        continue
     }
 
-    Write-Host "Validated PBIP semantic model: no orphaned LocalDateTable variations found in $semanticModelRoot"
-}
+    $relationshipsPath = Join-Path $semanticModelRoot "definition/relationships.tmdl"
 
+    $relationshipsContent = if (Test-Path $relationshipsPath) {
+        Get-Content $relationshipsPath -Raw
+    }
+    else {
+        ""
+    }
+
+    $orphaned = @(
+        $localDateTables | Where-Object {
+            $tableName = $_.BaseName
+
+            $relationshipsContent -notmatch (
+                [regex]::Escape($tableName) + "\."
+            )
+        }
+    )
+
+    if ($orphaned.Count -gt 0) {
+        $paths = $orphaned | ForEach-Object { $_.FullName }
+
+        throw @"
+PBIP validation failed: orphaned LocalDateTable variation tables were found under '$semanticModelRoot' (no matching relationship):
+ - $($paths -join "`n - ")
+"@
+    }
+
+    Write-Host "Validated PBIP semantic model: all $($localDateTables.Count) LocalDateTable variation(s) in $semanticModelRoot are properly related"
+}
 Write-Host "Validation complete."
 exit 0
