@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json.Nodes;
 using System.Text.Json;
 using System.Text;
+using System.Linq;
 
 namespace PowerBiPipelineSlaTemplate.Core.Pbip
 {
@@ -35,8 +36,6 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
             if (changed)
             {
-                // Only semantically changed visuals are reserialized. This preserves the
-                // existing report content/layout for visuals that need no normalization.
                 File.WriteAllText(
                     visualPath,
                     root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }),
@@ -44,8 +43,6 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             }
             else if (hadUtf8Bom)
             {
-                // Remove only the BOM when the visual itself does not require a semantic change.
-                // Do not deserialize/reserialize unchanged visuals.
                 File.WriteAllBytes(visualPath, jsonBytes);
             }
         }
@@ -75,9 +72,10 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                     changed = true;
                 }
 
-                foreach (var property in obj)
+                foreach (var property in obj.ToList())
                 {
-                    if (property.Value is not null && NormalizeMeasureSourceRefs(property.Value)) changed = true;
+                    if (property.Value is null) continue;
+                    if (NormalizeMeasureSourceRefs(property.Value)) changed = true;
                 }
             }
             else if (node is JsonArray array)
