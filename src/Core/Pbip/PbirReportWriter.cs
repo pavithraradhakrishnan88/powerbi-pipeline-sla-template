@@ -51,13 +51,13 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 CopyDirectoryRecursively(templateReportRootPath, staging);
                 Console.WriteLine($"Established generated PBIP from authoritative report template '{templateReportRootPath}'.");
 
-                // The dataset pointer is the only report-level field intentionally regenerated.
-                // Everything else in the copied definition remains exactly as supplied by the template.
+                // The dataset pointer and registered-image metadata are the only report-level fields intentionally patched.
                 var definitionPbirPath = Path.Combine(staging, "definition.pbir");
                 if (!File.Exists(definitionPbirPath))
                     throw new InvalidOperationException($"Template is missing required file '{definitionPbirPath}'.");
                 File.WriteAllText(definitionPbirPath, BuildDefinitionPbir(semanticModelRelativePath), new System.Text.UTF8Encoding(false));
 
+                PbirReportResourcePackagePatcher.RegisterTemplatePngs(staging);
                 ValidateTemplateOutput(staging);
                 ReplaceDirectoryAtomically(staging, reportRootPath);
             }
@@ -242,7 +242,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         private static string ResolveBookmarkPageId(BookmarkDefinition b) => string.IsNullOrWhiteSpace(b.PageId) ? b.Page : b.PageId;
         private static string ResolveBookmarkId(BookmarkDefinition b) => string.IsNullOrWhiteSpace(b.BookmarkId) ? b.Name : b.BookmarkId;
         private static string? ResolveThemePath(string configuredPath, string root, string? themeRoot) { if (Path.IsPathRooted(configuredPath)) return configuredPath; var a = Path.GetFullPath(Path.Combine(root, configuredPath)); if (File.Exists(a)) return a; if (!string.IsNullOrWhiteSpace(themeRoot)) { var b = Path.GetFullPath(Path.Combine(themeRoot, configuredPath)); if (File.Exists(b)) return b; var c = Path.Combine(themeRoot, Path.GetFileName(configuredPath)); if (File.Exists(c)) return c; var d = Path.Combine(themeRoot, "theme", Path.GetFileName(configuredPath)); if (File.Exists(d)) return d; } return null; }
-        private static void CopyAdditionalStaticResources(string registered, string? themeRoot) { if (string.IsNullOrWhiteSpace(themeRoot)) return; foreach (var dir in new[] { Path.Combine(themeRoot, "staticResources", "RegisteredResources"), Path.Combine(themeRoot, "RegisteredResources") }) if (Directory.Exists(dir)) foreach (var f in Directory.GetFiles(dir)) { var d = Path.Combine(registered, Path.GetFileName(f)); if (!File.Exists(d)) File.Copy(f, d); } }
+        private static void CopyAdditionalStaticResources(registered, string? themeRoot) { if (string.IsNullOrWhiteSpace(themeRoot)) return; foreach (var dir in new[] { Path.Combine(themeRoot, "staticResources", "RegisteredResources"), Path.Combine(themeRoot, "RegisteredResources") }) if (Directory.Exists(dir)) foreach (var f in Directory.GetFiles(dir)) { var d = Path.Combine(registered, Path.GetFileName(f)); if (!File.Exists(d)) File.Copy(f, d); } }
         private static string SanitizeDirectoryName(string value) { var s = value.Trim(); foreach (var c in Path.GetInvalidFileNameChars()) s = s.Replace(c, '_'); return string.IsNullOrWhiteSpace(s) ? "Page" : s; }
         private static void SafeDeleteDirectory(string path) { if (!Directory.Exists(path)) return; try { Directory.Delete(path, true); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
     }
