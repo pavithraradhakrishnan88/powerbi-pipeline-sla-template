@@ -14,12 +14,14 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         /// <param name="model">The built model.</param>
         /// <param name="semanticModelRootPath">The semantic model output directory.</param>
         /// <param name="reportRootPath">The report output directory.</param>
-        public PipelineResult(DatabaseSchema metadata, ModelBuildResult model, string semanticModelRootPath, string reportRootPath)
+        /// <param name="pbipFilePath">The generated root .pbip project file.</param>
+        public PipelineResult(DatabaseSchema metadata, ModelBuildResult model, string semanticModelRootPath, string reportRootPath, string pbipFilePath)
         {
             Metadata = metadata;
             Model = model;
             SemanticModelRootPath = semanticModelRootPath;
             ReportRootPath = reportRootPath;
+            PbipFilePath = pbipFilePath;
         }
 
         /// <summary>
@@ -41,5 +43,10 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         /// Gets the report output directory.
         /// </summary>
         public string ReportRootPath { get; }
+
+        /// <summary>
+        /// Gets the path to the generated root .pbip project file.
+        /// </summary>
+        public string PbipFilePath { get; }
     }
 }

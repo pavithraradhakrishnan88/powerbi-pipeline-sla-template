@@ -37,7 +37,8 @@ internal static class PbirMeasureReferenceMigrator
             JsonNode root;
             try { root = JsonNode.Parse(File.ReadAllText(visualPath)) ?? throw new InvalidOperationException("JSON document is null."); }
             catch (Exception ex) when (ex is JsonException or InvalidOperationException) { errors.Add($"{visualPath}: invalid JSON: {ex.Message}"); continue; }
-            if (MigrateNode(root, visualPath, errors, measures)) { File.WriteAllText(visualPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), new System.Text.UTF8Encoding(false)); migrated++; }
+            var changed = MigrateNode(root, visualPath, errors, measures);
+            if (changed) { File.WriteAllText(visualPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), new System.Text.UTF8Encoding(false)); migrated++; }
         }
         if (errors.Count > 0) throw new InvalidOperationException("PBIR measure-reference validation failed:" + Environment.NewLine + string.Join(Environment.NewLine, errors.Select(x => " - " + x)));
         Console.WriteLine($"PBIR measure-reference validation passed: {visualCount} visual(s), {migrated} visual(s) migrated from '{LegacyMeasuresTable}' to '{GeneratedMeasuresTable}'.");
@@ -59,11 +60,9 @@ internal static class PbirMeasureReferenceMigrator
                     else ValidateMeasureReference(visualPath, entity!, mappedProperty, measures, errors);
                 }
             }
-
             foreach (var property in obj.ToList())
             {
-                var value = property.Value;
-                if (value is null) continue;
+                var value = property.Value; if (value is null) continue;
                 if (property.Key is "queryRef" or "nativeQueryRef" or "metadata")
                 {
                     var text = value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : null;
