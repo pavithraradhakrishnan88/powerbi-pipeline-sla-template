@@ -105,25 +105,30 @@ function Assert-PageVisualContainers {
     param([Parameter(Mandatory = $true)][string]$ReportRoot)
     $pagesRoot = Join-Path $ReportRoot "definition\pages"
     if (!(Test-Path $pagesRoot -PathType Container)) { throw "Page validation failed: missing '$pagesRoot'." }
-    $totalContainers = 0
     $totalVisualFiles = 0
     $pageResults = @()
     foreach ($pageDirectory in Get-ChildItem -Path $pagesRoot -Directory | Sort-Object Name) {
         $pageJsonPath = Join-Path $pageDirectory.FullName "page.json"
         if (!(Test-Path $pageJsonPath -PathType Leaf)) { throw "Page validation failed: missing '$pageJsonPath'." }
         try { $page = Get-Content -Raw -Path $pageJsonPath | ConvertFrom-Json } catch { throw "Page validation failed: '$pageJsonPath' is not valid JSON. $($_.Exception.Message)" }
-        if ($null -eq $page.PSObject.Properties['visualContainers']) { throw "Page validation failed: '$pageJsonPath' is missing visualContainers." }
-        $containers = @($page.visualContainers)
+
         $visualDirectory = Join-Path $pageDirectory.FullName "visuals"
-        $visualFiles = if (Test-Path $visualDirectory -PathType Container) { @(Get-ChildItem $visualDirectory -Recurse -Filter "visual.json" -File) } else { @() }
-        if ($containers.Count -ne $visualFiles.Count) { throw "Page validation failed: '$($pageDirectory.Name)' has $($containers.Count) visualContainers but $($visualFiles.Count) visual.json files." }
-        $totalContainers += $containers.Count
+        if (!(Test-Path $visualDirectory -PathType Container)) { throw "Page validation failed: '$($pageDirectory.Name)' is missing its visuals folder '$visualDirectory'." }
+
+        $visualFiles = @(Get-ChildItem $visualDirectory -Recurse -Filter "visual.json" -File)
+        if ($visualFiles.Count -eq 0) { throw "Page validation failed: '$($pageDirectory.Name)' has no visual.json files under '$visualDirectory'." }
+
+        $schema = [string]$page.'$schema'
+        if ([string]::IsNullOrWhiteSpace($schema)) { throw "Page validation failed: '$pageJsonPath' is missing its `$schema value." }
+        if ($schema -notmatch '/definition/page/[^/]+/schema\.json$') { throw "Page validation failed: '$pageJsonPath' has an unexpected page schema '$schema'." }
+
         $totalVisualFiles += $visualFiles.Count
-        $pageResults += [pscustomobject]@{ Page = $pageDirectory.Name; VisualContainers = $containers.Count; VisualJson = $visualFiles.Count }
+        $pageResults += [pscustomobject]@{ Page = $pageDirectory.Name; VisualJson = $visualFiles.Count; Schema = $schema }
     }
-    foreach ($result in $pageResults) { Write-Host "Page $($result.Page): visualContainers=$($result.VisualContainers), visual.json=$($result.VisualJson)" }
-    if ($totalContainers -ne 28 -or $totalVisualFiles -ne 28) { throw "Page validation failed: expected total visualContainers=28 and visual.json=28, found visualContainers=$totalContainers and visual.json=$totalVisualFiles." }
-    Write-Host "Page-level visual validation passed: visualContainers=$totalContainers, visual.json=$totalVisualFiles."
+
+    foreach ($result in $pageResults) { Write-Host "Page $($result.Page): visual.json=$($result.VisualJson), schema=$($result.Schema)" }
+    if ($totalVisualFiles -ne 28) { throw "Page validation failed: expected total visual.json=28, found $totalVisualFiles." }
+    Write-Host "Page-level visual validation passed: visual.json=$totalVisualFiles across $($pageResults.Count) page(s)."
 }
 
 function Normalize-PbipMeasureBindings {
@@ -208,7 +213,7 @@ if ($expectedVisualJsonPaths.Count -ne 28) { throw "Authoritative visual invento
 Assert-PageVisualContainers -ReportRoot $sourceReportRoot
 Assert-VisualJsonFiles -ReportRoot $sourceReportRoot -ExpectedRelativePaths $expectedVisualJsonPaths
 Write-VisualBomDiagnostics -Stage "source-after-validation-before-robocopy" -ReportRoot $sourceReportRoot
-Write-Host "Authoritative regenerated source report contains exactly 28 visual.json files and matching page visualContainers."
+Write-Host "Authoritative regenerated source report contains exactly 28 visual.json files across PBIR page visual folders."
 
 $artifactPath = Join-Path $repoRoot "artifacts"
 if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
@@ -255,7 +260,7 @@ Write-VisualBomDiagnostics -Stage "after-published-definition-refresh" -ReportRo
 
 Assert-PageVisualContainers -ReportRoot $publishedReport
 Assert-VisualJsonFiles -ReportRoot $publishedReport -ExpectedRelativePaths $expectedVisualJsonPaths
-Write-Host "Published report visualContainers and visual.json inventory match regenerated source."
+Write-Host "Published report PBIR page/visual inventory matches regenerated source."
 
 robocopy $pbipSourceSemanticModel (Join-Path $pbipOutputRoot "$pbipName.SemanticModel") /MIR /NFL /NDL /NJH /NJS /NC /NS | Out-Null
 $robocopyExitCode = $LASTEXITCODE
