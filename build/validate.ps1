@@ -7,6 +7,8 @@
 # - Reject orphaned PBIP local date variation tables
 # =====================================
 
+$ErrorActionPreference = "Stop"
+
 Write-Host "Starting validation..."
 
 $requiredDirectories = @(
@@ -63,3 +65,4 @@ foreach ($semanticModelRoot in $pbipSemanticModelRoots) {
 }
 
 Write-Host "Validation complete."
+exit 0
