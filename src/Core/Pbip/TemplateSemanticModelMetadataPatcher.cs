@@ -88,9 +88,17 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
             if (additions.Length > 0)
             {
-                var partitionIndex = text.IndexOf("\tpartition ", StringComparison.Ordinal);
-                if (partitionIndex < 0) throw new InvalidDataException("Fact table has no partition to append measures before.");
-                text = text.Insert(partitionIndex, additions.ToString());
+                // A template fact table does not necessarily contain a partition.
+                // Measures are table metadata and can be inserted before the first
+                // column when the partition is absent. This keeps the template-first
+                // structure intact and does not recreate the deleted _Measure Table.
+                var insertionIndex = text.IndexOf("\tpartition ", StringComparison.Ordinal);
+                if (insertionIndex < 0)
+                    insertionIndex = text.IndexOf("\tcolumn ", StringComparison.Ordinal);
+                if (insertionIndex < 0)
+                    insertionIndex = text.Length;
+
+                text = text.Insert(insertionIndex, additions.ToString());
                 File.WriteAllText(factPath, text, new UTF8Encoding(false));
             }
 
