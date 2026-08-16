@@ -1,171 +1,81 @@
-# Getting Started
+# Getting Started — Version 1.0.0
 
-This guide explains how to set up, build, validate, and publish the **Power BI Pipeline SLA Tracker Template**.
-
----
+This guide covers the supported Version 1 PBIP workflow for the Power BI Pipeline SLA Tracker.
 
 ## Prerequisites
 
-Install the following tools before starting:
+- Power BI Desktop
+- Git
+- PowerShell 7+
+- .NET SDK
+- Tabular Editor 2.28 for the manual measure-generation/inspection workflow
 
-* Microsoft Power BI Desktop
-* Git
-* PowerShell 7+
-* Tabular Editor 2
-
-Recommended:
-
-* .NET SDK (required for automation tooling)
-* Power BI Service workspace access
-
----
-
-## Clone Repository
-
-Clone the repository:
+## Clone and open
 
 ```bash
 git clone https://github.com/pavithraradhakrishnan88/powerbi-pipeline-sla-template.git
-```
-
-Navigate into the project:
-
-```powershell
 cd powerbi-pipeline-sla-template
 ```
 
----
+Open this PBIP in Power BI Desktop:
 
-## Repository Structure
-
-The main folders are:
-
-```
-powerbi-pipeline-sla-template
-│
-├── data/              # Sample pipeline datasets
-├── model/             # Semantic model files
-├── pbip/              # Power BI Project files
-├── powerquery/        # Power Query scripts
-├── src/               # DAX and model definitions
-├── theme/             # Power BI theme files
-├── build/             # Validation and build automation
-├── docs/              # Documentation
-└── .github/workflows/ # CI/CD workflows
+```text
+pbip/Pipeline_SLA_Tracker.pbip
 ```
 
----
+Do not use the older `reports/PipelineDashboard.pbip` path; it is not the Version 1 project.
 
-## Open Power BI Project
+## Generate measures metadata
 
-Open the PBIP project:
+The source of truth is:
 
-```
-pbip/
-└── Pipeline SLA.pbip
-```
-
-Open it using Power BI Desktop.
-
----
-
-## Load Sample Data
-
-The repository includes sample pipeline data.
-
-Default files:
-
-```
-data/
-├── Fact_Pipeline_SampleData.csv
-└── Dim_Category.csv
+```text
+scripts/metadata/MeasureDefinitions.json
 ```
 
-To use your own data:
-
-1. Replace the sample CSV files.
-2. Maintain the required column structure.
-3. Refresh the Power BI model.
-
----
-
-## Build
-
-Run the automated build process:
+Generate the Tabular Editor script:
 
 ```powershell
-.\build\build.ps1
+.\scripts\tools\GenerateMetadata.ps1
 ```
 
-The build process performs:
+This writes `scripts/GenerateMeasures.csx`, which is compatible with Tabular Editor 2.28.
 
-* Validation checks
-* Model updates
-* Power BI artifact generation
-* Build output creation
+## Manual Tabular Editor workflow
 
----
+1. Open the Version 1 semantic model in Tabular Editor 2.28.
+2. Run `scripts/GenerateMeasures.csx`.
+3. Confirm the measures on `Fact_Pipeline_SampleData`.
+4. Save and inspect the model in Power BI Desktop.
 
-## Validate
+## Automated build
 
-Run validation manually:
+Run:
 
 ```powershell
 .\build\validate.ps1
+.\build\build.ps1
 ```
 
-Validation checks:
+The automated build is template-first and does not require Tabular Editor on the CI runner. It materializes the authoritative measures from the repository contract, validates the semantic model, validates PBIR metadata, checks the `DataFolder` path, and applies the exact published-artifact visual gate.
 
-* Required files
-* CSV schema
-* Data availability
-* Project structure
+## Version 1 acceptance checks
 
----
+Before publishing:
 
-## GitHub Actions Validation
+- Build succeeds.
+- Expected measures are present inline on `Fact_Pipeline_SampleData`.
+- No generated `_Measures.tmdl` is required by the build.
+- `DataFolder` remains portable and does not contain a CI-runner absolute path.
+- PBIR definition is valid.
+- Exactly 28 `visual.json` files exist and all parse as JSON without BOMs.
+- Power BI Desktop opens the PBIP.
+- Slicers visibly filter visuals.
+- All pages/visuals render.
+- Registered images/resources display.
 
-The repository includes automated workflows:
+## Publish
 
-```
-.github/workflows/
+After those checks, open the PBIP in Power BI Desktop and publish it to the intended Power BI workspace.
 
-├── validate.yml
-├── build.yml
-└── release.yml
-```
-
-These workflows validate changes automatically during commits and releases.
-
----
-
-## Publish to Power BI Service
-
-After successful validation:
-
-1. Open the PBIP project in Power BI Desktop.
-2. Select **Publish**.
-3. Choose the target Power BI workspace.
-4. Verify dataset and report deployment.
-
----
-
-## Configure Scheduled Refresh
-
-After publishing:
-
-1. Open the dataset settings in Power BI Service.
-2. Configure data source credentials.
-3. Configure refresh schedule.
-4. Confirm successful refresh.
-
----
-
-## Next Steps
-
-Continue with:
-
-* [User Guide](UserGuide.md)
-* [Configuration Guide](Configuration.md)
-* [Testing Guide](Testing.md)
-* [Changelog](../CHANGELOG.md)
+Continue with [Testing](Testing.md), [Configuration](Configuration.md), and the root [Build Guide](../Pipeline_SLA_Tracker_Build_Guide.md).
