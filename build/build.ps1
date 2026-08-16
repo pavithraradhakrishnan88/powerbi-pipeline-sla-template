@@ -97,15 +97,14 @@ if ($measureCount -ne $expectedMeasureCount) { throw "Expected $expectedMeasureC
 if ($relationshipText -notmatch '(?s)relationship\s+[^\r\n]+\r?\n\s*fromColumn:\s*Fact_Pipeline_SampleData\.Category\r?\n\s*toColumn:\s*Dim_Category\.CategoryName') { throw "Expected Dim_Category[CategoryName] -> Fact_Pipeline_SampleData[Category] relationship is missing." }
 if ($expressionCount -ne 1) { throw "Expected 1 expression; found $expressionCount." }
 if ($expressionText -notmatch 'expression DataFolder = "[^"]*" meta') { throw "DataFolder expression is missing or malformed." }
-if ($factText -notmatch 'File\.Contents\(DataFolder') {
-    $fileContentsLines = @($factText -split "`r?`n" | Where-Object { $_ -match 'File\.Contents\(' })
-    $actualFileContents = if ($fileContentsLines.Count -gt 0) { $fileContentsLines -join ' || ' } else { '<no File.Contents(...) line found>' }
-    $expectedPattern = 'File\.Contents\(DataFolder'
-    Write-Host "DATAFOLDER-CHECK|FactPath=$factPath"
-    Write-Host "DATAFOLDER-CHECK|ActualFileContents=$actualFileContents"
-    Write-Host "DATAFOLDER-CHECK|ExpectedRegex=$expectedPattern"
-    Write-Host "DATAFOLDER-CHECK|RegexMatches=$($factText -match $expectedPattern)"
-    throw "Generated Fact partition does not use DataFolder."
+
+$factPowerQueryPath = Join-Path $repoRoot "powerquery\Fact_Pipeline.pq"
+if (!(Test-Path $factPowerQueryPath)) {
+    throw "Fact Power Query source is missing: $factPowerQueryPath"
+}
+$factPowerQueryText = Get-Content -Raw $factPowerQueryPath
+if ($factPowerQueryText -notmatch 'File\.Contents\(DataFolder\s*&\s*"\\Fact_Pipeline_SampleData\.csv"') {
+    throw "Fact Power Query source does not resolve through DataFolder."
 }
 
 Normalize-DefinitionSchema -Path (Join-Path $generatedReportRoot "definition.pbir")
