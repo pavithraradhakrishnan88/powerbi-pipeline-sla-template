@@ -1,314 +1,96 @@
-# User Guide
+# User Guide — Version 1.0.0
 
-## Report Overview
+The Pipeline SLA Tracker is an interactive Power BI report for monitoring pipeline execution, SLA compliance, runtime, and operational exceptions.
 
-The **Power BI Pipeline SLA Tracker** provides an interactive dashboard to monitor pipeline execution performance, SLA compliance, runtime trends, and operational health.
+## Report pages
 
-The report is designed for operations teams, data engineers, and business users who need visibility into:
+### Home
 
-- Pipeline execution status
-- SLA compliance
-- Runtime performance
-- Failed and successful executions
-- Environment-level monitoring
+Landing page for the Version 1 report. Use the configured KPI and summary visuals to understand current pipeline health.
 
-The dashboard uses a combination of KPI cards, charts, slicers, and timeline visualizations to help identify delayed or failed processes quickly.
+### Executive Overview
 
----
+Provides the executive KPI and operational overview, including pipeline counts, success/failure rates, runtime indicators, and SLA measures.
 
-# Dashboard Pages
+### SLA Exceptions
 
-## Pipeline Overview
+Focuses on pipelines that require investigation because of SLA breaches or execution exceptions. Use the available filters to narrow the exception set.
 
-The **Pipeline Overview** page provides a high-level summary of pipeline health.
+## Key measures
 
-### Key Visuals
+Version 1 includes measures such as:
 
-#### KPI Cards
+- Active Pipelines
+- Successful Runs
+- Failed Runs
+- Success Rate %
+- Failure Rate %
+- SLA Breach %
+- Total Runs
+- Breached Count
+- SLA Compliance %
+- Average Runtime
+- Timeline Base
+- Floating Bar Duration
+- Floating Bar Status
 
-The summary cards display important operational metrics:
+The measure source of truth is `scripts/metadata/MeasureDefinitions.json`.
 
-- **Active Pipelines**
-  - Total number of pipelines included in the selected filter context.
-  - Helps users understand the current pipeline workload.
+## Filters and slicers
 
-- **Average Runtime**
-  - Shows the average execution duration across selected pipelines.
-  - Useful for identifying performance changes over time.
+Where configured on the report, use slicers to filter the report by environment, category, time window, or status.
 
-- **SLA Breach %**
-  - Displays the percentage of pipeline executions that exceeded their SLA target.
-  - Higher values indicate potential operational issues.
+After changing a slicer, the expected visuals should visibly update. If a slicer does not change the intended visuals, treat it as a Desktop UAT defect and verify the relationship/field binding.
 
-- **Success Rate**
-  - Represents the percentage of successful pipeline executions.
+## SLA interpretation
 
----
+- **SLA Compliance %** represents the proportion of runs that met the SLA.
+- **SLA Breach %** represents the proportion of runs that breached the SLA.
+- **Breached Count** is the number of runs classified as SLA breaches.
 
-### Pipeline Execution Summary
+Always interpret these measures in the current filter context.
 
-This visual provides an overview of pipeline execution results.
+## Floating-bar visualization
 
-Users can identify:
+The floating-bar experience uses timeline-base and duration measures to position the runtime window. The report template controls the visual field bindings and formatting; users should not recreate the visual manually for normal Version 1 use.
 
-- Successful pipeline runs
-- Failed pipeline runs
-- SLA compliance trends
-- Execution patterns across environments
+## Replacing sample data
 
----
+1. Replace the files in `data/` while preserving the required schema.
+2. Run `build/validate.ps1`.
+3. Run `build/build.ps1`.
+4. Open `pbip/Pipeline_SLA_Tracker.pbip` in Power BI Desktop.
+5. Refresh/validate the model.
+6. Check slicers, KPI values, visuals, and registered resources.
 
-## SLA Monitoring
+The build keeps `DataFolder` portable; do not hardcode a local or CI-runner absolute path.
 
-The **SLA Monitoring** page focuses on detailed SLA tracking and exception analysis.
+## Desktop UAT
 
-### Floating Bar Chart
+Before publishing Version 1, confirm:
 
-The floating bar chart displays pipeline execution duration compared with SLA expectations.
+- KPI hierarchy and measure bindings render correctly.
+- Slicers visibly filter visuals.
+- All three pages render correctly.
+- Floating-bar and SLA visuals display expected values.
+- Registered report images/resources display.
 
-It helps users quickly identify:
+Automated CI validation proves structural/semantic integrity, not every Desktop interaction.
 
-- Pipelines completing within SLA
-- Pipelines exceeding SLA targets
-- Long-running processes requiring investigation
+## Troubleshooting
 
-### Environment Failure Analysis
+### Missing or incorrect KPI
 
-This visual compares failures across environments:
+Check the selected filter context and the measure definition in `scripts/metadata/MeasureDefinitions.json`.
 
-- Development (Dev)
-- Testing (Test)
-- Production (Prod)
+### Slicer has no effect
 
-Use this view to identify whether failures are isolated to a specific environment.
+Check the model relationship and the visual's field bindings. Reopen the authoritative PBIP after rebuilding.
 
-### Success vs Failure Distribution
+### Missing image/resource
 
-The status distribution chart shows the proportion of:
+Confirm the registered resource exists in the final report artifact and that the exact published artifact passed the resource/visual gates.
 
-- Successful runs
-- Failed runs
+### Build failure
 
-This provides a quick health check of pipeline reliability.
-
----
-
-# Using Filters
-
-Filters allow users to analyze specific pipeline scenarios.
-
-## Environment
-
-The Environment filter allows users to view pipeline activity by deployment environment.
-
-Available examples:
-
-- Dev
-- Test
-- Prod
-
-Use this filter to compare operational stability between environments.
-
----
-
-## Status
-
-The Status filter allows users to focus on specific execution outcomes.
-
-Typical values:
-
-- Success
-- Failed
-
-Use this filter to investigate failed runs or validate successful processing.
-
----
-
-## Time Window
-
-The Time Window filter controls the reporting period.
-
-Use this filter to analyze:
-
-- Recent pipeline executions
-- Historical performance
-- SLA trends over a selected period
-
----
-
-# Understanding SLA Metrics
-
-## Active Pipelines
-
-**Active Pipelines** represents the number of pipelines included in the current report selection.
-
-Example:
-
-If the Environment filter is set to Production, the metric shows only active production pipelines.
-
----
-
-## Average Runtime
-
-Average Runtime measures the typical execution duration of pipelines.
-
-Formula:
-
-
-Average Runtime = Total Runtime / Number of Pipeline Runs
-
-
-Use this metric to identify:
-
-- Increasing execution times
-- Performance degradation
-- Optimization opportunities
-
----
-
-## SLA Breach %
-
-SLA Breach % identifies how frequently pipelines exceed their expected completion time.
-
-Formula:
-
-
-SLA Breach % = SLA Breached Runs / Total Pipeline Runs
-
-
-Interpretation:
-
-| Value | Meaning |
-|---|---|
-| Low percentage | Pipelines are meeting SLA expectations |
-| High percentage | Pipelines require investigation |
-
----
-
-## Success vs Failure
-
-This metric compares completed successful runs against failed executions.
-
-Use it to monitor:
-
-- Reliability
-- Operational stability
-- Recurring pipeline issues
-
----
-
-# Floating Bar Chart Explanation
-
-The Floating Bar Chart is the main timeline visualization used in the SLA Tracker.
-
-It displays:
-
-- Pipeline name on the Y-axis
-- Scheduled start time as the starting position
-- Runtime duration as the floating bar length
-
-Each bar represents the execution window of a pipeline.
-
-### SLA Status Colors
-
-The chart highlights SLA performance:
-
-- Green → Pipeline completed within SLA
-- Red → Pipeline exceeded SLA target
-
-This allows users to identify SLA violations without reviewing individual records.
-
----
-
-# Replacing Sample Data
-
-The dashboard includes sample pipeline execution data for demonstration purposes.
-
-To connect your own pipeline data:
-
-1. Replace the sample CSV files in the `data/` folder.
-
-Example:
-
-
-data/
-├── Fact_Pipeline_SampleData.csv
-└── Dim_Category.csv
-
-
-2. Maintain the required column structure.
-
-The main fact table should include fields such as:
-
-| Column | Description |
-|---|---|
-| PipelineName | Pipeline or process name |
-| Environment | Execution environment |
-| Status | Success or Failed |
-| StartDate | Actual execution start time |
-| EndDate | Actual execution completion time |
-| Runtime | Execution duration |
-| SLA Target | Expected completion duration |
-
-3. Refresh the Power BI model.
-
-4. Validate that all visuals update correctly.
-
----
-
-# Troubleshooting
-
-## Dashboard Does Not Refresh
-
-Check:
-
-- Source files exist in the expected folder.
-- CSV column names match the required schema.
-- Data types are correct.
-
----
-
-## Missing Visual Data
-
-Possible causes:
-
-- Filters are limiting available records.
-- Sample data has been replaced incorrectly.
-- Required columns are missing.
-
----
-
-## SLA Metrics Show Incorrect Values
-
-Verify:
-
-- SLA target values are populated.
-- Runtime calculations are correct.
-- Status values match expected categories.
-
----
-
-## Build or Validation Errors
-
-Run the validation script:
-
-```powershell
-.\build\validate.ps1
-
-Check:
-
-CSV structure
-Required files
-Model configuration
-
-For build issues, review the generated logs under the build artifacts folder.
-
-Best Practices
-
-For reliable SLA monitoring:
-
-Keep pipeline names consistent.
-Maintain accurate SLA targets.
-Refresh data regularly.
-Review failed pipelines and SLA breaches regularly.
-Use environment filtering before investigating issues.
+Run `build/validate.ps1` first, then inspect the build logs and the failed gate named by `build/build.ps1`.

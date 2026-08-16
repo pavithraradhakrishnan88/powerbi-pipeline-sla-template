@@ -1,48 +1,62 @@
-# Developer Guide
+# Developer Guide — Version 1.0.0
 
-This document describes the architecture, extensibility points, coding conventions, and implementation guidance for the AI Metadata Generator introduced in Phase 4.
+This guide describes the current template-first PBIP generation architecture and the measure metadata workflow.
 
-## AI Module Architecture
+## Authoritative sources
 
-The AI module layer should be implemented as composable analyzers over a shared metadata context.
+- Report template: `pbip/Pipeline_SLA_Tracker.Report/`
+- Semantic-model template: `pbip/Pipeline_SLA_Tracker.SemanticModel/`
+- Measure contract: `scripts/metadata/MeasureDefinitions.json`
+- TE2.28 generated script: `scripts/GenerateMeasures.csx`
+- Generator: `scripts/tools/GenerateMetadata.ps1`
+- Build: `build/build.ps1`
 
-Recommended components:
+## Measure workflow
 
-- MetadataContext: in-memory object graph passed across analyzers
-- AnalyzerStage: ordered stage interface with deterministic input/output
-- AnalyzerRegistry: central registration and execution order
-- DiagnosticsSink: structured warnings/errors with object targets
+`MeasureDefinitions.json` is the source of truth. `GenerateMetadata.ps1` produces `GenerateMeasures.csx`, which can be executed in Tabular Editor 2.28 for manual materialization and inspection.
 
-## Metadata Object Model
+The automated build does not depend on Tabular Editor. Its authoritative generator materializes the required inline measures into the generated semantic model and validates the result against the metadata contract.
 
-Use a stable object model that maps directly to metadata.json:
+When changing a measure:
 
-- Document: version, timestamp, tables, relationships, diagnostics
-- Table: name, kind, columns, optional description
-- Column: dataType, nullable, semanticRole, optional hints
-- Relationship: from, to, cardinality, confidence
-- Diagnostic: code, severity, message, target
+1. Update `scripts/metadata/MeasureDefinitions.json`.
+2. Regenerate `scripts/GenerateMeasures.csx`.
+3. Validate the measure in TE2.28 if performing manual model work.
+4. Run the automated build.
+5. Update tests/docs when behavior changes.
 
-## Extending Metadata Generators
+## Template-first report architecture
 
-1. Add fields as optional first.
-2. Preserve backward compatibility in serializers.
-3. Add fixture updates and regression snapshots.
-4. Add validation rules for new fields before enabling strict gating.
+The report template remains authoritative. The build regenerates from that template rather than reconstructing the report from a blank definition.
 
-## Creating New AI Analyzers
+The build then validates:
 
-1. Implement analyzer stage interface.
-2. Declare stage order and dependencies.
-3. Keep analyzer side effects isolated to metadata context updates.
-4. Emit diagnostics instead of throwing for soft-confidence outcomes.
-5. Add targeted unit tests and one integration assertion.
+- PBIR definition schema/version.
+- Dataset path resolution.
+- DataFolder portability.
+- Expected relationship.
+- Measure count and placement.
+- Exact visual JSON inventory.
+- JSON syntax and BOM absence.
+- Final published-artifact integrity.
 
-## Coding Conventions for AI Modules
+## PBIR visual integrity
 
-- Deterministic output for same input data
-- No hidden global state
-- Prefer pure functions for scoring logic
-- Use explicit confidence thresholds
-- Keep diagnostics machine-readable and stable
-- Use Arrange/Act/Assert tests with fixture-backed datasets
+Version 1 expects exactly 28 `visual.json` files in the published report artifact. Every file is parsed as JSON. This prevents malformed visual metadata from passing CI and failing later in Power BI Desktop.
+
+## UAT boundary
+
+Automated semantic validation cannot prove all Power BI Desktop interactions. Desktop validation remains required for:
+
+- KPI hierarchy/field rendering.
+- Slicer filtering.
+- Page and visual rendering.
+- Registered image/resource display.
+
+## Development rules
+
+- Keep generated artifacts reproducible.
+- Do not commit machine-specific `DataFolder` paths.
+- Preserve template-managed report resources.
+- Avoid manual edits to generated `GenerateMeasures.csx`; change the JSON contract instead.
+- Keep CI validation pointed at the exact artifact that will be released.

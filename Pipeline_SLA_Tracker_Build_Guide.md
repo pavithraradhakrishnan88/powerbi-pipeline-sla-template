@@ -1,84 +1,168 @@
 # Pipeline SLA Tracker — Power BI Build Guide
 
-## 1. Load the data
+**Version:** 1.0.0  
+**Power BI project:** `pbip/Pipeline_SLA_Tracker.pbip`  
+**Measure source of truth:** `scripts/metadata/MeasureDefinitions.json`
 
-1. Open Power BI Desktop → **Get Data → Text/CSV**
-2. Import `Fact_Pipeline_SampleData.csv` → name it **Fact_Pipeline**
-3. Import `Dim_Category.csv` → name it **Dim_Category**
-4. In Power Query, set data types:
-   - `StartDate`, `EndDate` → Date/Time
-   - `SLA_Target_Hrs` → Whole Number
-   - `PipelineID`, `Category`, `Status` → Text
+## 1. Prerequisites
 
-## 2. Create the disconnected spacing table (floating bar trick)
+Install:
 
-New Table (Modeling → New Table):
+- Power BI Desktop
+- PowerShell 7+
+- Git
+- Tabular Editor 2.28 when using the manual measure-generation/inspection workflow
+- .NET SDK for the automated repository build
 
-```
-Dim_Spacing = GENERATESERIES(0, 200, 1)
-```
+Version 1 is a PBIP/PBIR project. Do not rebuild the report from a blank Power BI file; the checked-in PBIP template remains authoritative for report layout and visual metadata.
 
-Rename the column to `Index`. This table has **no relationship** to any other table — it exists purely to drive the X-axis category order for the floating bar chart. Leave it disconnected.
+## 2. Source data
 
-## 3. Relationships
+The sample data is in:
 
-- `Dim_Category[CategoryName]` (1) → `Fact_Pipeline[Category]` (many)
-
-## 4. DAX Measures
-
-Paste these into a new measure table called `_Measures`:
-
-```dax
-Actual Duration Hrs =
-DIVIDE(
-    DATEDIFF(SELECTEDVALUE(Fact_Pipeline[StartDate]), SELECTEDVALUE(Fact_Pipeline[EndDate]), MINUTE),
-    60
-)
-
-SLA Breach Flag =
-IF([Actual Duration Hrs] > SELECTEDVALUE(Fact_Pipeline[SLA_Target_Hrs]), 1, 0)
-
-Total Pipelines = COUNTROWS(Fact_Pipeline)
-
-Breached Count = SUMX(Fact_Pipeline, [SLA Breach Flag])
-
-SLA Compliance % =
-DIVIDE([Total Pipelines] - [Breached Count], [Total Pipelines])
-
-Avg Duration by Category =
-AVERAGEX(Fact_Pipeline, [Actual Duration Hrs])
-
--- Floating bar measures (for a bar chart using StartDate as the invisible base)
-Bar Base (Start) = SELECTEDVALUE(Fact_Pipeline[StartDate])
-Bar Length (Duration) = [Actual Duration Hrs]
+```text
+data/Fact_Pipeline_SampleData.csv
+data/Dim_Category.csv
 ```
 
-## 5. Floating Bar Chart Setup
+The semantic model uses `Fact_Pipeline_SampleData` as the fact table and `Dim_Category` as the category dimension.
 
-This is the technique for making bars appear to "float" instead of starting at zero — useful for showing each pipeline's actual start-to-end window against its SLA target.
+## 3. Generate the measure script
 
-1. Use a **Stacked Bar Chart** visual
-2. Axis: `PipelineID` (or `Dim_Spacing[Index]` if you want custom manual ordering)
-3. Values (in this order):
-   - First value: a hidden/invisible measure representing the "base" (e.g. hours from the earliest StartDate in the dataset to this row's StartDate) — set its color to **transparent/no fill**
-   - Second value: `Bar Length (Duration)` — this is the visible floating segment
-4. Add a **conditional formatting rule** on the second segment: red if `SLA Breach Flag = 1`, green otherwise
-5. Add a reference line at the SLA target value using the Analytics pane
+The authoritative measure definitions are stored in:
 
-## 6. Report Pages
+```text
+scripts/metadata/MeasureDefinitions.json
+```
 
-**Page 1 — SLA Overview**
-- Card visuals: `SLA Compliance %`, `Total Pipelines`, `Breached Count`
-- Floating bar chart (per pipeline, built above) as the centerpiece
-- Slicer: `Dim_Category[CategoryName]`
+Generate the Tabular Editor script with:
 
-**Page 2 — Breach Log**
-- Table visual: PipelineID, Category, StartDate, EndDate, Actual Duration Hrs, SLA_Target_Hrs, SLA Breach Flag
-- Sort descending by `Actual Duration Hrs - SLA_Target_Hrs`
-- Category heatmap (matrix with conditional formatting) showing breach rate by category
+```powershell
+.\scripts\tools\GenerateMetadata.ps1
+```
 
-## 7. Before listing on Gumroad/Etsy
+This produces:
 
-- Replace sample data with a clearly-labeled "swap this table" instruction in your setup doc
-- Strip any real client data
-- Export a short GIF/demo video of the floating bar interaction — this is the visual hook that sells the template
+```text
+scripts/GenerateMeasures.csx
+```
+
+`GenerateMeasures.csx` is generated from `MeasureDefinitions.json`; do not hand-edit it as the source of truth.
+
+## 4. Version 1 Tabular Editor workflow
+
+When validating or manually materializing the measures in Tabular Editor 2.28:
+
+1. Open the Version 1 semantic model in Tabular Editor 2.28.
+2. Run `scripts/GenerateMeasures.csx`.
+3. Confirm the measures are created/updated on `Fact_Pipeline_SampleData`.
+4. Confirm the KPI/SLA/runtime/floating-bar display folders are present.
+5. Save the semantic model.
+6. Open `pbip/Pipeline_SLA_Tracker.pbip` in Power BI Desktop and validate the report.
+
+The script is compatible with Tabular Editor 2.28 and derives its measure expressions and metadata from `MeasureDefinitions.json`. The generated script currently represents the complete metadata contract; the repository build additionally performs an authoritative inline-measure generation step so CI does not depend on a locally installed Tabular Editor.
+
+## 5. Automated repository build
+
+The supported CI/local build is:
+
+```powershell
+.\build\build.ps1
+```
+
+The build is template-first. It:
+
+1. Validates the source data and repository.
+2. Regenerates the PBIP output from the checked-in authoritative templates.
+3. Materializes the authoritative measures on `Fact_Pipeline_SampleData`.
+4. Preserves the template-managed report and visual structure.
+5. Validates the category relationship and `DataFolder` expression.
+6. Validates the PBIR `definition.pbir` schema/version and dataset path.
+7. Requires exactly 28 `visual.json` files and parses every file as JSON.
+8. Rejects UTF-8 BOMs in visual JSON.
+9. Applies the final artifact gate to the exact package that is uploaded/released.
+
+The build must not use a CI-runner absolute data path. `DataFolder` resolves from the PBIP artifact context so the published project remains portable.
+
+## 6. Measures in Version 1
+
+The source contract contains the Version 1 measure set in `scripts/metadata/MeasureDefinitions.json`. The generated semantic model places measures inline on `Fact_Pipeline_SampleData`; `_Measures.tmdl` is not generated by the template-first build.
+
+Key measures include:
+
+- Active Pipelines
+- Successful Runs
+- Failed Runs
+- Running Pipelines
+- Queued Pipelines
+- Success Rate %
+- Failure Rate %
+- SLA Breach %
+- Total Runs
+- Breached Count
+- SLA Compliance %
+- Average Runtime
+- Total Runtime
+- Maximum Runtime
+- Minimum Runtime
+- Timeline Base
+- Floating Bar Duration
+- Floating Bar Status
+- SLA Breach Color
+- Average Start Delay
+- Timeline Coverage %
+- Average Start Offset
+- Timeline Span
+
+## 7. Report pages
+
+Version 1 contains three PBIP report pages:
+
+1. **Home** — landing/summary experience.
+2. **Executive Overview** — KPI and operational overview.
+3. **SLA Exceptions** — SLA exception analysis.
+
+The exact visual set in the authoritative report is protected by the build gate; do not manually add/remove report visuals as part of an automated build unless the template and acceptance tests are intentionally changed together.
+
+## 8. Desktop validation
+
+Automated semantic validation is necessary but is not a substitute for Power BI Desktop rendering validation.
+
+After a successful build, open the PBIP in Power BI Desktop and verify:
+
+- The project opens without schema or data-source errors.
+- KPI hierarchy/field bindings render correctly.
+- Slicers visibly filter the expected visuals.
+- All report pages and visuals render.
+- Registered report resources/images display.
+- Floating bar and SLA status visuals show expected values.
+- The `Dim_Category` slicer filters `Fact_Pipeline_SampleData` visuals.
+
+CI proves structural/semantic conditions; Desktop validation proves interactive rendering and usability.
+
+## 9. Release validation
+
+Before releasing Version 1, confirm:
+
+```text
+CSV validation             PASS
+Semantic model validation  PASS
+Measure validation         PASS
+PBIR validation             PASS
+28/28 visual JSON gate      PASS
+Artifact gate               PASS
+Power BI Desktop smoke test PASS
+```
+
+The release artifact must be the same build output that passed these gates; do not validate one generated tree and publish a different tree.
+
+## 10. Data source changes
+
+When replacing the sample data:
+
+1. Preserve required table and column names unless the model and measure contract are deliberately changed.
+2. Keep `data/` alongside the PBIP project.
+3. Run `build/validate.ps1`.
+4. Run `build/build.ps1`.
+5. Open the resulting PBIP in Power BI Desktop.
+6. Recheck slicers, visuals, images/resources, and KPI calculations.
