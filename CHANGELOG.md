@@ -1,79 +1,36 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project are documented here. The project follows semantic versioning.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows semantic versioning.
-
----
-
-## [Unreleased]
+## [1.0.0] - 2026-08-16
 
 ### Added
 
-- Placeholder for upcoming features and enhancements.
+- Version 1 template-first PBIP/PBIR Pipeline SLA Tracker.
+- Authoritative `scripts/metadata/MeasureDefinitions.json` measure contract.
+- Tabular Editor 2.28-compatible `scripts/GenerateMeasures.csx` workflow.
+- Automated inline measure materialization during the repository build.
+- Portable `DataFolder` resolution for the PBIP artifact.
+- PBIR schema/version and dataset-path validation.
+- Hard 28/28 published visual JSON gate with JSON parsing and BOM validation.
+- Final artifact validation against the exact package intended for publication.
+- Power BI Desktop UAT guidance covering KPI hierarchy, slicers, visual rendering, and registered resources.
+- Current documentation for configuration, development, metadata, testing, architecture, getting started, and user operation.
 
 ### Changed
 
-- Placeholder for upcoming changes.
+- Documentation now reflects the current three-page report: Home, Executive Overview, and SLA Exceptions.
+- Documentation no longer describes the obsolete `reports/PipelineDashboard.pbip` path.
+- Documentation now distinguishes the manual Tabular Editor workflow from the deterministic automated CI build.
+- Release guidance now requires Desktop validation in addition to semantic CI validation.
 
 ### Fixed
 
-- Placeholder for bug fixes and maintenance updates.
-
----
-
-## [1.0.0] - Initial Release
-
-### Added
-
-- Pipeline SLA Tracker Power BI template.
-- PBIP project structure for source-controlled Power BI development.
-- Floating Bar SLA visualization technique using native Power BI visuals.
-- SLA monitoring dashboard capabilities:
-  - Pipeline runtime tracking.
-  - SLA compliance monitoring.
-  - Success and failure analysis.
-  - Environment-based filtering.
-
-- CI/CD workflow foundation:
-  - Validation workflow.
-  - Build automation workflow.
-  - Release packaging workflow.
-
-- Documentation foundation:
-  - Getting Started guide.
-  - User Guide.
-  - Configuration Guide.
-  - Testing Guide.
-  - Architecture documentation.
-
-### Changed
-
-- Established repository structure for Power BI development lifecycle:
-  - `data/`
-  - `model/`
-  - `powerquery/`
-  - `src/`
-  - `theme/`
-  - `docs/`
-  - `.github/workflows/`
-
-- Introduced reusable Power BI development patterns:
-  - Semantic model organization.
-  - DAX measure management.
-  - Theme configuration.
-  - Automated validation scripts.
-
-### Fixed
-
-- Removed Power BI local cache files from source control.
-- Improved repository readiness for Git-based Power BI project management.
-
----
+- Release documentation is aligned with the current template-first build and artifact gates.
+- Measure workflow documentation now points to `MeasureDefinitions.json` as the source of truth.
 
 ## Version History
 
-| Version | Description |
-|---|---|
-| Unreleased | Upcoming enhancements and improvements |
-| 1.0.0 | Initial Pipeline SLA Tracker template release |
+| Version | Date | Description |
+|---|---|---|
+| 1.0.0 | 2026-08-16 | Version 1 Pipeline SLA Tracker release |
