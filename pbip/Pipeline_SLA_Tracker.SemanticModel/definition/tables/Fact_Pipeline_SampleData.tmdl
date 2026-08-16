@@ -36,16 +36,27 @@ table Fact_Pipeline_SampleData
 		lineageTag: d34bc854-2e8e-47c7-9d52-9305af6da3e8
 
 		annotation Owner = BI Team
+
 		annotation Category = KPI
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 20
+
 		annotation Template = CountRows
+
 		annotation Status = Active
+
 		annotation Tags = LandingPage
+
 		annotation Synonyms = Successful Pipelines
+
 		annotation KPI = True
+
 		annotation DataType = Whole Number
+
 		annotation DependsOn = Active Pipelines
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Failed pipeline executions.
@@ -55,16 +66,27 @@ table Fact_Pipeline_SampleData
 		lineageTag: 712fd322-bb8c-4585-896d-c042501864b7
 
 		annotation Owner = BI Team
+
 		annotation Category = KPI
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 30
+
 		annotation Template = CountRows
+
 		annotation Status = Active
+
 		annotation Tags = LandingPage
+
 		annotation Synonyms = Failed Pipelines
+
 		annotation KPI = True
+
 		annotation DataType = Whole Number
+
 		annotation DependsOn = Active Pipelines
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Running pipelines.
@@ -74,16 +96,27 @@ table Fact_Pipeline_SampleData
 		lineageTag: 94f58ad4-9774-4b54-b9eb-96e5edd3af4e
 
 		annotation Owner = BI Team
+
 		annotation Category = KPI
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 40
+
 		annotation Template = CountRows
+
 		annotation Status = Active
+
 		annotation Tags = Operations
+
 		annotation Synonyms = Running
+
 		annotation KPI = False
+
 		annotation DataType = Whole Number
+
 		annotation DependsOn = Active Pipelines
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Queued pipelines.
@@ -93,16 +126,27 @@ table Fact_Pipeline_SampleData
 		lineageTag: 302b0ed8-24fe-4c16-8c82-7726945e818d
 
 		annotation Owner = BI Team
+
 		annotation Category = KPI
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 50
+
 		annotation Template = CountRows
+
 		annotation Status = Active
+
 		annotation Tags = Operations
+
 		annotation Synonyms = Queued
+
 		annotation KPI = False
+
 		annotation DataType = Whole Number
+
 		annotation DependsOn = Active Pipelines
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Percentage of successful pipeline executions.
@@ -112,16 +156,27 @@ table Fact_Pipeline_SampleData
 		lineageTag: 0310c56d-6f43-41ab-9f14-a8d3ce6a960f
 
 		annotation Owner = BI Team
+
 		annotation Category = SLA
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 10
+
 		annotation Template = Ratio
+
 		annotation Status = Active
+
 		annotation Tags = Executive
+
 		annotation Synonyms = Success Rate
+
 		annotation KPI = True
+
 		annotation DataType = Percentage
+
 		annotation DependsOn = Successful Runs;Active Pipelines
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Percentage of failed pipeline executions.
@@ -131,16 +186,27 @@ table Fact_Pipeline_SampleData
 		lineageTag: 120eeabd-0511-4077-9563-64edf6233623
 
 		annotation Owner = BI Team
+
 		annotation Category = SLA
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 20
+
 		annotation Template = Ratio
+
 		annotation Status = Active
+
 		annotation Tags = Executive
+
 		annotation Synonyms = Failure Rate
+
 		annotation KPI = True
+
 		annotation DataType = Percentage
+
 		annotation DependsOn = Failed Runs;Active Pipelines
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Percentage of SLA breaches.
@@ -150,16 +216,27 @@ table Fact_Pipeline_SampleData
 		lineageTag: 0b94a07f-d2e1-4a1d-9cd9-ff7118d1fbc8
 
 		annotation Owner = BI Team
+
 		annotation Category = SLA
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 30
+
 		annotation Template = Ratio
+
 		annotation Status = Active
+
 		annotation Tags = Executive
+
 		annotation Synonyms = SLA
+
 		annotation KPI = True
+
 		annotation DataType = Percentage
+
 		annotation DependsOn = Active Pipelines
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Average runtime in hours.
@@ -169,15 +246,25 @@ table Fact_Pipeline_SampleData
 		lineageTag: f102e98f-67c6-41b5-9e3f-1993ce48083c
 
 		annotation Owner = BI Team
+
 		annotation Category = Runtime
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 10
+
 		annotation Template = Average
+
 		annotation Status = Active
+
 		annotation Tags = Performance
+
 		annotation Synonyms = Average Duration
+
 		annotation KPI = False
+
 		annotation DataType = Decimal
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Total runtime in minutes.
@@ -187,15 +274,25 @@ table Fact_Pipeline_SampleData
 		lineageTag: edd1b320-e531-42b6-bd58-e97346650c3b
 
 		annotation Owner = BI Team
+
 		annotation Category = Runtime
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 20
+
 		annotation Template = Sum
+
 		annotation Status = Active
+
 		annotation Tags = Performance
+
 		annotation Synonyms = Runtime
+
 		annotation KPI = False
+
 		annotation DataType = Decimal
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Maximum runtime.
@@ -205,15 +302,25 @@ table Fact_Pipeline_SampleData
 		lineageTag: 4ac147f7-58cd-434a-85ae-fb4f1701fb25
 
 		annotation Owner = BI Team
+
 		annotation Category = Runtime
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 30
+
 		annotation Template = Maximum
+
 		annotation Status = Active
+
 		annotation Tags = Performance
+
 		annotation Synonyms = Longest Runtime
+
 		annotation KPI = False
+
 		annotation DataType = Decimal
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Minimum runtime.
@@ -223,15 +330,25 @@ table Fact_Pipeline_SampleData
 		lineageTag: ac946b59-fc71-4807-9076-6c7f0e5aca3b
 
 		annotation Owner = BI Team
+
 		annotation Category = Runtime
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 40
+
 		annotation Template = Minimum
+
 		annotation Status = Active
+
 		annotation Tags = Performance
+
 		annotation Synonyms = Shortest Runtime
+
 		annotation KPI = False
+
 		annotation DataType = Decimal
+
 		annotation LastUpdated = 2026-07-31
 
 	/// Starting position of floating bar timeline.
@@ -252,15 +369,25 @@ table Fact_Pipeline_SampleData
 		lineageTag: f62bacee-85c6-4d48-a4f3-25ec68b67195
 
 		annotation Owner = BI Team
+
 		annotation Category = Floating Bar
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 10
+
 		annotation Template = Minimum
+
 		annotation Status = Active
+
 		annotation Tags = FloatingBar;Timeline
+
 		annotation Synonyms = Bar Start;Timeline Start
+
 		annotation KPI = False
+
 		annotation DataType = DateTime
+
 		annotation LastUpdated = 2026-08-01
 
 	/// Length of floating bar in hours.
@@ -270,16 +397,27 @@ table Fact_Pipeline_SampleData
 		lineageTag: a84c2fa1-0e7b-43d7-bf4d-411e871075d5
 
 		annotation Owner = BI Team
+
 		annotation Category = Floating Bar
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 20
+
 		annotation Template = Average
+
 		annotation Status = Active
+
 		annotation Tags = FloatingBar;Runtime
+
 		annotation Synonyms = Bar Width;Duration
+
 		annotation KPI = False
+
 		annotation DataType = Whole Number
+
 		annotation DependsOn = Average Runtime
+
 		annotation LastUpdated = 2026-08-01
 
 	/// Status label used for floating bar conditional formatting.
@@ -288,35 +426,57 @@ table Fact_Pipeline_SampleData
 		lineageTag: 72a525d2-cada-4ad8-9e25-5bdbeaff725f
 
 		annotation Owner = BI Team
+
 		annotation Category = Floating Bar
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 30
+
 		annotation Template = Status
+
 		annotation Status = Active
+
 		annotation Tags = FloatingBar;SLA
+
 		annotation Synonyms = Bar Status
+
 		annotation KPI = False
+
 		annotation DataType = Text
+
 		annotation DependsOn = SLA Breach %
+
 		annotation LastUpdated = 2026-08-01
 
 	/// Color code for floating bar conditional formatting.
-	measure 'SLA Breach Color' = IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Missed","#FF0000","#00B050")
+	measure 'SLA Breach Color' = IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Missed", "#FF0000", "#00B050")
 		isHidden
 		displayFolder: 05 Floating Bar
 		lineageTag: 17b33bc2-853e-4eb8-8a4c-92db87b5242e
 
 		annotation Owner = BI Team
+
 		annotation Category = Floating Bar
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 40
+
 		annotation Template = Color
+
 		annotation Status = Active
+
 		annotation Tags = FloatingBar;ConditionalFormatting
+
 		annotation Synonyms = Bar Color
+
 		annotation KPI = False
+
 		annotation DataType = Text
+
 		annotation DependsOn = SLA Breach %
+
 		annotation LastUpdated = 2026-08-01
 
 	/// Average delay before pipeline start.
@@ -326,15 +486,25 @@ table Fact_Pipeline_SampleData
 		lineageTag: 1ac04617-c6d5-4001-8646-03d50429095e
 
 		annotation Owner = BI Team
+
 		annotation Category = Runtime
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 50
+
 		annotation Template = Average
+
 		annotation Status = Active
+
 		annotation Tags = Delay
+
 		annotation Synonyms = Start Delay
+
 		annotation KPI = False
+
 		annotation DataType = Decimal
+
 		annotation LastUpdated = 2026-08-01
 
 	/// Average delay after scheduled completion.
@@ -344,15 +514,25 @@ table Fact_Pipeline_SampleData
 		lineageTag: dbf25099-444c-473a-a221-90d9de1947d0
 
 		annotation Owner = BI Team
+
 		annotation Category = Runtime
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 60
+
 		annotation Template = Average
+
 		annotation Status = Active
+
 		annotation Tags = Delay
+
 		annotation Synonyms = End Delay
+
 		annotation KPI = False
+
 		annotation DataType = Decimal
+
 		annotation LastUpdated = 2026-08-01
 
 	/// KPI for success rate with target and status.
@@ -362,17 +542,29 @@ table Fact_Pipeline_SampleData
 		lineageTag: 3136d0a2-e8af-4258-b405-857a0da616cc
 
 		annotation Owner = BI Team
+
 		annotation Category = SLA
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 40
+
 		annotation Template = Ratio
+
 		annotation Status = Active
+
 		annotation Tags = Executive
+
 		annotation Synonyms = Success Rate KPI
+
 		annotation KPI = True
+
 		annotation DataType = Percentage
+
 		annotation DependsOn = Success Rate %
+
 		annotation LastUpdated = 2026-08-01
+
 		annotation KPIConfig = @{TargetExpression=0.95; StatusExpression=IF([Success Rate %]>=0.95,1,0); TrendExpression=[Success Rate %]}
 
 	/// Last data refresh timestamp.
@@ -381,15 +573,25 @@ table Fact_Pipeline_SampleData
 		lineageTag: c4751141-c052-46e3-b0f4-a01a67279fcc
 
 		annotation Owner = BI Team
+
 		annotation Category = System
+
 		annotation Version = 1.0.0
+
 		annotation DisplayOrder = 5
+
 		annotation Template = Text
+
 		annotation Status = Active
+
 		annotation Tags = System
+
 		annotation Synonyms = Refresh Time
+
 		annotation KPI = False
+
 		annotation DataType = Text
+
 		annotation LastUpdated = 2026-08-02
 
 	column PipelineID
@@ -488,6 +690,7 @@ table Fact_Pipeline_SampleData
 		sourceColumn: SLAHours
 
 		annotation SummarizationSetBy = Automatic
+
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	column DurationHours
@@ -497,6 +700,7 @@ table Fact_Pipeline_SampleData
 		sourceColumn: DurationHours
 
 		annotation SummarizationSetBy = Automatic
+
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	column StartDelayMinutes
