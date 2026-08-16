@@ -421,7 +421,7 @@ table Fact_Pipeline_SampleData
 		annotation LastUpdated = 2026-08-01
 
 	/// Status label used for floating bar conditional formatting.
-	measure 'Floating Bar Status' = IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Breached","Breach","Within SLA")
+	measure 'Floating Bar Status' = IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Missed","Breach","WithinSLA")
 		displayFolder: 05 Floating Bar
 		lineageTag: 72a525d2-cada-4ad8-9e25-5bdbeaff725f
 
@@ -450,7 +450,7 @@ table Fact_Pipeline_SampleData
 		annotation LastUpdated = 2026-08-01
 
 	/// Color code for floating bar conditional formatting.
-	measure 'SLA Breach Color' = IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Breached", "#FF0000", "#00B050")
+	measure 'SLA Breach Color' = IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Missed", "#FF0000", "#00B050")
 		isHidden
 		displayFolder: 05 Floating Bar
 		lineageTag: 17b33bc2-853e-4eb8-8a4c-92db87b5242e
