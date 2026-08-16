@@ -1,215 +1,101 @@
 # Power BI Pipeline SLA Tracker Template
 
-A ready-to-use Power BI template for tracking pipeline/process SLA compliance, featuring a custom **floating bar chart** technique (built with a disconnected `GENERATESERIES` spacing table) to visualize start-to-end duration against SLA targets at a glance.
+A source-controlled Power BI PBIP/PBIR template for monitoring pipeline execution, SLA compliance, runtime, failures, and operational health.
 
-<!-- TODO: add assets/preview.png before publishing -- image is currently referenced but missing -->
+**Current release: Version 1.0.0**
 
----
+## Version 1 highlights
 
-## What's Included
+- Template-first PBIP generation from the checked-in report and semantic-model templates.
+- Authoritative measure definitions in `scripts/metadata/MeasureDefinitions.json`.
+- Tabular Editor 2.28-compatible generated measure script at `scripts/GenerateMeasures.csx`.
+- Automated inline measure materialization during the repository build.
+- Three report pages: Home, Executive Overview, and SLA Exceptions.
+- Floating-bar SLA visualization and SLA compliance KPIs.
+- Portable `DataFolder` resolution; the build does not embed a CI-runner data path.
+- PBIR validation plus a hard 28/28 visual JSON artifact gate.
+- Registered report resources/images carried through the published artifact.
 
-| File | Description |
-|---|---|
-| `data/Fact_Pipeline_SampleData.csv` | Sample fact table — swap with your own pipeline/process data |
-| `data/Dim_Category.csv` | Category dimension table |
-| `src/measures.dax` | All DAX measures used in the report |
-| `PipelineTheme.json` | Custom Power BI theme (green/red SLA compliance palette) |
-| `Pipeline_SLA_Tracker_Build_Guide.md` | Full step-by-step build guide — data model, DAX, floating bar chart setup, report layout |
+## Repository structure
 
----
-
-## Repository Structure
-
-
-powerbi-pipeline-sla-template
-│
-├── data/
-│ ├── Fact_Pipeline_SampleData.csv
-│ └── Dim_Category.csv
-│
-├── model/
-│ └── TMDL semantic model definitions
-│
-├── pbip/
-│ └── Power BI Project artifacts
-│
-├── powerquery/
-│ └── Data transformation scripts
-│
-├── src/
-│ └── DAX measures and supporting logic
-│
+```text
+powerbi-pipeline-sla-template/
+├── data/                         # Sample CSV data
+├── model/                        # Source model/measure metadata
+├── pbip/                         # Authoritative Power BI project
+├── powerquery/                   # Power Query definitions
 ├── scripts/
-│ └── Metadata generation and automation tools
-│
-├── metadata/
-│ └── Generated metadata contracts
-│
-├── build/
-│ ├── validate.ps1
-│ ├── build.ps1
-│ └── publish.ps1
-│
-└── docs/
-├── Architecture
-├── Getting-Started
-├── UserGuide
-├── Developer Guide
-├── Testing
-└── Configuration
+│   ├── metadata/MeasureDefinitions.json
+│   ├── tools/GenerateMetadata.ps1
+│   └── GenerateMeasures.csx
+├── src/                          # DAX/supporting source
+├── build/                        # Validation/build/release scripts
+├── docs/                         # Current project documentation
+├── Pipeline_SLA_Tracker_Build_Guide.md
+└── .github/workflows/            # CI/CD
+```
 
----
+## Build Version 1
 
-## Features
+Prerequisites:
 
-### Reporting & Visualization
+- Power BI Desktop
+- PowerShell 7+
+- Git
+- .NET SDK
+- Tabular Editor 2.28 for the manual measure-generation/inspection workflow
 
-- **SLA Compliance %** tracking with card visuals
-- **Floating bar chart** — visualizes each pipeline's actual start/end window against its SLA target
-- **Conditional formatting** — bars turn red on SLA breach, green on compliance
-- **Breach Log page** — sortable table + category heatmap of breach rates
-- Category slicer for quick filtering
+Generate the Tabular Editor script from the measure contract:
 
-### AI & Automation (Phase 4)
+```powershell
+.\scripts\tools\GenerateMetadata.ps1
+```
 
-- **AI-Assisted Metadata Generator** — automatically extracts, analyzes, and enriches semantic metadata from datasets using deterministic analyzers.
-- **Metadata Contract Generation** — produces a standardized `metadata.json` schema used by downstream model and report generation.
-- **Semantic Inference Engine** — identifies candidate keys, measures, relationships, formatting hints, and semantic roles.
-- **Metadata Quality Validation** — detects schema issues, missing relationships, and modeling risks before PBIP generation.
-- **CI/CD Integration** — executes metadata generation and validation as part of the automated build pipeline.
+Run the automated build:
 
-## 📚 Documentation
+```powershell
+.\build\validate.ps1
+.\build\build.ps1
+```
 
-| Document | Description |
-|----------|-------------|
-| [Getting Started](docs/getting-started.md) | Installation, setup, and first build |
-| [Architecture](docs/architecture.md) | Solution architecture and AI metadata workflow |
-| [Developer Guide](docs/DeveloperGuide.md) | AI module architecture, extensibility, and coding guidelines |
-| [Metadata Schema](docs/MetadataSchema.md) | Metadata object model, JSON schema, and extension guidance |
-| [User Guide](docs/UserGuide.md) | Using generated metadata and reports |
-| [Configuration](docs/Configuration.md) | Project configuration, paths, and feature flags |
-| [Testing](docs/Testing.md) | Validation, unit tests, integration tests, and regression testing |
-| [Changelog](CHANGELOG.md) | Release history and version tracking |
+The automated build is not dependent on a CI installation of Tabular Editor. It materializes the authoritative measure definitions itself, while `GenerateMeasures.csx` remains the supported Tabular Editor 2.28 workflow for manual inspection/materialization.
 
-## Setup
+## Power BI Desktop validation
 
-1. Clone this repo
-2. Open **Power BI Desktop**
-3. Get Data → Text/CSV → import both files from `/data`
-4. Follow `Pipeline_SLA_Tracker_Build_Guide.md` for the relationship, DAX measures, and floating bar chart configuration
-5. Apply the theme: **View → Themes → Browse for themes** → select `PipelineTheme.json`
-6. Replace the sample data with your own pipeline data (see "Data Source Swap" section in the build guide)
+Open:
 
-## Requirements
+```text
+pbip/Pipeline_SLA_Tracker.pbip
+```
 
-- Power BI Desktop (latest version recommended)
-- Basic familiarity with Power Query and DAX to customize for your data source
+After a successful build, verify in Desktop that:
 
-## Automated Build Pipeline
+1. KPI fields and hierarchy render correctly.
+2. Slicers visibly filter the intended visuals.
+3. All three report pages and visuals render without errors.
+4. Registered images/resources display.
+5. SLA and floating-bar visuals show expected values.
 
-The project includes GitHub Actions automation for validation and artifact generation.
+CI semantic validation does not by itself prove Desktop rendering or interaction.
 
-Pipeline stages:
+## Documentation
 
-1. Repository validation
-2. CSV schema checks
-3. Metadata generation
-4. Semantic model validation
-5. PBIP artifact generation
-6. Build artifact packaging
+- [Getting Started](docs/getting-started.md)
+- [Architecture](docs/architecture.md)
+- [Developer Guide](docs/DeveloperGuide.md)
+- [Metadata Schema](docs/MetadataSchema.md)
+- [User Guide](docs/UserGuide.md)
+- [Configuration](docs/Configuration.md)
+- [Testing](docs/Testing.md)
+- [Build Guide](Pipeline_SLA_Tracker_Build_Guide.md)
+- [Changelog](CHANGELOG.md)
 
-Workflow files:
+## Release acceptance
 
-- `.github/workflows/validate.yml`
-- `.github/workflows/build.yml`
-- `.github/workflows/release.yml`
+Version 1 is releasable when the repository validation/build pipeline is green, the exact published artifact passes the 28/28 visual JSON gate, and a Power BI Desktop smoke test confirms slicer behavior, page/visual rendering, and resource display.
+
+See `CHANGELOG.md` for the release history.
 
 ## License
 
-Released under the MIT License.
-
-Commercial resale of the template package, branding, documentation, or marketplace distribution requires separate authorization.
-
-## Author
-
-Built by Pavithra Radhakrishnan — Power BI Developer & BI Analyst.
-
-## AI Features
-
-- AI-assisted metadata inference for tables, columns, data types, and modeling hints
-- Rule-aware enrichment that preserves deterministic build behavior
-- Validation-first generation that surfaces schema risks before PBIP output
-- Extensible analyzer pipeline for domain-specific heuristics
-
-## AI Metadata Generator Overview
-
-Phase 4 introduces an AI Metadata Generator layer that transforms raw dataset signals into structured metadata used by model and report generation. The generator augments inferred schema with semantic annotations (for example: key candidates, measure candidates, and display grouping hints) while keeping existing build outputs compatible.
-
-## Phase 4 Feature List
-
-- Multi-source metadata normalization into one metadata contract
-- Analyzer pipeline with pluggable scoring and enrichment stages
-- Confidence-aware metadata fields for downstream validation decisions
-- Pre-build diagnostics for missing keys, weak relationships, and low-quality fields
-- Snapshot-friendly output for regression testing and CI checks
-
-## AI Build Process
-
-1. Read source data definitions and sampled records.
-2. Infer baseline metadata (types, nullability, cardinality hints).
-3. Run AI analyzers to enrich relationships, measures, and semantic labels.
-4. Validate enriched metadata and emit diagnostics.
-5. Persist metadata.json for model/report generation.
-6. Continue standard PBIP generation and artifact validation.
-
-## Example metadata.json Output
-
-```json
-{
-	"version": "1.0",
-	"generatedAtUtc": "2026-08-07T00:00:00Z",
-	"tables": [
-		{
-			"name": "Fact_Pipeline_SampleData",
-			"kind": "fact",
-			"columns": [
-				{
-					"name": "PipelineID",
-					"dataType": "string",
-					"nullable": false,
-					"semanticRole": "identifier"
-				},
-				{
-					"name": "DurationHours",
-					"dataType": "decimal",
-					"nullable": false,
-					"semanticRole": "measure",
-					"formatHint": "0.00"
-				}
-			]
-		}
-	],
-	"relationships": [
-		{
-			"from": "Fact_Pipeline_SampleData.CategoryId",
-			"to": "Dim_Category.CategoryId",
-			"cardinality": "manyToOne",
-			"confidence": 0.98
-		}
-	],
-	"diagnostics": []
-}
-```
-
-## AI Metadata Workflow
-
-```mermaid
-flowchart LR
-		A[Input CSV Files] --> B[Baseline Metadata Extraction]
-		B --> C[AI Analyzer Pipeline]
-		C --> D[Metadata Validation]
-		D --> E[metadata.json]
-		E --> F[Model Generation]
-		F --> G[PBIP Artifacts]
-		G --> H[Output Validation]
-```
+MIT License. Commercial resale of the template package, branding, documentation, or marketplace distribution requires separate authorization.
