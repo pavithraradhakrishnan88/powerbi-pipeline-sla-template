@@ -95,9 +95,9 @@ $relationshipCount = ([regex]::Matches($relationshipText,'(?m)^\s*relationship\s
 Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|InlineMeasuresOnFact=$measureCount|ExpectedInlineMeasures=$expectedMeasureCount|Relationships=$relationshipCount|Expressions=$expressionCount|Has_MeasuresTmdl=$([bool](Test-Path $measuresPath))"
 if ($measureCount -ne $expectedMeasureCount) { throw "Expected $expectedMeasureCount inline measures on Fact_Pipeline_SampleData from MeasureDefinitions.json; found $measureCount." }
 if ($relationshipText -notmatch '(?s)relationship\s+[^\r\n]+\r?\n\s*fromColumn:\s*Fact_Pipeline_SampleData\.Category\r?\n\s*toColumn:\s*Dim_Category\.CategoryName') { throw "Expected Dim_Category[CategoryName] -> Fact_Pipeline_SampleData[Category] relationship is missing." }
-if ($expressionCount -ne 2) { throw "Expected 2 expressions; found $expressionCount." }
+if ($expressionCount -ne 1) { throw "Expected exactly 1 expression (DataFolder); found $expressionCount." }
 if ($expressionText -notmatch 'expression DataFolder = "[^"]*" meta') { throw "DataFolder expression is missing or malformed." }
-if ($expressionText -notmatch "expression '_Measure Table'") { throw "_Measure Table expression is missing." }
+if ($expressionText -match "expression '_Measure Table'") { throw "Dangling _Measure Table expression must not be present." }
 if ($factText -notmatch 'File\.Contents\(DataFolder') {
     $fileContentsLines = @($factText -split "`r?`n" | Where-Object { $_ -match 'File\.Contents\(' })
     $actualFileContents = if ($fileContentsLines.Count -gt 0) { $fileContentsLines -join ' || ' } else { '<no File.Contents(...) line found>' }
@@ -125,10 +125,6 @@ foreach ($entry in @('docs','data','scripts','theme','LICENSE','CHANGELOG.md','R
     if (Test-Path $source) { Copy-Item $source $destination -Recurse -Force }
 }
 
-# Hard gate the exact Step-1 artifact that will be uploaded/published.
-# Do not allow PBIR autosave/UAT publication to proceed unless the published
-# artifact itself contains exactly 28 visual.json files and every one passes
-# the JSON/BOM/orphan checks.
 & "$PSScriptRoot\Assert-VisualArtifactGate.ps1" -BuildRoot $artifactPath
 if ($LASTEXITCODE -ne 0) { throw "Published visual artifact gate failed with exit code $LASTEXITCODE." }
 
