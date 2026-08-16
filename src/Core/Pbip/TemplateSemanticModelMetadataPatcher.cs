@@ -37,6 +37,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             if (!File.Exists(measureDefinitionsPath)) throw new FileNotFoundException("MeasureDefinitions.json is missing.", measureDefinitionsPath);
 
             PatchMeasures(factPath, measureDefinitionsPath, logger);
+            EnsureFactPartition(factPath, logger);
             PatchCategoryRelationship(relationshipsPath, logger);
             RemoveLegacyMeasuresTable(tables, modelPath, logger);
             RemoveDanglingMeasureTableAnnotation(modelPath, expressionsPath, logger);
@@ -88,9 +89,6 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
             if (additions.Length > 0)
             {
-                // PR #10: a template fact table does not necessarily contain a partition.
-                // Measures are table metadata and can be inserted before the first column
-                // when the partition is absent. This keeps the template-first structure intact.
                 var insertionIndex = text.IndexOf("\tpartition ", StringComparison.Ordinal);
                 if (insertionIndex < 0)
                     insertionIndex = text.IndexOf("\tcolumn ", StringComparison.Ordinal);
@@ -102,6 +100,23 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             }
 
             logger?.Invoke($"SEMANTIC-MODEL-PATCH|Measures|InlineFactCount={names.Count}");
+        }
+
+        private static void EnsureFactPartition(string factPath, Action<string>? logger)
+        {
+            var text = File.ReadAllText(factPath, Encoding.UTF8);
+            if (text.Contains("partition Fact_Pipeline_SampleData = m", StringComparison.Ordinal))
+            {
+                if (!text.Contains("File.Contents(DataFolder & \\\"\\\\Fact_Pipeline_SampleData.csv\\\")", StringComparison.Ordinal))
+                    throw new InvalidDataException("Fact partition exists but does not resolve through DataFolder.");
+                logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|DataFolder=AlreadyPresent");
+                return;
+            }
+
+            const string partition = "\n\tpartition Fact_Pipeline_SampleData = m\n\t\tmode: import\n\t\tsource =\n\t\t\t\tlet\n\t\t\t\t  Source = Csv.Document(File.Contents(DataFolder & \\\"\\\\Fact_Pipeline_SampleData.csv\\\"), [Delimiter = \\\",\\\", Columns = 17, QuoteStyle = QuoteStyle.None]),\n\t\t\t\t  #\\\"Promoted headers\\\" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),\n\t\t\t\t  #\\\"Changed column type\\\" = Table.TransformColumnTypes(#\\\"Promoted headers\\\", {{\\\"PipelineID\\\", Int64.Type}, {\\\"PipelineName\\\", type text}, {\\\"Category\\\", type text}, {\\\"Status\\\", type text}, {\\\"ScheduledStart\\\", type datetime}, {\\\"ActualStart\\\", type datetime}, {\\\"ScheduledEnd\\\", type datetime}, {\\\"ActualEnd\\\", type datetime}, {\\\"SLAHours\\\", type number}, {\\\"DurationHours\\\", type number}, {\\\"StartDelayMinutes\\\", Int64.Type}, {\\\"EndDelayMinutes\\\", Int64.Type}, {\\\"SLAStatus\\\", type text}, {\\\"Environment\\\", type text}, {\\\"Owner\\\", type text}, {\\\"Region\\\", type text}, {\\\"RetryCount\\\", Int64.Type}})\n\t\t\t\tin\n\t\t\t\t  #\\\"Changed column type\\\"\n\n\tannotation PBI_NavigationStepName = Navigation\n\n\tannotation PBI_ResultType = Table\n";
+
+            File.WriteAllText(factPath, text.TrimEnd('\r', '\n') + partition, new UTF8Encoding(false));
+            logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|Added|DataFolder");
         }
 
         private static void PatchCategoryRelationship(string path, Action<string>? logger)
