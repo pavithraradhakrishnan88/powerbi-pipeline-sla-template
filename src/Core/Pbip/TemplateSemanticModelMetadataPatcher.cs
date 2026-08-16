@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace PowerBiPipelineSlaTemplate.Core.Pbip
 {
@@ -37,7 +38,8 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             if (!File.Exists(measureDefinitionsPath)) throw new FileNotFoundException("MeasureDefinitions.json is missing.", measureDefinitionsPath);
 
             PatchMeasures(factPath, measureDefinitionsPath, logger);
-            PatchCategoryRelationship(relationshipsPath, logger);
+            PatchCategoryRelationship(relationshipsPath, tables, logger);
+            ReconcileRelationships(relationshipsPath, tables, logger);
             RemoveLegacyMeasuresTable(tables, modelPath, logger);
             RemoveDanglingMeasureTableAnnotation(modelPath, expressionsPath, logger);
         }
@@ -97,11 +99,19 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             logger?.Invoke($"SEMANTIC-MODEL-PATCH|Measures|InlineFactCount={names.Count}");
         }
 
-        private static void PatchCategoryRelationship(string path, Action<string>? logger)
+        private static void PatchCategoryRelationship(string relationshipsPath, string tablesPath, Action<string>? logger)
         {
-            var text = File.ReadAllText(path, Encoding.UTF8);
-            var expected = $"fromColumn: {FactTable}.{FactColumn}" + Environment.NewLine + $"\ttoColumn: {DimensionTable}.{DimensionColumn}";
-            if (text.Contains(expected, StringComparison.Ordinal))
+            var available = ReadTableColumns(tablesPath);
+            if (!HasColumn(available, FactTable, FactColumn) || !HasColumn(available, DimensionTable, DimensionColumn))
+            {
+                logger?.Invoke("SEMANTIC-MODEL-PATCH|Relationship|Dim_Category->Fact_Pipeline_SampleData|SkippedBecauseColumnsAreAbsent");
+                return;
+            }
+
+            var text = File.ReadAllText(relationshipsPath, Encoding.UTF8);
+            var expected = $"fromColumn: {FactTable}.{FactColumn}";
+            var target = $"toColumn: {DimensionTable}.{DimensionColumn}";
+            if (text.Contains(expected, StringComparison.Ordinal) && text.Contains(target, StringComparison.Ordinal))
             {
                 logger?.Invoke("SEMANTIC-MODEL-PATCH|Relationship|Dim_Category->Fact_Pipeline_SampleData|AlreadyPresent");
                 return;
@@ -116,8 +126,84 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 string.Empty,
                 string.Empty
             });
-            File.WriteAllText(path, text.TrimEnd('\r', '\n') + newline + block, new UTF8Encoding(false));
+            File.WriteAllText(relationshipsPath, text.TrimEnd('\r', '\n') + newline + block, new UTF8Encoding(false));
             logger?.Invoke("SEMANTIC-MODEL-PATCH|Relationship|Dim_Category->Fact_Pipeline_SampleData|Added");
+        }
+
+        private static void ReconcileRelationships(string relationshipsPath, string tablesPath, Action<string>? logger)
+        {
+            var available = ReadTableColumns(tablesPath);
+            var text = File.ReadAllText(relationshipsPath, Encoding.UTF8);
+            var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+            var blocks = Regex.Split(text.Trim(), @"\r?\n\s*\r?\n")
+                .Where(block => !string.IsNullOrWhiteSpace(block))
+                .ToList();
+            var kept = new List<string>();
+
+            foreach (var block in blocks)
+            {
+                var nameMatch = Regex.Match(block, @"(?m)^relationship\s+(\S+)");
+                var fromMatch = Regex.Match(block, @"(?m)^\s*fromColumn:\s*([^\r\n]+)");
+                var toMatch = Regex.Match(block, @"(?m)^\s*toColumn:\s*([^\r\n]+)");
+                if (!nameMatch.Success || !fromMatch.Success || !toMatch.Success)
+                {
+                    kept.Add(block);
+                    continue;
+                }
+
+                var from = ParseEndpoint(fromMatch.Groups[1].Value.Trim());
+                var to = ParseEndpoint(toMatch.Groups[1].Value.Trim());
+                if (from is null || to is null || !HasColumn(available, from.Value.Table, from.Value.Column) || !HasColumn(available, to.Value.Table, to.Value.Column))
+                {
+                    logger?.Invoke($"SEMANTIC-MODEL-PATCH|Relationship|RemovedDangling|{nameMatch.Groups[1].Value}|From={fromMatch.Groups[1].Value.Trim()}|To={toMatch.Groups[1].Value.Trim()}");
+                    continue;
+                }
+
+                kept.Add(block);
+            }
+
+            var reconciled = string.Join(newline + newline, kept) + (kept.Count > 0 ? newline + newline : string.Empty);
+            if (!string.Equals(text.TrimEnd('\r', '\n') + (kept.Count > 0 ? newline + newline : string.Empty), reconciled, StringComparison.Ordinal))
+                File.WriteAllText(relationshipsPath, reconciled, new UTF8Encoding(false));
+            else if (!string.Equals(text, reconciled, StringComparison.Ordinal))
+                File.WriteAllText(relationshipsPath, reconciled, new UTF8Encoding(false));
+        }
+
+        private static Dictionary<string, HashSet<string>> ReadTableColumns(string tablesPath)
+        {
+            var result = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+            if (!Directory.Exists(tablesPath)) return result;
+
+            foreach (var file in Directory.GetFiles(tablesPath, "*.tmdl", SearchOption.TopDirectoryOnly))
+            {
+                var text = File.ReadAllText(file, Encoding.UTF8);
+                var tableMatch = Regex.Match(text, @"(?m)^table\s+([^\r\n]+)");
+                if (!tableMatch.Success) continue;
+                var table = UnquoteIdentifier(tableMatch.Groups[1].Value.Trim());
+                var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (Match match in Regex.Matches(text, @"(?m)^\s*column\s+([^\r\n]+)"))
+                    columns.Add(UnquoteIdentifier(match.Groups[1].Value.Trim()));
+                result[table] = columns;
+            }
+
+            return result;
+        }
+
+        private static bool HasColumn(IReadOnlyDictionary<string, HashSet<string>> tables, string table, string column)
+            => tables.TryGetValue(table, out var columns) && columns.Contains(column);
+
+        private static (string Table, string Column)? ParseEndpoint(string endpoint)
+        {
+            var separator = endpoint.LastIndexOf('.');
+            if (separator <= 0 || separator >= endpoint.Length - 1) return null;
+            return (UnquoteIdentifier(endpoint[..separator].Trim()), UnquoteIdentifier(endpoint[(separator + 1)..].Trim()));
+        }
+
+        private static string UnquoteIdentifier(string value)
+        {
+            if (value.Length >= 2 && value[0] == '\'' && value[^1] == '\'')
+                return value[1..^1].Replace("''", "'", StringComparison.Ordinal);
+            return value;
         }
 
         private static void RemoveLegacyMeasuresTable(string tablesPath, string modelPath, Action<string>? logger)
