@@ -55,10 +55,10 @@ $floatingColorDefinition = $definitions | Where-Object Name -eq 'SLA Breach Colo
 foreach ($definition in @($breachedCountDefinition,$floatingStatusDefinition,$floatingColorDefinition)) {
     if ($null -eq $definition) { throw "SLA semantic UAT failed: required SLA measure definition is missing." }
     if ([string]$definition.Expression -match 'SLAStatus\]\s*=\s*"Breached"') {
-        throw "SLA semantic UAT failed: '$($definition.Name)' still uses SLAStatus = \"Breached\"; the source domain is \"Missed\"/\"Met\"."
+        throw 'SLA semantic UAT failed: measure still uses SLAStatus = "Breached"; the source domain is "Missed"/"Met".'
     }
     if ([string]$definition.Expression -notmatch 'SLAStatus\]\s*=\s*"Missed"') {
-        throw "SLA semantic UAT failed: '$($definition.Name)' does not explicitly use SLAStatus = \"Missed\"."
+        throw 'SLA semantic UAT failed: measure does not explicitly use SLAStatus = "Missed".'
     }
 }
 
