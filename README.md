@@ -16,6 +16,30 @@ A source-controlled Power BI PBIP/PBIR template for monitoring pipeline executio
 - PBIR validation plus a hard 28/28 visual JSON artifact gate.
 - Registered report resources/images carried through the published artifact.
 
+## Successful Version 1 baseline
+
+The released Version 1 baseline is the PR #11 resolved integration that was successfully validated before being merged to `main`.
+
+The successful changes leading to that baseline were:
+
+- Restored the known-good floating-bar visual template state so report visuals are preserved rather than regenerated destructively.
+- Restored the PR #10 exact Fact template and limited changes to the required Floating Bar DAX contracts.
+- Restored the DataFolder-backed Fact partition so the PBIP remains portable between local Desktop use and CI.
+- Corrected the Floating Bar semantic expressions while preserving the authoritative template.
+- Removed the stale `Breached` SLA-domain assertion and aligned Floating Bar UAT with semantic mapping rather than brittle DAX text shape.
+- Validated generated semantic expressions against the published artifact.
+- Applied the recursive visual-preservation gate to the conflict-resolved integration branch.
+- Preserved the semantic and UAT fixes while resolving PR #10 into PR #11.
+- Added/fixed local Desktop parameter preparation required by the final PR #11 baseline.
+
+The successful PR #11 head was `412864da6f9cffdfcef5df0998daca29b99bead4`. It passed the Validate and Build workflows before being merged to `main`.
+
+### Explicitly excluded from the baseline
+
+**PR #12 is not part of the successful Version 1 baseline.** PR #12 was an experimental relationship-validator change created from `main` rather than from the resolved PR #11 integration state. It was closed without being merged after its validation exposed incompatibility with the existing model-generation/test fixture path.
+
+Do not use the PR #12 relationship-validator experiment as the basis for modifying the Version 1 semantic model. The successful baseline is the PR #11 integration that was validated and then merged to `main`.
+
 ## Repository structure
 
 ```text
