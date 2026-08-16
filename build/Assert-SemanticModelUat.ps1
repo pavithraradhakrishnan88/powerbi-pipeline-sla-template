@@ -54,10 +54,13 @@ $floatingStatusDefinition = $definitions | Where-Object Name -eq 'Floating Bar S
 $floatingColorDefinition = $definitions | Where-Object Name -eq 'SLA Breach Color' | Select-Object -First 1
 foreach ($definition in @($breachedCountDefinition,$floatingStatusDefinition,$floatingColorDefinition)) {
     if ($null -eq $definition) { throw "SLA semantic UAT failed: required SLA measure definition is missing." }
-    if ([string]$definition.Expression -match 'SLAStatus\]\s*=\s*"Breached"') {
+    $expression = [string]$definition.Expression
+    if ($expression -match 'SLAStatus\]\s*=\s*"Breached"' -or $expression -match 'SLAStatus\]\)\s*=\s*"Breached"') {
         throw 'SLA semantic UAT failed: measure still uses SLAStatus = "Breached"; the source domain is "Missed"/"Met".'
     }
-    if ([string]$definition.Expression -notmatch 'SLAStatus\]\s*=\s*"Missed"') {
+    $usesMissedDirect = $expression -match 'SLAStatus\]\s*=\s*"Missed"'
+    $usesMissedAggregate = $expression -match 'SLAStatus\]\)\s*=\s*"Missed"'
+    if (-not ($usesMissedDirect -or $usesMissedAggregate)) {
         throw 'SLA semantic UAT failed: measure does not explicitly use SLAStatus = "Missed".'
     }
 }
