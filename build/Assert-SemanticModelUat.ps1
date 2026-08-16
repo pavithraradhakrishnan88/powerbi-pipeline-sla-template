@@ -79,20 +79,23 @@ $missedRow = $factRows | Where-Object { [string]$_.SLAStatus -eq 'Missed' } | Se
 $metRow = $factRows | Where-Object { [string]$_.SLAStatus -eq 'Met' } | Select-Object -First 1
 if ($null -eq $missedRow -or $null -eq $metRow) { throw "Floating-bar UAT failed: both Missed and Met source rows are required." }
 
-# Validate the semantic outcome, not one exact DAX serialization. The known-good measure
-# may express the mapping with SWITCH/IF or another equivalent DAX form.
-$statusExpression = [string]$floatingStatusDefinition.Expression
-$colorExpression = [string]$floatingColorDefinition.Expression
-if ($statusExpression -notmatch '"Missed"' -or $statusExpression -notmatch '"Breach"') { throw "Floating-bar UAT failed: Missed rows are not mapped to 'Breach'." }
-if ($statusExpression -notmatch '"Within SLA"') { throw "Floating-bar UAT failed: Met rows are not mapped to 'Within SLA'." }
-if ($colorExpression -notmatch '"Missed"' -or $colorExpression -notmatch '"#FF0000"') { throw "Floating-bar UAT failed: Missed rows are not mapped to #FF0000." }
-if ($colorExpression -notmatch '"#00B050"') { throw "Floating-bar UAT failed: Met rows are not mapped to #00B050." }
+# Validate the actual generated semantic-model expressions in the published artifact.
+# Known-good run 31931247792 generated these exact mappings on Fact_Pipeline_SampleData.
+$statusMatch = [regex]::Match($factText, "(?m)^\s*measure\s+'Floating Bar Status'\s*=\s*(?<expr>[^\r\n]+)")
+$colorMatch = [regex]::Match($factText, "(?m)^\s*measure\s+'SLA Breach Color'\s*=\s*(?<expr>[^\r\n]+)")
+if (!$statusMatch.Success -or !$colorMatch.Success) { throw "Floating-bar UAT failed: generated Floating Bar Status/SLA Breach Color measures are missing from the published Fact_Pipeline_SampleData TMDL." }
+$statusExpression = ($statusMatch.Groups['expr'].Value -replace '\s+', '')
+$colorExpression = ($colorMatch.Groups['expr'].Value -replace '\s+', '')
+$expectedStatusExpression = 'IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Missed","Breach","WithinSLA")'
+$expectedColorExpression = 'IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Missed","#FF0000","#00B050")'
+if ($statusExpression -ne $expectedStatusExpression) { throw "Floating-bar UAT failed: generated Floating Bar Status expression differs from known-good semantic expression. Actual=$statusExpression Expected=$expectedStatusExpression" }
+if ($colorExpression -ne $expectedColorExpression) { throw "Floating-bar UAT failed: generated SLA Breach Color expression differs from known-good semantic expression. Actual=$colorExpression Expected=$expectedColorExpression" }
 
 Write-Host "PUBLISHED-ARTIFACT-UAT|Root=$publishedRoot|SourceUnderTest=artifacts"
 Write-Host "KPI-UAT|MeasureCount=$($definitions.Count)|InlineFactCount=$($inlineNames.Count)|SLACompliancePresent=True|Hierarchy=PASS"
 Write-Host "SLA-DOMAIN-UAT|TotalRuns=$totalRuns|Missed=$overallMissed|Met=$overallMet|BreachedCount=$overallMissed|SLACompliance=$overallCompliance|ExpectedCompliance=0.208"
 Write-Host "SLA-DOMAIN-UAT|Category=ETL|FilteredRows=$($filteredRows.Count)|Missed=$filteredMissed|Met=$filteredMet|BreachedCount=$filteredMissed|SLACompliance=$filteredCompliance|ExpectedCompliance=$([math]::Round(14.0/54.0,6))"
-Write-Host "FLOATING-BAR-UAT|SemanticLogic=PASS"
+Write-Host "FLOATING-BAR-UAT|GeneratedSemanticExpression=PASS|KnownGoodRun=31931247792"
 Write-Host "FILTER-UAT|Relationship=PASS|CategorySlicer=$([IO.Path]::GetRelativePath($reportRoot,$categorySlicer.FullName))|TestCategory=$testCategory|TotalRows=$totalRuns|FilteredRows=$($filteredRows.Count)|OverallCompliance=$overallCompliance|FilteredCompliance=$filteredCompliance"
 Write-Host "FILTER-UAT|Behavior=PASS|CategoryFilterChangesFactPopulation=True|SLAComplianceEvaluatesAgainstFilteredPopulation=True"
 Write-Host "SEMANTIC-MODEL-UAT|PASS|PublishedArtifact=True"
