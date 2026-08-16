@@ -23,11 +23,15 @@ All notable changes to this project are documented here. The project follows sem
 - Documentation no longer describes the obsolete `reports/PipelineDashboard.pbip` path.
 - Documentation now distinguishes the manual Tabular Editor workflow from the deterministic automated CI build.
 - Release guidance now requires Desktop validation in addition to semantic CI validation.
+- The successful Version 1 baseline is documented as the PR #11 resolved integration that passed Validate and Build before merge to `main`.
+- The baseline records restoration of the known-good floating-bar visual template, the PR #10 Fact template, the DataFolder-backed Fact partition, and the required Floating Bar DAX contracts.
+- The baseline records removal of the stale `Breached` SLA-domain assertion, semantic Floating Bar UAT validation, published-artifact semantic validation, recursive visual preservation, and local Desktop parameter preparation.
 
 ### Fixed
 
 - Release documentation is aligned with the current template-first build and artifact gates.
 - Measure workflow documentation now points to `MeasureDefinitions.json` as the source of truth.
+- Documentation explicitly records that PR #12's relationship-validator experiment was closed without merge and is **not part of the successful Version 1 baseline**.
 
 ## Version History
 
