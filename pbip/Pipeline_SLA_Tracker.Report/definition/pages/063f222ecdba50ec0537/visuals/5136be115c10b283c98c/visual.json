@@ -37,7 +37,7 @@
                   "Property": "Timeline Base"
                 }
               },
-              "queryRef": "_Measures.Timeline Base",
+              "queryRef": "Fact_Pipeline_SampleData.Timeline Base",
               "nativeQueryRef": "Timeline Base"
             },
             {
@@ -47,7 +47,7 @@
                   "Property": "Floating Bar Duration"
                 }
               },
-              "queryRef": "_Measures.Floating Bar Duration",
+              "queryRef": "Fact_Pipeline_SampleData.Floating Bar Duration",
               "nativeQueryRef": "Floating Bar Duration"
             }
           ]
@@ -84,6 +84,9 @@
                 }
               }
             }
+          },
+          "selector": {
+            "metadata": "Fact_Pipeline_SampleData.Floating Bar Duration"
           }
         },
         {
@@ -98,7 +101,7 @@
               }
             },
             "borderShow": {
-              "expr": { "Literal": { "Value": "true" } }
+              "expr": { "Literal": { "Value": "false" } }
             }
           },
           "selector": {
