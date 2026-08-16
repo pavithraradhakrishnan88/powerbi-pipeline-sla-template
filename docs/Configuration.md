@@ -1,410 +1,107 @@
-# Configuration Guide
+# Configuration Guide — Version 1.0.0
 
-This guide explains how developers and maintainers can customize the **Power BI Pipeline SLA Tracker Template**.
+This guide describes the current Power BI Pipeline SLA Tracker configuration.
 
-The configuration areas covered include data sources, semantic model settings, DAX measures, report theme, Power Query transformations, CI/CD automation, and local development setup.
+## Data
 
----
+Default sample files:
 
-# Data Configuration
-
-The Pipeline SLA Tracker is designed to work with pipeline/process execution data stored in CSV format.
-
-Default sample data location:
-
-```
-data/
-├── Fact_Pipeline_SampleData.csv
-└── Dim_Category.csv
+```text
+data/Fact_Pipeline_SampleData.csv
+data/Dim_Category.csv
 ```
 
-To use your own data:
+The semantic model uses `Fact_Pipeline_SampleData` as the fact table and `Dim_Category` as the dimension.
 
-1. Replace the sample CSV files with your pipeline execution data.
-2. Maintain the required column names and data types.
-3. Run validation:
+Run validation after data changes:
 
 ```powershell
 .\build\validate.ps1
 ```
 
-4. Rebuild the Power BI project:
+## Semantic model
 
-```powershell
-.\build\build.ps1
+The authoritative PBIP semantic model is under:
+
+```text
+pbip/Pipeline_SLA_Tracker.SemanticModel/
 ```
 
----
+The main relationship is:
 
-# CSV Schema Requirements
-
-## Fact Pipeline Data
-
-The main fact table contains pipeline execution details.
-
-Expected schema:
-
-| Column             | Description                 | Data Type    |
-| ------------------ | --------------------------- | ------------ |
-| PipelineID         | Unique pipeline identifier  | Text/Integer |
-| PipelineName       | Pipeline or process name    | Text         |
-| CategoryID         | Category reference          | Integer      |
-| Environment        | Execution environment       | Text         |
-| Status             | Run status                  | Text         |
-| StartDate          | Actual execution start time | DateTime     |
-| EndDate            | Actual execution end time   | DateTime     |
-| ScheduledStart     | Planned execution start     | DateTime     |
-| RuntimeMinutes     | Execution duration          | Decimal      |
-| SLA_Target_Minutes | SLA threshold               | Decimal      |
-| SLA_Breach_Flag    | SLA compliance indicator    | Integer      |
-
-Additional columns can be added if required, but existing column names should remain unchanged to avoid breaking model relationships and measures.
-
----
-
-## Dimension Data
-
-The category dimension provides descriptive information.
-
-Example:
-
-```
-data/Dim_Category.csv
+```text
+Dim_Category[CategoryName]  (1) -> (*)  Fact_Pipeline_SampleData[Category]
 ```
 
-Expected columns:
+Keep the relationship active and single-directional unless the model contract is intentionally changed.
 
-| Column       | Description          |
-| ------------ | -------------------- |
-| CategoryID   | Unique category key  |
-| CategoryName | Category description |
+## Measures
 
----
+Measure definitions are maintained in:
 
-# Semantic Model Configuration
-
-The Power BI semantic model follows a star schema approach.
-
-Recommended structure:
-
-```
-Fact_Pipeline_SampleData
-        |
-        |
-Dim_Category
+```text
+scripts/metadata/MeasureDefinitions.json
 ```
 
-## Relationships
-
-Configure relationships using:
-
-| From                                 | To                       | Type        |
-| ------------------------------------ | ------------------------ | ----------- |
-| Fact_Pipeline_SampleData[CategoryID] | Dim_Category[CategoryID] | Many-to-One |
-
-Recommended relationship settings:
-
-* Cross-filter direction: Single
-* Dimension tables should contain unique keys
-* Fact tables should contain transactional records
-
----
-
-## Model Files
-
-Semantic model definitions are maintained in:
-
-```
-model/
-```
-
-Typical structure:
-
-```
-model/
-├── tables/
-├── relationships/
-├── measures/
-└── model.tmdl
-```
-
-When modifying the model:
-
-1. Update TMDL files.
-2. Validate syntax.
-3. Rebuild the PBIP project.
-
----
-
-# DAX Measure Configuration
-
-DAX measures are maintained separately for easier management.
-
-Location:
-
-```
-src/
-└── measures.dax
-```
-
-Generated measures are maintained through:
-
-```
-scripts/
-├── GenerateMeasures.csx
-└── MeasureDefinitions.json
-```
-
-Example KPI categories:
-
-```
-measures/
-├── SLA.tmdl
-├── Duration.tmdl
-└── KPIs.tmdl
-```
-
-Common measures include:
-
-* Active Pipelines
-* Average Runtime
-* Successful Runs
-* Failed Runs
-* SLA Breach %
-* Average Start Offset
-* Timeline Coverage %
-
----
-
-## Adding New Measures
-
-To add a measure:
-
-1. Add definition to:
-
-```
-scripts/MeasureDefinitions.json
-```
-
-2. Run the measure generator:
+Generate the Tabular Editor 2.28 script with:
 
 ```powershell
 .\scripts\tools\GenerateMetadata.ps1
 ```
 
-3. Validate generated output.
-4. Commit updated model files.
+The generated script is:
 
----
-
-# Theme Configuration
-
-The report theme is controlled using:
-
-```
-theme/
-└── PipelineTheme.json
+```text
+scripts/GenerateMeasures.csx
 ```
 
-The theme controls:
+For manual model work, run that script in Tabular Editor 2.28. For CI/local automated builds, `build/build.ps1` materializes the authoritative measure set itself and does not require Tabular Editor on the runner.
 
-* Report colors
-* Visual styling
-* KPI indicators
-* SLA status colors
+Do not treat `scripts/GenerateMeasures.csx` or generated PBIP output as the metadata source of truth; edit `MeasureDefinitions.json` first.
 
-Current SLA color logic:
+## Report
 
-| Status     | Indicator |
-| ---------- | --------- |
-| SLA Met    | Green     |
-| SLA Breach | Red       |
+The Version 1 report is:
 
-To customize branding:
-
-1. Update `PipelineTheme.json`.
-2. Import the theme in Power BI Desktop.
-3. Validate all report pages.
-
----
-
-# Power Query Configuration
-
-Power Query transformations are stored in:
-
-```
-powerquery/
+```text
+pbip/Pipeline_SLA_Tracker.Report/
 ```
 
-Power Query is responsible for:
+Current pages:
 
-* Loading CSV files
-* Cleaning source data
-* Applying transformations
-* Preparing tables for the semantic model
+- Home
+- Executive Overview
+- SLA Exceptions
 
-When changing data sources:
+The report template remains authoritative for layout, visual metadata, and registered resources.
 
-1. Update connection paths.
-2. Validate column mappings.
-3. Refresh the dataset.
-4. Confirm model relationships.
+## DataFolder
 
-Recommended practices:
+The semantic model uses the `DataFolder` expression for the sample-data location. The build must leave this portable and resolve it relative to the PBIP artifact context.
 
-* Avoid hardcoded file paths.
-* Keep transformation steps documented.
-* Validate data types after changes.
+Do not introduce a runner-specific absolute path such as `C:\...` into the generated artifact.
 
----
+## Theme and resources
 
-# CI/CD Configuration
+Theme and registered resources are maintained with the report template. Version 1 requires the final artifact to carry its registered report resources through publication.
 
-GitHub Actions workflows automate validation, building, and releases.
+## CI/CD
 
-Location:
+Workflows:
 
-```
-.github/workflows/
+```text
+.github/workflows/validate.yml
+.github/workflows/build.yml
+.github/workflows/release.yml
 ```
 
-Current workflows:
+The build workflow validates the exact artifact that is packaged. It includes PBIR validation and the 28/28 visual JSON gate.
 
-```
-.github/workflows/
-├── validate.yml
-├── build.yml
-└── release.yml
-```
-
----
-
-## Validation Workflow
-
-Purpose:
-
-* Validate CSV files
-* Check schema consistency
-* Detect configuration issues
-
-Runs on:
-
-* Pull requests
-* Code changes
-
----
-
-## Build Workflow
-
-Purpose:
-
-* Validate project files
-* Generate artifacts
-* Build Power BI package
-
-Triggered by changes in:
-
-```
-data/
-model/
-powerquery/
-theme/
-src/
-```
-
-Build script:
+## Local build
 
 ```powershell
+.\build\validate.ps1
 .\build\build.ps1
 ```
 
----
-
-## Release Workflow
-
-Purpose:
-
-* Package production release artifacts
-* Create release packages
-
-Triggered by:
-
-* GitHub releases
-* Manual execution
-
----
-
-# Environment Setup
-
-## Required Software
-
-Install:
-
-* Power BI Desktop
-* Git
-* PowerShell
-* Tabular Editor 2
-* .NET SDK
-
----
-
-## Clone Repository
-
-```bash
-git clone https://github.com/pavithraradhakrishnan88/powerbi-pipeline-sla-template.git
-```
-
-Navigate:
-
-```bash
-cd powerbi-pipeline-sla-template
-```
-
----
-
-## Open Project
-
-Open:
-
-```
-reports/
-└── PipelineDashboard.pbip
-```
-
----
-
-## Build Locally
-
-Run:
-
-```powershell
-.\build.ps1
-```
-
-or:
-
-```powershell
-.\build\build.ps1
-```
-
-The build process will:
-
-1. Validate source files.
-2. Generate model artifacts.
-3. Apply configuration updates.
-4. Create build outputs.
-
----
-
-# Maintenance Guidelines
-
-For safe customization:
-
-* Keep sample data structure unchanged.
-* Add new columns carefully.
-* Document schema changes.
-* Test DAX changes before deployment.
-* Validate builds before merging pull requests.
-* Keep documentation synchronized with configuration changes.
-
-This ensures the Pipeline SLA Tracker remains reusable as a production-ready Power BI template.
+Outputs are written to `BuildResult/` and `artifacts/` as defined by the build script.
