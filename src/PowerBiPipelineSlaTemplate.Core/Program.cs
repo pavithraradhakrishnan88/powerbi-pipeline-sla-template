@@ -5,9 +5,16 @@ using PowerBiPipelineSlaTemplate.Core.Pbip;
 
 var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
 var outputPath = Path.Combine(repoRoot, "metadata", "metadata.json");
-var dataDirectory = Environment.GetEnvironmentVariable("PBIP_DATA_DIRECTORY");
-if (string.IsNullOrWhiteSpace(dataDirectory))
-    dataDirectory = Path.Combine(repoRoot, "data");
+var dataDirectory = Path.Combine(repoRoot, "data");
+
+// Local Desktop materialization always resolves data from the local repository.
+// CI may explicitly provide its checkout-local absolute path through the environment.
+if (string.Equals(Environment.GetEnvironmentVariable("CI"), "true", StringComparison.OrdinalIgnoreCase))
+{
+    var ciDataDirectory = Environment.GetEnvironmentVariable("PBIP_DATA_DIRECTORY");
+    if (!string.IsNullOrWhiteSpace(ciDataDirectory))
+        dataDirectory = ciDataDirectory;
+}
 
 var generatedPbipRoot = Path.Combine(repoRoot, "BuildResult", "PBIP");
 var semanticModelTemplateRoot = Path.Combine(repoRoot, "pbip", "Pipeline_SLA_Tracker.SemanticModel");
