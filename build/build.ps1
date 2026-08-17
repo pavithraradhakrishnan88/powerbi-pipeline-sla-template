@@ -80,34 +80,24 @@ $expressionsPath = Join-Path $generatedSemanticModelRoot "definition\expressions
 $relationshipsPath = Join-Path $generatedSemanticModelRoot "definition\relationships.tmdl"
 $measuresPath = Join-Path $generatedSemanticModelRoot "definition\tables\_Measures.tmdl"
 $measureDefinitionsPath = Join-Path $repoRoot "scripts\metadata\MeasureDefinitions.json"
+$dataFolderPath = [IO.Path]::GetFullPath((Join-Path $repoRoot "data"))
 if (!(Test-Path $factPath)) { throw "Generated semantic model is missing Fact_Pipeline_SampleData.tmdl." }
-if (!(Test-Path $expressionsPath)) { throw "Generated semantic model is missing expressions.tmdl." }
 if (!(Test-Path $measureDefinitionsPath)) { throw "Authoritative MeasureDefinitions.json is missing: $measureDefinitionsPath" }
+if (Test-Path $expressionsPath) { throw "Generated semantic model must not contain expressions.tmdl or a DataFolder Power BI parameter." }
 if (Test-Path $measuresPath) { throw "Generated semantic model must not contain _Measures.tmdl." }
 $factText = Get-Content -Raw $factPath
-$expressionText = Get-Content -Raw $expressionsPath
 $relationshipText = if (Test-Path $relationshipsPath) { Get-Content -Raw $relationshipsPath } else { "" }
 $measureMetadata = @(Get-Content -Raw $measureDefinitionsPath | ConvertFrom-Json).measures
 $expectedMeasureCount = $measureMetadata.Count
 $measureCount = ([regex]::Matches($factText,'(?m)^\s*measure\s+[^\r\n=]+\s*=')).Count
-$expressionCount = ([regex]::Matches($expressionText,'(?m)^\s*expression\s+')).Count
 $relationshipCount = ([regex]::Matches($relationshipText,'(?m)^\s*relationship\s+')).Count
-Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|InlineMeasuresOnFact=$measureCount|ExpectedInlineMeasures=$expectedMeasureCount|Relationships=$relationshipCount|Expressions=$expressionCount|Has_MeasuresTmdl=$([bool](Test-Path $measuresPath))"
+Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|InlineMeasuresOnFact=$measureCount|ExpectedInlineMeasures=$expectedMeasureCount|Relationships=$relationshipCount|Expressions=0|Has_MeasuresTmdl=$([bool](Test-Path $measuresPath))"
 if ($measureCount -ne $expectedMeasureCount) { throw "Expected $expectedMeasureCount inline measures on Fact_Pipeline_SampleData from MeasureDefinitions.json; found $measureCount." }
 if ($relationshipText -notmatch '(?s)relationship\s+[^\r\n]+\r?\n\s*fromColumn:\s*Fact_Pipeline_SampleData\.Category\r?\n\s*toColumn:\s*Dim_Category\.CategoryName') { throw "Expected Dim_Category[CategoryName] -> Fact_Pipeline_SampleData[Category] relationship is missing." }
-if ($expressionCount -ne 1) { throw "Expected exactly 1 expression (DataFolder); found $expressionCount." }
-if ($expressionText -notmatch 'expression DataFolder = "[^"]*" meta') { throw "DataFolder expression is missing or malformed." }
-if ($expressionText -match "expression '_Measure Table'") { throw "Dangling _Measure Table expression must not be present." }
-if ($factText -notmatch 'File\.Contents\(DataFolder') {
-    $fileContentsLines = @($factText -split "`r?`n" | Where-Object { $_ -match 'File\.Contents\(' })
-    $actualFileContents = if ($fileContentsLines.Count -gt 0) { $fileContentsLines -join ' || ' } else { '<no File.Contents(...) line found>' }
-    $expectedPattern = 'File\.Contents\(DataFolder'
-    Write-Host "DATAFOLDER-CHECK|FactPath=$factPath"
-    Write-Host "DATAFOLDER-CHECK|ActualFileContents=$actualFileContents"
-    Write-Host "DATAFOLDER-CHECK|ExpectedRegex=$expectedPattern"
-    Write-Host "DATAFOLDER-CHECK|RegexMatches=$($factText -match $expectedPattern)"
-    throw "Generated Fact partition does not use DataFolder."
-}
+$expectedFactPath = $dataFolderPath.Replace('\\','\\') + '\\Fact_Pipeline_SampleData.csv'
+if ($factText -match 'DataFolder') { throw "Generated semantic model must not contain DataFolder references." }
+if ($factText -notmatch [regex]::Escape($expectedFactPath)) { throw "Generated Fact partition does not contain the build-time absolute data path '$expectedFactPath'." }
+if ($factText -match '(?i)[A-Z]:\\[^\r\n"]*\\_work\\|/home/runner/|/opt/hostedtoolcache/') { throw "Generated Fact partition contains a CI-runner-specific path pattern." }
 
 Normalize-DefinitionSchema -Path (Join-Path $generatedReportRoot "definition.pbir")
 Write-VisualBomDiagnostics -Stage "after-dotnet-regeneration" -ReportRoot $generatedReportRoot
@@ -128,4 +118,4 @@ foreach ($entry in @('docs','data','scripts','theme','LICENSE','CHANGELOG.md','R
 & "$PSScriptRoot\Assert-VisualArtifactGate.ps1" -BuildRoot $artifactPath
 if ($LASTEXITCODE -ne 0) { throw "Published visual artifact gate failed with exit code $LASTEXITCODE." }
 
-Write-Host "Build complete. Template was preserved; generated semantic model was copied wholesale and only environment-dependent values were patched."
+Write-Host "Build complete. Template remains portable; generated Desktop artifact uses the build-time absolute data path and contains no DataFolder parameter."
