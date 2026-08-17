@@ -120,10 +120,8 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
             if (!string.IsNullOrWhiteSpace(column.Description))
                 builder.Append($"\t\tannotation Description = '{EscapeSingleQuotes(column.Description)}'");
-            else
-                builder.Append($"\t\tsourceColumn: {columnName}");
 
-            return builder.ToString();
+            return builder.ToString().TrimEnd('\r', '\n');
         }
 
         private static string MapTmdlDataType(string? dataType)
