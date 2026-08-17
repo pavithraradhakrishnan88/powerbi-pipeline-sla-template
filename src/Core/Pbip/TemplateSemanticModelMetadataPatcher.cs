@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using PowerBiPipelineSlaTemplate.Core;
 
 namespace PowerBiPipelineSlaTemplate.Core.Pbip
 {
@@ -19,8 +20,9 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         private const string FactColumn = "Category";
         private const string DimensionColumn = "CategoryName";
 
-        public static void Patch(string semanticModelRootPath, string repositoryRootPath, Action<string>? logger = null)
+        public static void Patch(ModelBuildResult model, string semanticModelRootPath, string repositoryRootPath, Action<string>? logger = null)
         {
+            ArgumentNullException.ThrowIfNull(model);
             ArgumentException.ThrowIfNullOrWhiteSpace(semanticModelRootPath);
             ArgumentException.ThrowIfNullOrWhiteSpace(repositoryRootPath);
 
@@ -36,11 +38,114 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             if (!File.Exists(relationshipsPath)) throw new FileNotFoundException("Template is missing relationships.tmdl.", relationshipsPath);
             if (!File.Exists(measureDefinitionsPath)) throw new FileNotFoundException("MeasureDefinitions.json is missing.", measureDefinitionsPath);
 
+            PatchColumns(model, factPath, logger);
             PatchMeasures(factPath, measureDefinitionsPath, logger);
             EnsureFactPartition(factPath, logger);
             PatchCategoryRelationship(relationshipsPath, logger);
             RemoveLegacyMeasuresTable(tables, modelPath, logger);
             RemoveDanglingMeasureTableAnnotation(modelPath, expressionsPath, logger);
+        }
+
+        private static void PatchColumns(ModelBuildResult model, string factPath, Action<string>? logger)
+        {
+            var factTable = model.Tables.FirstOrDefault(table => string.Equals(table.Name, FactTable, StringComparison.OrdinalIgnoreCase));
+            if (factTable is null)
+                throw new InvalidDataException($"ModelBuildResult does not contain required fact table '{FactTable}'.");
+
+            var text = File.ReadAllText(factPath, Encoding.UTF8);
+            var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var line in text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
+            {
+                var trimmed = line.Trim();
+                if (!trimmed.StartsWith("column ", StringComparison.OrdinalIgnoreCase)) continue;
+
+                var name = trimmed[7..].Trim();
+                if (name.Length >= 2 && name[0] == '\'' && name[^1] == '\'')
+                    name = name[1..^1];
+                var firstWhitespace = name.IndexOfAny(new[] { ' ', '\t' });
+                if (firstWhitespace >= 0)
+                    name = name[..firstWhitespace];
+                existingColumns.Add(name);
+            }
+
+            var additions = new StringBuilder();
+            var addedCount = 0;
+            foreach (var column in factTable.Columns)
+            {
+                if (existingColumns.Contains(column.Name)) continue;
+
+                additions.AppendLine(BuildColumnBlock(column));
+                existingColumns.Add(column.Name);
+                addedCount++;
+                logger?.Invoke($"SEMANTIC-MODEL-PATCH|Added column|{FactTable}.{column.Name}");
+            }
+
+            if (addedCount == 0)
+            {
+                logger?.Invoke($"SEMANTIC-MODEL-PATCH|Columns|Fact={FactTable}|Added=0|Existing={existingColumns.Count}");
+                return;
+            }
+
+            var insertionIndex = text.IndexOf("\tcolumn ", StringComparison.Ordinal);
+            if (insertionIndex < 0)
+                insertionIndex = text.IndexOf("\tmeasure ", StringComparison.Ordinal);
+            if (insertionIndex < 0)
+                insertionIndex = text.IndexOf("\tpartition ", StringComparison.Ordinal);
+            if (insertionIndex < 0)
+                insertionIndex = text.Length;
+
+            text = text.Insert(insertionIndex, additions.ToString());
+            File.WriteAllText(factPath, text, new UTF8Encoding(false));
+            logger?.Invoke($"SEMANTIC-MODEL-PATCH|Columns|Fact={FactTable}|Added={addedCount}|Total={existingColumns.Count}");
+        }
+
+        private static string BuildColumnBlock(BuiltColumn column)
+        {
+            var builder = new StringBuilder();
+            var columnName = SanitizeObjectName(column.Name);
+
+            builder.AppendLine($"\tcolumn {columnName}");
+            builder.AppendLine($"\t\tdataType: {MapTmdlDataType(column.DataType)}");
+            builder.AppendLine($"\t\tsummarizeBy: {(IsNumericColumn(column) ? "sum" : "none")}");
+            builder.AppendLine($"\t\tsourceColumn: {columnName}");
+
+            if (!string.IsNullOrWhiteSpace(column.DisplayFolder))
+                builder.AppendLine($"\t\tdisplayFolder: '{EscapeSingleQuotes(column.DisplayFolder)}'");
+
+            if (!string.IsNullOrWhiteSpace(column.FormatString))
+                builder.AppendLine($"\t\tformatString: '{EscapeSingleQuotes(column.FormatString)}'");
+
+            if (!string.IsNullOrWhiteSpace(column.Description))
+                builder.AppendLine($"\t\tannotation Description = '{EscapeSingleQuotes(column.Description)}'");
+
+            builder.AppendLine();
+            return builder.ToString();
+        }
+
+        private static string MapTmdlDataType(string? dataType)
+            => (dataType ?? "Text").Trim() switch
+            {
+                "Boolean" => "boolean",
+                "Int64" => "int64",
+                "Double" => "double",
+                "Decimal" => "decimal",
+                "DateTime" => "dateTime",
+                "Date" => "date",
+                "Text" => "string",
+                _ => "string"
+            };
+
+        private static bool IsNumericColumn(BuiltColumn column)
+            => string.Equals(column.DataType, "Int64", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(column.DataType, "Decimal", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(column.DataType, "Double", StringComparison.OrdinalIgnoreCase);
+
+        private static string SanitizeObjectName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "ModelObject";
+            return value.Contains(' ') || value.Contains('\\') || value.Contains('/')
+                ? $"'{EscapeSingleQuotes(value)}'"
+                : value;
         }
 
         private static void PatchMeasures(string factPath, string definitionsPath, Action<string>? logger)
