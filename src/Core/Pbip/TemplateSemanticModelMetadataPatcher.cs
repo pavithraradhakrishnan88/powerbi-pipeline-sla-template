@@ -194,41 +194,89 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             using var document = JsonDocument.Parse(File.ReadAllText(definitionsPath));
             if (!document.RootElement.TryGetProperty("measures", out var measures) || measures.ValueKind != JsonValueKind.Array)
                 throw new InvalidDataException("MeasureDefinitions.json must contain a 'measures' array.");
+
             var text = File.ReadAllText(factPath, Encoding.UTF8);
-            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var line in text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
+            var measureRegex = new Regex(
+                "(?m)^[ \\t]*measure[ \\t]+(?:'(?<qname>[^']+)'|(?<name>[^=\\r\\n]+?))[ \\t]*=[ \\t]*(?<expr>.*)$",
+                RegexOptions.CultureInvariant);
+
+            var existing = new Dictionary<string, MeasureSpan>(StringComparer.OrdinalIgnoreCase);
+            foreach (Match match in measureRegex.Matches(text))
             {
-                var trimmed = line.Trim();
-                if (!trimmed.StartsWith("measure ", StringComparison.OrdinalIgnoreCase)) continue;
-                var name = trimmed[8..].TrimStart(); var equals = name.IndexOf('=');
-                if (equals >= 0) name = name[..equals].Trim();
-                if (name.Length >= 2 && name[0] == '\'' && name[^1] == '\'') name = name[1..^1];
-                names.Add(name);
+                var name = match.Groups["qname"].Success
+                    ? match.Groups["qname"].Value
+                    : match.Groups["name"].Value.Trim();
+                existing[name] = new MeasureSpan(
+                    match.Groups["expr"].Index,
+                    match.Groups["expr"].Index + match.Groups["expr"].Length,
+                    match.Groups["expr"].Value.Trim());
             }
+
+            var replacements = new List<(int Start, int End, string Expression, string Name)>();
             var additions = new StringBuilder();
+            var measureCount = existing.Count;
+
             foreach (var measure in measures.EnumerateArray())
             {
-                var table = GetString(measure, "Table"); var name = GetString(measure, "Name");
-                if (!string.Equals(table, FactTable, StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(name) || names.Contains(name)) continue;
+                var table = GetString(measure, "Table");
+                var name = GetString(measure, "Name");
+                if (!string.Equals(table, FactTable, StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(name))
+                    continue;
+
                 var expression = GetString(measure, "Expression");
-                if (string.IsNullOrWhiteSpace(expression)) throw new InvalidDataException($"Measure '{name}' has no expression.");
-                additions.AppendLine(); additions.AppendLine($"\tmeasure '{EscapeSingleQuotes(name)}' = {expression.Trim()}");
-                var format = GetString(measure, "Format"); var folder = GetString(measure, "Folder");
+                if (string.IsNullOrWhiteSpace(expression))
+                    throw new InvalidDataException($"Measure '{name}' has no expression.");
+                expression = expression.Trim();
+
+                if (existing.TryGetValue(name, out var current))
+                {
+                    if (!ExpressionsEqual(current.Expression, expression))
+                    {
+                        replacements.Add((current.Start, current.End, expression, name));
+                        logger?.Invoke($"SEMANTIC-MODEL-PATCH|Updated measure|{name}|ExpressionChanged");
+                    }
+                    else
+                    {
+                        logger?.Invoke($"SEMANTIC-MODEL-PATCH|Measure|{name}|AlreadyPresent");
+                    }
+                    continue;
+                }
+
+                additions.AppendLine();
+                additions.AppendLine($"\tmeasure '{EscapeSingleQuotes(name)}' = {expression}");
+                var format = GetString(measure, "Format");
+                var folder = GetString(measure, "Folder");
                 if (!string.IsNullOrWhiteSpace(format)) additions.AppendLine($"\t\tformatString: {format}");
                 if (!string.IsNullOrWhiteSpace(folder)) additions.AppendLine($"\t\tdisplayFolder: {folder}");
                 if (measure.TryGetProperty("Hidden", out var hidden) && hidden.ValueKind == JsonValueKind.True && hidden.GetBoolean()) additions.AppendLine("\t\tisHidden");
                 if (measure.TryGetProperty("KPI", out var kpi) && kpi.ValueKind == JsonValueKind.True && kpi.GetBoolean()) additions.AppendLine("\t\tannotation KPI = True");
                 if (measure.TryGetProperty("DisplayOrder", out var order) && order.ValueKind == JsonValueKind.Number) additions.AppendLine($"\t\tannotation DisplayOrder = {order.GetInt32()}");
-                additions.AppendLine(); names.Add(name); logger?.Invoke($"SEMANTIC-MODEL-PATCH|Added measure|{name}");
+                additions.AppendLine();
+                measureCount++;
+                logger?.Invoke($"SEMANTIC-MODEL-PATCH|Added measure|{name}");
             }
+
+            // Apply expression replacements from the end of the file backwards so spans remain valid.
+            foreach (var replacement in replacements.OrderByDescending(r => r.Start))
+                text = text[..replacement.Start] + replacement.Expression + text[replacement.End..];
+
             if (additions.Length > 0)
             {
                 var insertionIndex = text.IndexOf("\tpartition ", StringComparison.Ordinal);
                 if (insertionIndex < 0) insertionIndex = text.Length;
                 text = text.Insert(insertionIndex, additions.ToString());
-                File.WriteAllText(factPath, text, new UTF8Encoding(false));
             }
-            logger?.Invoke($"SEMANTIC-MODEL-PATCH|Measures|InlineFactCount={names.Count}");
+
+            File.WriteAllText(factPath, text, new UTF8Encoding(false));
+            logger?.Invoke($"SEMANTIC-MODEL-PATCH|Measures|InlineFactCount={measureCount}");
+        }
+
+        private readonly record struct MeasureSpan(int Start, int End, string Expression);
+
+        private static bool ExpressionsEqual(string left, string right)
+        {
+            static string Normalize(string value) => Regex.Replace(value.Trim(), "\\s+", " ");
+            return string.Equals(Normalize(left), Normalize(right), StringComparison.Ordinal);
         }
 
         private static void EnsureFactPartition(string factPath, Action<string>? logger)
@@ -252,7 +300,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
             var block = string.Join(newline, new[] { "relationship Category_Fact_Dimension", $"\tfromColumn: {FactTable}.{FactColumn}", $"\ttoColumn: {DimensionTable}.{DimensionColumn}", string.Empty, string.Empty });
             File.WriteAllText(path, text.TrimEnd('\r', '\n') + newline + block, new UTF8Encoding(false));
-            logger?.Invoke("SEMANTIC-MODEL-PATCH|Relationship|Dim_Category->Fact_Pipeline_SampleData|Added");
+            logger?.Invoke("SEMANTIC-MODEL-PATCH|Relationship|Dim_Category->Fact_Pipeline_SLA|Added");
         }
 
         private static void RemoveLegacyMeasuresTable(string tablesPath, string modelPath, Action<string>? logger)
