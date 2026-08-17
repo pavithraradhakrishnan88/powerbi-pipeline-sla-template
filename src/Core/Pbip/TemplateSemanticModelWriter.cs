@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using PowerBiPipelineSlaTemplate.Core;
 
 namespace PowerBiPipelineSlaTemplate.Core.Pbip
 {
@@ -11,11 +12,12 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         private static readonly Regex MeasureRegex = new(@"(?m)^\s*measure\s+(?:'[^']+'|[^\r\n=]+)\s*=", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private const string PbipRelativeDataFolder = "data";
 
-        public void Write(string templateRootPath, string semanticModelRootPath, string dataFolderPath, Action<string>? logger = null)
+        public void Write(string templateRootPath, string semanticModelRootPath, string dataFolderPath, ModelBuildResult model, Action<string>? logger = null)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(templateRootPath);
             ArgumentException.ThrowIfNullOrWhiteSpace(semanticModelRootPath);
             ArgumentException.ThrowIfNullOrWhiteSpace(dataFolderPath);
+            ArgumentNullException.ThrowIfNull(model);
             var templateRoot = Path.GetFullPath(templateRootPath);
             var outputRoot = Path.GetFullPath(semanticModelRootPath);
             if (!Directory.Exists(templateRoot)) throw new DirectoryNotFoundException($"Semantic model template directory was not found: {templateRoot}");
@@ -23,11 +25,11 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, recursive: true);
             CopyDirectoryRecursively(templateRoot, outputRoot);
             LogDiagnostics(outputRoot, "after-template-copy", logger);
-            PatchDataFolder(outputRoot, templateRoot, logger);
+            PatchDataFolder(outputRoot, templateRoot, model, logger);
             LogDiagnostics(outputRoot, "after-datafolder-and-metadata-patch", logger, PbipRelativeDataFolder);
         }
 
-        private static void PatchDataFolder(string semanticModelRootPath, string templateRootPath, Action<string>? logger)
+        private static void PatchDataFolder(string semanticModelRootPath, string templateRootPath, ModelBuildResult model, Action<string>? logger)
         {
             var expressionsPath = Path.Combine(semanticModelRootPath, "definition", "expressions.tmdl");
             if (!File.Exists(expressionsPath)) throw new FileNotFoundException("Semantic model template is missing expressions.tmdl.", expressionsPath);
@@ -35,7 +37,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             // Never bake the CI runner's absolute checkout path into the semantic model.
             File.WriteAllBytes(expressionsPath, PatchDataFolderBytes(File.ReadAllBytes(expressionsPath), PbipRelativeDataFolder));
             var repositoryRootPath = FindRepositoryRoot(templateRootPath);
-            TemplateSemanticModelMetadataPatcher.Patch(semanticModelRootPath, repositoryRootPath, logger);
+            TemplateSemanticModelMetadataPatcher.Patch(model, semanticModelRootPath, repositoryRootPath, logger);
         }
 
         private static string FindRepositoryRoot(string startingPath)
