@@ -68,13 +68,13 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 existingColumns.Add(name);
             }
 
-            var additions = new StringBuilder();
+            var columnBlocks = new List<string>();
             var addedCount = 0;
             foreach (var column in factTable.Columns)
             {
                 if (existingColumns.Contains(column.Name)) continue;
 
-                additions.AppendLine(BuildColumnBlock(column));
+                columnBlocks.Add(BuildColumnBlock(column));
                 existingColumns.Add(column.Name);
                 addedCount++;
                 logger?.Invoke($"SEMANTIC-MODEL-PATCH|Added column|{FactTable}.{column.Name}");
@@ -86,6 +86,9 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 return;
             }
 
+            var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+            var additions = string.Join(newline + newline, columnBlocks).TrimEnd('\r', '\n');
+
             var insertionIndex = text.IndexOf("\tcolumn ", StringComparison.Ordinal);
             if (insertionIndex < 0)
                 insertionIndex = text.IndexOf("\tmeasure ", StringComparison.Ordinal);
@@ -94,7 +97,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             if (insertionIndex < 0)
                 insertionIndex = text.Length;
 
-            text = text.Insert(insertionIndex, additions.ToString());
+            text = text.Insert(insertionIndex, additions);
             File.WriteAllText(factPath, text, new UTF8Encoding(false));
             logger?.Invoke($"SEMANTIC-MODEL-PATCH|Columns|Fact={FactTable}|Added={addedCount}|Total={existingColumns.Count}");
         }
@@ -116,9 +119,10 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 builder.AppendLine($"\t\tformatString: '{EscapeSingleQuotes(column.FormatString)}'");
 
             if (!string.IsNullOrWhiteSpace(column.Description))
-                builder.AppendLine($"\t\tannotation Description = '{EscapeSingleQuotes(column.Description)}'");
+                builder.Append($"\t\tannotation Description = '{EscapeSingleQuotes(column.Description)}'");
+            else
+                builder.Append($"\t\tsourceColumn: {columnName}");
 
-            builder.AppendLine();
             return builder.ToString();
         }
 
@@ -212,13 +216,13 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var text = File.ReadAllText(factPath, Encoding.UTF8);
             if (text.Contains("partition Fact_Pipeline_SampleData = m", StringComparison.Ordinal))
             {
-                if (!text.Contains("File.Contents(DataFolder & \\\"\\\\Fact_Pipeline_SampleData.csv\\\")", StringComparison.Ordinal))
+                if (!text.Contains("File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\")", StringComparison.Ordinal))
                     throw new InvalidDataException("Fact partition exists but does not resolve through DataFolder.");
                 logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|DataFolder=AlreadyPresent");
                 return;
             }
 
-            const string partition = "\n\tpartition Fact_Pipeline_SampleData = m\n\t\tmode: import\n\t\tsource =\n\t\t\t\tlet\n\t\t\t\t  Source = Csv.Document(File.Contents(DataFolder & \\\"\\\\Fact_Pipeline_SampleData.csv\\\"), [Delimiter = \\\",\\\", Columns = 17, QuoteStyle = QuoteStyle.None]),\n\t\t\t\t  #\\\"Promoted headers\\\" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),\n\t\t\t\t  #\\\"Changed column type\\\" = Table.TransformColumnTypes(#\\\"Promoted headers\\\", {{\\\"PipelineID\\\", Int64.Type}, {\\\"PipelineName\\\", type text}, {\\\"Category\\\", type text}, {\\\"Status\\\", type text}, {\\\"ScheduledStart\\\", type datetime}, {\\\"ActualStart\\\", type datetime}, {\\\"ScheduledEnd\\\", type datetime}, {\\\"ActualEnd\\\", type datetime}, {\\\"SLAHours\\\", type number}, {\\\"DurationHours\\\", type number}, {\\\"StartDelayMinutes\\\", Int64.Type}, {\\\"EndDelayMinutes\\\", Int64.Type}, {\\\"SLAStatus\\\", type text}, {\\\"Environment\\\", type text}, {\\\"Owner\\\", type text}, {\\\"Region\\\", type text}, {\\\"RetryCount\\\", Int64.Type}})\n\t\t\t\tin\n\t\t\t\t  #\\\"Changed column type\\\"\n\n\tannotation PBI_NavigationStepName = Navigation\n\n\tannotation PBI_ResultType = Table\n";
+            const string partition = "\n\tpartition Fact_Pipeline_SampleData = m\n\t\tmode: import\n\t\tsource =\n\t\t\t\tlet\n\t\t\t\t  Source = Csv.Document(File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\"), [Delimiter = \",\", Columns = 17, QuoteStyle = QuoteStyle.None]),\n\t\t\t\t  #\"Promoted headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),\n\t\t\t\t  #\"Changed column type\" = Table.TransformColumnTypes(#\"Promoted headers\", {{\"PipelineID\", Int64.Type}, {\"PipelineName\", type text}, {\"Category\", type text}, {\"Status\", type text}, {\"ScheduledStart\", type datetime}, {\"ActualStart\", type datetime}, {\"ScheduledEnd\", type datetime}, {\"ActualEnd\", type datetime}, {\"SLAHours\", type number}, {\"DurationHours\", type number}, {\"StartDelayMinutes\", Int64.Type}, {\"EndDelayMinutes\", Int64.Type}, {\"SLAStatus\", type text}, {\"Environment\", type text}, {\"Owner\", type text}, {\"Region\", type text}, {\"RetryCount\", Int64.Type}})\n\t\t\t\tin\n\t\t\t\t  #\"Changed column type\"\n\n\tannotation PBI_NavigationStepName = Navigation\n\n\tannotation PBI_ResultType = Table\n";
 
             File.WriteAllText(factPath, text.TrimEnd('\r', '\n') + partition, new UTF8Encoding(false));
             logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|Added|DataFolder");
