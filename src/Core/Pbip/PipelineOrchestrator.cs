@@ -11,6 +11,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         public PipelineResult Run(PipelineOptions options)
         {
             ValidateInput(options);
+            ValidatePbipRootRelationship(options);
             var metadata = ExtractMetadata(options);
             var model = BuildModel(metadata);
             ValidateModel(model);
@@ -39,6 +40,23 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             if (!Directory.Exists(options.ReportTemplateRootPath)) throw new DirectoryNotFoundException($"Report template directory was not found: {options.ReportTemplateRootPath}");
             if (string.Equals(Path.GetFullPath(options.SemanticModelRootPath).TrimEnd(Path.DirectorySeparatorChar), Path.GetFullPath(options.SemanticModelTemplateRootPath).TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("SemanticModelRootPath must be a generated output directory and cannot equal SemanticModelTemplateRootPath.");
+        }
+
+        private static void ValidatePbipRootRelationship(PipelineOptions options)
+        {
+            var reportParent = GetParentDirectory(options.ReportRootPath);
+            var semanticModelParent = GetParentDirectory(options.SemanticModelRootPath);
+            if (!string.Equals(reportParent.TrimEnd(Path.DirectorySeparatorChar), semanticModelParent.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Cannot determine a single PBIP root directory: ReportRootPath's parent ('{reportParent}') differs from SemanticModelRootPath's parent ('{semanticModelParent}').");
+        }
+
+        private static string GetParentDirectory(string path)
+        {
+            var fullPath = Path.GetFullPath(Path.TrimEndingDirectorySeparator(path));
+            var parent = Path.GetDirectoryName(fullPath);
+            if (string.IsNullOrWhiteSpace(parent))
+                throw new InvalidOperationException($"Cannot determine parent directory for PBIP path '{path}'.");
+            return Path.GetFullPath(parent);
         }
 
         private static DatabaseSchema ExtractMetadata(PipelineOptions options) => new SchemaReader(options.DataDirectoryPath, options.Logger, options.ThrowOnValidationError).Read();
@@ -80,10 +98,8 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
         private static string WritePbipProjectFile(PipelineOptions options)
         {
-            var reportParent = Path.GetFullPath(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(options.ReportRootPath)) ?? string.Empty);
-            var semanticModelParent = Path.GetFullPath(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(options.SemanticModelRootPath)) ?? string.Empty);
-            if (!string.Equals(reportParent.TrimEnd(Path.DirectorySeparatorChar), semanticModelParent.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException($"Cannot determine a single PBIP root directory: ReportRootPath's parent ('{reportParent}') differs from SemanticModelRootPath's parent ('{semanticModelParent}').");
+            // Root relationship is deliberately validated before any generated artifact is written.
+            var reportParent = GetParentDirectory(options.ReportRootPath);
             return new PbipProjectWriter().Write(options.ReportRootPath, reportParent);
         }
 
