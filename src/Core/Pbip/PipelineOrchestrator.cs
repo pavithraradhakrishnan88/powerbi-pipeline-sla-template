@@ -19,7 +19,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             WriteReport(options);
             MigrateAndValidateReportMeasures(options);
             var pbipFilePath = WritePbipProjectFile(options);
-            ValidateOutput(options, pbipFilePath);
+            ValidateOutput(model, options, pbipFilePath);
             return new PipelineResult(metadata, model, options.SemanticModelRootPath, options.ReportRootPath, pbipFilePath);
         }
 
