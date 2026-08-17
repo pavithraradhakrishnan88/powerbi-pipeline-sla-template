@@ -1,9 +1,25 @@
 [CmdletBinding()]
 param(
-    [string]$ArtifactRoot = $PSScriptRoot
+    [string]$ArtifactRoot = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+# When executed as a .ps1 file, use the directory containing the script.
+# When pasted into an interactive PowerShell session, PSScriptRoot is empty,
+# so use the current directory instead. An explicit -ArtifactRoot always wins.
+if ([string]::IsNullOrWhiteSpace($ArtifactRoot)) {
+    if (![string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+        $ArtifactRoot = $PSScriptRoot
+    } else {
+        $ArtifactRoot = (Get-Location).Path
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($ArtifactRoot)) {
+    throw "ArtifactRoot could not be determined. Run this script from the extracted artifact directory or pass -ArtifactRoot 'C:\path\to\artifact'."
+}
+
 $ArtifactRoot = [IO.Path]::GetFullPath($ArtifactRoot)
 $SemanticModelRoot = Join-Path $ArtifactRoot "Pipeline_SLA_Tracker.SemanticModel"
 $DataRoot = Join-Path $ArtifactRoot "data"
@@ -11,10 +27,10 @@ $PlaceholderRoot = "C:\__PBIP_ARTIFACT_ROOT__"
 $RunnerPathPattern = '(?i)(?:[A-Z]:\\[^\r\n"]*\\_work\\|/home/runner/|/opt/hostedtoolcache/)'
 
 if (!(Test-Path $SemanticModelRoot -PathType Container)) {
-    throw "PBIP semantic-model root was not found: $SemanticModelRoot"
+    throw "PBIP semantic-model root was not found: $SemanticModelRoot. Make sure ArtifactRoot points to the extracted artifact directory."
 }
 if (!(Test-Path $DataRoot -PathType Container)) {
-    throw "Artifact data directory was not found: $DataRoot"
+    throw "Artifact data directory was not found: $DataRoot. Make sure ArtifactRoot points to the extracted artifact directory."
 }
 
 $tmdlFiles = @(Get-ChildItem $SemanticModelRoot -Recurse -Filter "*.tmdl" -File)
@@ -42,7 +58,7 @@ foreach ($file in $tmdlFiles) {
 
 $expectedFact = Join-Path $DataRoot "Fact_Pipeline_SampleData.csv"
 $factPath = Join-Path $SemanticModelRoot "definition\tables\Fact_Pipeline_SampleData.tmdl"
-if (!(Test-Path $factPath)) {
+if (!(Test-Path $factPath -PathType Leaf)) {
     throw "Materialized Fact_Pipeline_SampleData.tmdl was not found: $factPath"
 }
 $factText = Get-Content -Raw $factPath
