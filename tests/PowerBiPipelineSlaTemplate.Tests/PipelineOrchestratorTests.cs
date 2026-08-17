@@ -25,6 +25,28 @@ public class PipelineOrchestratorTests
     }
 
     [Fact]
+    public void Run_ShouldPatchFactColumnsFromBuiltModel_WithoutReplacingTemplateMeasures()
+    {
+        using var fixture = new PipelineTestFixture("Normal");
+        var orchestrator = new PipelineOrchestrator();
+
+        var result = orchestrator.Run(fixture.Options);
+
+        var factTable = result.Model.Tables.Should().ContainSingle(table => table.Name == "Fact_Pipeline_SampleData").Subject;
+        var factPath = Path.Combine(fixture.SemanticModelRootPath, "definition", "tables", "Fact_Pipeline_SampleData.tmdl");
+        var factText = File.ReadAllText(factPath);
+
+        foreach (var column in factTable.Columns)
+        {
+            factText.Should().Contain($"\tcolumn {column.Name}");
+        }
+
+        factText.Should().Contain("measure 'Active Pipelines'");
+        factText.Should().Contain("measure 'SLA Breach %'");
+        factText.Should().Contain("partition Fact_Pipeline_SampleData = m");
+    }
+
+    [Fact]
     public void Run_ShouldThrow_WhenDataDirectoryIsMissing()
     {
         using var fixture = new PipelineTestFixture("Normal");
@@ -36,7 +58,7 @@ public class PipelineOrchestratorTests
             ReportRootPath = fixture.Options.ReportRootPath,
             ReportTemplateRootPath = fixture.Options.ReportTemplateRootPath,
             SemanticModelRelativePath = fixture.Options.SemanticModelRelativePath,
-            MetadataOutputPath = fixture.Options.MetadataOutputPath,
+            MetadataOutputPath = fixture.MetadataOutputPath,
             ThrowOnValidationError = fixture.Options.ThrowOnValidationError,
             Logger = fixture.Options.Logger
         };
@@ -59,7 +81,7 @@ public class PipelineOrchestratorTests
             ReportRootPath = fixture.Options.ReportRootPath,
             ReportTemplateRootPath = Path.Combine(fixture.ReportTemplateRootPath, "missing"),
             SemanticModelRelativePath = fixture.Options.SemanticModelRelativePath,
-            MetadataOutputPath = fixture.Options.MetadataOutputPath,
+            MetadataOutputPath = fixture.MetadataOutputPath,
             ThrowOnValidationError = fixture.Options.ThrowOnValidationError,
             Logger = fixture.Options.Logger
         };
@@ -93,7 +115,7 @@ public class PipelineOrchestratorTests
             ReportRootPath = fixture.Options.ReportRootPath,
             ReportTemplateRootPath = fixture.Options.ReportTemplateRootPath,
             SemanticModelRelativePath = fixture.Options.SemanticModelRelativePath,
-            MetadataOutputPath = fixture.Options.MetadataOutputPath,
+            MetadataOutputPath = fixture.MetadataOutputPath,
             ThrowOnValidationError = fixture.Options.ThrowOnValidationError,
             Logger = fixture.Options.Logger
         };
