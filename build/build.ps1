@@ -94,7 +94,7 @@ $relationshipCount = ([regex]::Matches($relationshipText,'(?m)^\s*relationship\s
 Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|InlineMeasuresOnFact=$measureCount|ExpectedInlineMeasures=$expectedMeasureCount|Relationships=$relationshipCount|Expressions=0|Has_MeasuresTmdl=$([bool](Test-Path $measuresPath))"
 if ($measureCount -ne $expectedMeasureCount) { throw "Expected $expectedMeasureCount inline measures on Fact_Pipeline_SampleData from MeasureDefinitions.json; found $measureCount." }
 if ($relationshipText -notmatch '(?s)relationship\s+[^\r\n]+\r?\n\s*fromColumn:\s*Fact_Pipeline_SampleData\.Category\r?\n\s*toColumn:\s*Dim_Category\.CategoryName') { throw "Expected Dim_Category[CategoryName] -> Fact_Pipeline_SampleData[Category] relationship is missing." }
-$expectedFactPath = $dataFolderPath.Replace('\\','\\') + '\\Fact_Pipeline_SampleData.csv'
+$expectedFactPath = $dataFolderPath + '\Fact_Pipeline_SampleData.csv'
 if ($factText -match 'DataFolder') { throw "Generated semantic model must not contain DataFolder references." }
 if ($factText -notmatch [regex]::Escape($expectedFactPath)) { throw "Generated Fact partition does not contain the build-time absolute data path '$expectedFactPath'." }
 if ($factText -match '(?i)[A-Z]:\\[^\r\n"]*\\_work\\|/home/runner/|/opt/hostedtoolcache/') { throw "Generated Fact partition contains a CI-runner-specific path pattern." }
