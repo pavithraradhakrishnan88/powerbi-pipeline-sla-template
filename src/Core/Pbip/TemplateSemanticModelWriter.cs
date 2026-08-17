@@ -27,12 +27,10 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             CopyDirectoryRecursively(templateRoot, outputRoot);
             LogDiagnostics(outputRoot, "after-template-copy", logger);
 
-            // Preserve the existing metadata/date-variation contract first. It may temporarily
-            // use the template's DataFolder expression while the semantic metadata is patched.
             var repositoryRootPath = FindRepositoryRoot(templateRoot);
             TemplateSemanticModelMetadataPatcher.Patch(model, outputRoot, repositoryRootPath, logger);
 
-            // The generated/Desktop artifact is environment-specific: replace every partition
+            // The generated/Desktop artifact is environment-specific. Replace every partition
             // reference with the build-time absolute data path, then remove the DataFolder
             // expression entirely so Power BI Desktop does not expose an Edit Parameters dialog.
             PatchDataFolderReferences(outputRoot, absoluteDataFolder);
@@ -47,14 +45,13 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var tablesPath = Path.Combine(semanticModelRootPath, "definition", "tables");
             if (!Directory.Exists(tablesPath)) return;
             var normalizedFolder = absoluteDataFolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            var escapedFolder = normalizedFolder.Replace("\\", "\\\\", StringComparison.Ordinal);
             foreach (var file in Directory.GetFiles(tablesPath, "*.tmdl", SearchOption.TopDirectoryOnly))
             {
                 var text = File.ReadAllText(file, Encoding.UTF8);
                 var patched = Regex.Replace(
                     text,
                     @"File\.Contents\(DataFolder\s*&\s*\"\\(?<file>[^\"]+)\"\)",
-                    match => $"File.Contents(\"{escapedFolder}\\{match.Groups["file"].Value}\")",
+                    match => $"File.Contents(\"{normalizedFolder}\\{match.Groups["file"].Value}\")",
                     RegexOptions.CultureInvariant);
                 if (!string.Equals(text, patched, StringComparison.Ordinal)) File.WriteAllText(file, patched, new UTF8Encoding(false));
             }
