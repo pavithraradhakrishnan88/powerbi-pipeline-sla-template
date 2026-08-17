@@ -1,4 +1,4 @@
-PipelineID,CategoryId,Status,DurationHours,SLA_Target_Hrs,StartDate,EndDate
-P001,1,Success,2.5,4,2026-01-01T01:00:00,2026-01-01T03:30:00
-P002,2,Failed,6.0,4,2026-01-01T04:00:00,2026-01-01T10:00:00
-P003,3,Success,1.0,2,2026-01-01T11:00:00,2026-01-01T12:00:00
+PipelineID,PipelineName,Category,Status,ScheduledStart,ActualStart,ScheduledEnd,ActualEnd,SLAHours,DurationHours,StartDelayMinutes,EndDelayMinutes,SLAStatus,Environment,Owner,Region,RetryCount
+1001,Finance_ETL,Reporting,Success,2026-07-11 03:00:00,2026-07-11 03:07:00,2026-07-11 04:17:00,2026-07-11 04:21:00,1.28,1.23,7,4,Missed,Dev,Analytics,East US,0
+1002,Support,ML,Success,2026-07-02 06:15:00,2026-07-02 06:37:00,2026-07-02 09:04:00,2026-07-02 09:16:00,2.82,2.65,22,12,Missed,Dev,Analytics,Southeast Asia,1
+1003,Orders,ETL,Failed,2026-07-18 09:30:00,2026-07-18 09:44:00,2026-07-18 11:00:00,2026-07-18 11:18:00,1.50,1.57,14,18,Missed,Test,DataOps,West Europe,2
