@@ -18,6 +18,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             WriteSemanticModel(model, options);
             WriteReport(options);
             MigrateAndValidateReportMeasures(options);
+            NormalizeAndValidateReportVisuals(options);
             var pbipFilePath = WritePbipProjectFile(options);
             ValidateOutput(model, options, pbipFilePath);
             return new PipelineResult(metadata, model, options.SemanticModelRootPath, options.ReportRootPath, pbipFilePath);
@@ -71,13 +72,18 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             PbirMeasureReferenceMigrator.MigrateAndValidate(options.ReportRootPath, options.SemanticModelRootPath);
         }
 
+        private static void NormalizeAndValidateReportVisuals(PipelineOptions options)
+        {
+            // Keep the authoritative template visual tree intact; normalize only model references and reject malformed PBIR.
+            PbirVisualContainerNormalizer.NormalizeReport(options.ReportRootPath);
+        }
+
         private static string WritePbipProjectFile(PipelineOptions options)
         {
             var reportParent = Path.GetFullPath(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(options.ReportRootPath)) ?? string.Empty);
             var semanticModelParent = Path.GetFullPath(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(options.SemanticModelRootPath)) ?? string.Empty);
             if (!string.Equals(reportParent.TrimEnd(Path.DirectorySeparatorChar), semanticModelParent.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"Cannot determine a single PBIP root directory: ReportRootPath's parent ('{reportParent}') differs from SemanticModelRootPath's parent ('{semanticModelParent}').");
-
             return new PbipProjectWriter().Write(options.ReportRootPath, reportParent);
         }
 
@@ -85,7 +91,6 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         {
             var requiredFiles = new[] { Path.Combine(options.SemanticModelRootPath, "definition.pbism"), Path.Combine(options.SemanticModelRootPath, "definition", "model.tmdl"), Path.Combine(options.SemanticModelRootPath, "definition", "database.tmdl"), Path.Combine(options.ReportRootPath, "definition.pbir"), Path.Combine(options.ReportRootPath, "definition", "report.json"), Path.Combine(options.ReportRootPath, "definition", "pages", "pages.json"), pbipFilePath };
             foreach (var filePath in requiredFiles) if (!File.Exists(filePath)) throw new InvalidOperationException($"Generated pipeline output is missing required file '{filePath}'.");
-
             var factPath = Path.Combine(options.SemanticModelRootPath, "definition", "tables", "Fact_Pipeline_SampleData.tmdl");
             if (!File.Exists(factPath)) throw new InvalidOperationException($"Generated pipeline output is missing required fact table '{factPath}'.");
             var factText = File.ReadAllText(factPath);
