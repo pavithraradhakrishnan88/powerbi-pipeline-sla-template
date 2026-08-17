@@ -32,6 +32,11 @@ jobs:
   build:
     runs-on: windows-latest
     timeout-minutes: 30
+    env:
+      # CI validates against the checkout-local data directory. The authoritative
+      # template remains path-free; a developer running build.ps1 locally uses the
+      # local repository data directory instead.
+      PBIP_DATA_DIRECTORY: ${{ github.workspace }}\data
 
     steps:
       - name: Checkout repository
