@@ -50,7 +50,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 var text = File.ReadAllText(file, Encoding.UTF8);
                 var patched = Regex.Replace(
                     text,
-                    @"File\.Contents\(DataFolder\s*&\s*\"\\(?<file>[^\"]+)\"\)",
+                    @"File\.Contents\(DataFolder\s*&\s*""\\?(?<file>[^""]+)""\)",
                     match => $"File.Contents(\"{normalizedFolder}\\{match.Groups["file"].Value}\")",
                     RegexOptions.CultureInvariant);
                 if (!string.Equals(text, patched, StringComparison.Ordinal)) File.WriteAllText(file, patched, new UTF8Encoding(false));
