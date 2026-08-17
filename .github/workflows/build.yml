@@ -13,6 +13,7 @@ on:
       - "theme/**"
       - "src/**"
       - "build/**"
+      - "scripts/**"
 
   pull_request:
     branches:
@@ -72,6 +73,14 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           ./build/build.ps1
+
+      - name: Assert measure expression parity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          ./scripts/Assert-MeasureExpressionParity.ps1 `
+            -RepoRoot "${{ github.workspace }}" `
+            -TmdlPath "${{ github.workspace }}\BuildResult\PBIP\Pipeline_SLA_Tracker.SemanticModel\definition\tables\Fact_Pipeline_SampleData.tmdl"
 
       - name: Assert exact generated artifact materialization
         shell: pwsh
