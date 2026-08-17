@@ -1,4 +1,21 @@
-<#[CmdletBinding()]
+<#
+.SYNOPSIS
+    Fails if any Fact_Pipeline_SampleData measure's expression in a TMDL file
+    has drifted from the canonical definition in MeasureDefinitions.json.
+
+.DESCRIPTION
+    This is a name+expression parity check, not a name-only existence check.
+    Existing measures must match the canonical expression, while missing
+    measures are reported as failures.
+
+.PARAMETER RepoRoot
+    Path to the repository root.
+
+.PARAMETER TmdlPath
+    Optional explicit path to the TMDL file to check.
+#>
+
+[CmdletBinding()]
 param(
     [string]$RepoRoot = (Get-Location).Path,
     [string]$TmdlPath
