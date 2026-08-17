@@ -12,7 +12,7 @@ var reportTemplateRoot = Path.Combine(repoRoot, "pbip", "Pipeline_SLA_Tracker.Re
 var semanticModelRoot = Path.Combine(generatedPbipRoot, "Pipeline_SLA_Tracker.SemanticModel");
 var reportRoot = Path.Combine(generatedPbipRoot, "Pipeline_SLA_Tracker.Report");
 
-if (args.Length >= 2 && string.Equals(args[0], "--extract-metadata", StringComparison.OrdinalIgnoreCase))
+if (args.Length >= 1 && string.Equals(args[0], "--extract-metadata", StringComparison.OrdinalIgnoreCase))
 {
     for (var index = 1; index < args.Length; index++)
     {
@@ -23,6 +23,19 @@ if (args.Length >= 2 && string.Equals(args[0], "--extract-metadata", StringCompa
         }
     }
 }
+else
+{
+    for (var index = 0; index < args.Length; index++)
+    {
+        if (string.Equals(args[index], "--data-directory", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+        {
+            dataDirectory = Path.GetFullPath(args[++index]);
+        }
+    }
+}
+
+if (!Directory.Exists(dataDirectory))
+    throw new DirectoryNotFoundException($"Build data directory was not found: {dataDirectory}");
 
 var options = new PipelineOptions
 {
@@ -40,6 +53,7 @@ var options = new PipelineOptions
 var orchestrator = new PipelineOrchestrator();
 var result = orchestrator.Run(options);
 Console.WriteLine("Pipeline completed successfully.");
+Console.WriteLine($"Data directory materialized from: {options.DataDirectoryPath}");
 Console.WriteLine($"Semantic Model Template: {options.SemanticModelTemplateRootPath}");
 Console.WriteLine($"Semantic Model Output: {result.SemanticModelRootPath}");
 Console.WriteLine($"Report Output: {result.ReportRootPath}");
