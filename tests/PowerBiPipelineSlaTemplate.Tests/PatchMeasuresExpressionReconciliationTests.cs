@@ -66,8 +66,9 @@ public sealed class PatchMeasuresExpressionReconciliationTests
 
     private static void InvokePatchMeasures(string factPath, string definitionsPath)
     {
-        // Resolve the production type from the referenced Core assembly, not the test assembly.
-        var coreAssembly = typeof(PipelineOrchestrator).Assembly;
+        var coreAssembly =
+            typeof(PowerBiPipelineSlaTemplate.Core.Pbip.PipelineOrchestrator).Assembly;
+
         var type = coreAssembly.GetType(
             "PowerBiPipelineSlaTemplate.Core.Pbip.TemplateSemanticModelMetadataPatcher",
             throwOnError: true)!;
