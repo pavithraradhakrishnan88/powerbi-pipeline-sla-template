@@ -136,11 +136,11 @@ foreach ($entry in @('docs','data','scripts','theme','LICENSE','CHANGELOG.md','R
     if (Test-Path $source) { Copy-Item $source $destination -Recurse -Force }
 }
 
-# The generated PBIP is validated with the CI build-time absolute path above,
-# but the packaged artifact must never retain that runner-specific path.
-# Package a placeholder and materialize it after extraction on the Desktop machine.
 Materialize-ArtifactDataPath -ArtifactRoot $artifactPath -BuildDataPath $dataFolderPath
 Copy-Item (Join-Path $PSScriptRoot 'Materialize-PbipArtifact.ps1') (Join-Path $artifactPath 'Materialize-PbipArtifact.ps1') -Force
+
+& "$PSScriptRoot\Assert-ArtifactIntegrity.ps1" -GeneratedRoot $pbipOutputRoot -ArtifactRoot $artifactPath -BuildDataPath $dataFolderPath
+if ($LASTEXITCODE -ne 0) { throw "Artifact integrity gate failed with exit code $LASTEXITCODE." }
 
 & "$PSScriptRoot\Assert-VisualArtifactGate.ps1" -BuildRoot $artifactPath
 if ($LASTEXITCODE -ne 0) { throw "Published visual artifact gate failed with exit code $LASTEXITCODE." }
