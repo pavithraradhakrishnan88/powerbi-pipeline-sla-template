@@ -73,6 +73,12 @@ jobs:
           $ErrorActionPreference = "Stop"
           ./build/build.ps1
 
+      - name: Assert exact generated artifact materialization
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          ./build/Assert-ArtifactMaterialization.ps1
+
       - name: Semantic-model KPI and slicer/filter UAT
         shell: pwsh
         run: |
