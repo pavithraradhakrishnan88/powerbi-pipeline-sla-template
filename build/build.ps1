@@ -56,6 +56,27 @@ function Normalize-DefinitionSchema {
     [IO.File]::WriteAllText($Path,$json,[Text.UTF8Encoding]::new($false))
 }
 
+function Materialize-ArtifactDataPath {
+    param([Parameter(Mandatory=$true)][string]$ArtifactRoot,[Parameter(Mandatory=$true)][string]$BuildDataPath)
+    $placeholder = 'C:\__PBIP_ARTIFACT_ROOT__'
+    $runnerPattern = '(?i)(?:[A-Z]:\\[^\r\n"]*\\_work\\|/home/runner/|/opt/hostedtoolcache/)'
+    $semanticModelRoot = Join-Path $ArtifactRoot "$pbipName.SemanticModel"
+    $tmdlFiles = @(Get-ChildItem $semanticModelRoot -Recurse -Filter '*.tmdl' -File)
+    foreach ($file in $tmdlFiles) {
+        $text = Get-Content -Raw $file.FullName
+        if ($text.Contains($BuildDataPath)) {
+            $updated = $text.Replace($BuildDataPath, $placeholder)
+            [IO.File]::WriteAllText($file.FullName, $updated, [Text.UTF8Encoding]::new($false))
+        }
+    }
+    foreach ($file in $tmdlFiles) {
+        $text = Get-Content -Raw $file.FullName
+        if ($text -match [regex]::Escape($BuildDataPath)) { throw "Artifact materialization failed: CI build data path remains in '$($file.FullName)'." }
+        if ($text -match $runnerPattern) { throw "Artifact materialization failed: runner-specific path remains in '$($file.FullName)'." }
+    }
+    Write-Host "Artifact PBIP data paths sanitized to a portable materialization placeholder."
+}
+
 Write-Host "Running validation..."
 & "$PSScriptRoot\validate.ps1"
 $validationExitCode = $LASTEXITCODE
@@ -115,7 +136,13 @@ foreach ($entry in @('docs','data','scripts','theme','LICENSE','CHANGELOG.md','R
     if (Test-Path $source) { Copy-Item $source $destination -Recurse -Force }
 }
 
+# The generated PBIP is validated with the CI build-time absolute path above,
+# but the packaged artifact must never retain that runner-specific path.
+# Package a placeholder and materialize it after extraction on the Desktop machine.
+Materialize-ArtifactDataPath -ArtifactRoot $artifactPath -BuildDataPath $dataFolderPath
+Copy-Item (Join-Path $PSScriptRoot 'Materialize-PbipArtifact.ps1') (Join-Path $artifactPath 'Materialize-PbipArtifact.ps1') -Force
+
 & "$PSScriptRoot\Assert-VisualArtifactGate.ps1" -BuildRoot $artifactPath
 if ($LASTEXITCODE -ne 0) { throw "Published visual artifact gate failed with exit code $LASTEXITCODE." }
 
-Write-Host "Build complete. Template remains portable; generated Desktop artifact uses the build-time absolute data path and contains no DataFolder parameter."
+Write-Host "Build complete. Main template remains untouched; CI generated PBIP uses the build-time absolute path only during validation, while the packaged Desktop artifact contains no CI-runner path and is materialized locally after extraction."
