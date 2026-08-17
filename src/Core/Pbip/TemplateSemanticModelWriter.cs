@@ -10,7 +10,6 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
     {
         private static readonly Regex RelationshipRegex = new(@"(?m)^\s*relationship\s+\S+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex MeasureRegex = new(@"(?m)^\s*measure\s+(?:'[^']+'|[^\r\n=]+)\s*=", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private const string PbipRelativeDataFolder = "data";
 
         public void Write(string templateRootPath, string semanticModelRootPath, string dataFolderPath, ModelBuildResult model, Action<string>? logger = null)
         {
@@ -20,24 +19,48 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             ArgumentNullException.ThrowIfNull(model);
             var templateRoot = Path.GetFullPath(templateRootPath);
             var outputRoot = Path.GetFullPath(semanticModelRootPath);
+            var absoluteDataFolder = Path.GetFullPath(dataFolderPath);
             if (!Directory.Exists(templateRoot)) throw new DirectoryNotFoundException($"Semantic model template directory was not found: {templateRoot}");
+            if (!Directory.Exists(absoluteDataFolder)) throw new DirectoryNotFoundException($"Build data directory was not found: {absoluteDataFolder}");
             if (string.Equals(templateRoot.TrimEnd(Path.DirectorySeparatorChar), outputRoot.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("SemanticModelTemplateRootPath and SemanticModelRootPath must be different directories. The authoritative template must never be patched in place.");
             if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, recursive: true);
             CopyDirectoryRecursively(templateRoot, outputRoot);
             LogDiagnostics(outputRoot, "after-template-copy", logger);
-            PatchDataFolder(outputRoot, templateRoot, model, logger);
-            LogDiagnostics(outputRoot, "after-datafolder-and-metadata-patch", logger, PbipRelativeDataFolder);
+            PatchDataFolder(outputRoot, absoluteDataFolder, model, logger);
+            LogDiagnostics(outputRoot, "after-absolute-data-path-patch", logger, absoluteDataFolder);
         }
 
-        private static void PatchDataFolder(string semanticModelRootPath, string templateRootPath, ModelBuildResult model, Action<string>? logger)
+        private static void PatchDataFolder(string semanticModelRootPath, string absoluteDataFolder, ModelBuildResult model, Action<string>? logger)
         {
             var expressionsPath = Path.Combine(semanticModelRootPath, "definition", "expressions.tmdl");
-            if (!File.Exists(expressionsPath)) throw new FileNotFoundException("Semantic model template is missing expressions.tmdl.", expressionsPath);
-            // PBIP artifacts are portable: the .pbip file and data/ folder are siblings.
-            // Never bake the CI runner's absolute checkout path into the semantic model.
-            File.WriteAllBytes(expressionsPath, PatchDataFolderBytes(File.ReadAllBytes(expressionsPath), PbipRelativeDataFolder));
-            var repositoryRootPath = FindRepositoryRoot(templateRootPath);
-            TemplateSemanticModelMetadataPatcher.Patch(model, semanticModelRootPath, repositoryRootPath, logger);
+            if (File.Exists(expressionsPath)) File.Delete(expressionsPath);
+
+            var tablesPath = Path.Combine(semanticModelRootPath, "definition", "tables");
+            if (Directory.Exists(tablesPath))
+            {
+                foreach (var file in Directory.GetFiles(tablesPath, "*.tmdl", SearchOption.TopDirectoryOnly))
+                {
+                    var text = File.ReadAllText(file, Encoding.UTF8);
+                    var patched = PatchDataFolderReferences(text, absoluteDataFolder);
+                    if (!string.Equals(text, patched, StringComparison.Ordinal))
+                        File.WriteAllText(file, patched, new UTF8Encoding(false));
+                }
+            }
+
+            var repositoryRootPath = FindRepositoryRoot(Path.GetDirectoryName(semanticModelRootPath) ?? semanticModelRootPath);
+            TemplateSemanticModelMetadataPatcher.Patch(model, semanticModelRootPath, repositoryRootPath, absoluteDataFolder, logger);
+        }
+
+        private static string PatchDataFolderReferences(string text, string absoluteDataFolder)
+        {
+            var normalizedFolder = absoluteDataFolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var escapedFolder = normalizedFolder.Replace("\\", "\\\\", StringComparison.Ordinal);
+            var replacementPrefix = $"File.Contents(\"{escapedFolder}\\";
+            return Regex.Replace(
+                text,
+                @"File\.Contents\(DataFolder\s*&\s*\"\\(?<file>[^\"]+)\"\)",
+                match => $"File.Contents(\"{escapedFolder}\\{match.Groups["file"].Value}\")",
+                RegexOptions.CultureInvariant);
         }
 
         private static string FindRepositoryRoot(string startingPath)
