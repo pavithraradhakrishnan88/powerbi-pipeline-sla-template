@@ -5,7 +5,10 @@ using PowerBiPipelineSlaTemplate.Core.Pbip;
 
 var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
 var outputPath = Path.Combine(repoRoot, "metadata", "metadata.json");
-var dataDirectory = Path.Combine(repoRoot, "data");
+var dataDirectory = Environment.GetEnvironmentVariable("PBIP_DATA_DIRECTORY");
+if (string.IsNullOrWhiteSpace(dataDirectory))
+    dataDirectory = Path.Combine(repoRoot, "data");
+
 var generatedPbipRoot = Path.Combine(repoRoot, "BuildResult", "PBIP");
 var semanticModelTemplateRoot = Path.Combine(repoRoot, "pbip", "Pipeline_SLA_Tracker.SemanticModel");
 var reportTemplateRoot = Path.Combine(repoRoot, "pbip", "Pipeline_SLA_Tracker.Report");
@@ -29,11 +32,12 @@ else
     {
         if (string.Equals(args[index], "--data-directory", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
         {
-            dataDirectory = Path.GetFullPath(args[++index]);
+            dataDirectory = args[++index];
         }
     }
 }
 
+dataDirectory = Path.GetFullPath(dataDirectory);
 if (!Directory.Exists(dataDirectory))
     throw new DirectoryNotFoundException($"Build data directory was not found: {dataDirectory}");
 
