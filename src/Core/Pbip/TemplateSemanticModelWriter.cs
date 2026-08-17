@@ -26,41 +26,38 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, recursive: true);
             CopyDirectoryRecursively(templateRoot, outputRoot);
             LogDiagnostics(outputRoot, "after-template-copy", logger);
-            PatchDataFolder(outputRoot, absoluteDataFolder, model, logger);
+
+            // Preserve the existing metadata/date-variation contract first. It may temporarily
+            // use the template's DataFolder expression while the semantic metadata is patched.
+            var repositoryRootPath = FindRepositoryRoot(templateRoot);
+            TemplateSemanticModelMetadataPatcher.Patch(model, outputRoot, repositoryRootPath, logger);
+
+            // The generated/Desktop artifact is environment-specific: replace every partition
+            // reference with the build-time absolute data path, then remove the DataFolder
+            // expression entirely so Power BI Desktop does not expose an Edit Parameters dialog.
+            PatchDataFolderReferences(outputRoot, absoluteDataFolder);
+            var expressionsPath = Path.Combine(outputRoot, "definition", "expressions.tmdl");
+            if (File.Exists(expressionsPath)) File.Delete(expressionsPath);
+
             LogDiagnostics(outputRoot, "after-absolute-data-path-patch", logger, absoluteDataFolder);
         }
 
-        private static void PatchDataFolder(string semanticModelRootPath, string absoluteDataFolder, ModelBuildResult model, Action<string>? logger)
+        private static void PatchDataFolderReferences(string semanticModelRootPath, string absoluteDataFolder)
         {
-            var expressionsPath = Path.Combine(semanticModelRootPath, "definition", "expressions.tmdl");
-            if (File.Exists(expressionsPath)) File.Delete(expressionsPath);
-
             var tablesPath = Path.Combine(semanticModelRootPath, "definition", "tables");
-            if (Directory.Exists(tablesPath))
-            {
-                foreach (var file in Directory.GetFiles(tablesPath, "*.tmdl", SearchOption.TopDirectoryOnly))
-                {
-                    var text = File.ReadAllText(file, Encoding.UTF8);
-                    var patched = PatchDataFolderReferences(text, absoluteDataFolder);
-                    if (!string.Equals(text, patched, StringComparison.Ordinal))
-                        File.WriteAllText(file, patched, new UTF8Encoding(false));
-                }
-            }
-
-            var repositoryRootPath = FindRepositoryRoot(Path.GetDirectoryName(semanticModelRootPath) ?? semanticModelRootPath);
-            TemplateSemanticModelMetadataPatcher.Patch(model, semanticModelRootPath, repositoryRootPath, absoluteDataFolder, logger);
-        }
-
-        private static string PatchDataFolderReferences(string text, string absoluteDataFolder)
-        {
+            if (!Directory.Exists(tablesPath)) return;
             var normalizedFolder = absoluteDataFolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             var escapedFolder = normalizedFolder.Replace("\\", "\\\\", StringComparison.Ordinal);
-            var replacementPrefix = $"File.Contents(\"{escapedFolder}\\";
-            return Regex.Replace(
-                text,
-                @"File\.Contents\(DataFolder\s*&\s*\"\\(?<file>[^\"]+)\"\)",
-                match => $"File.Contents(\"{escapedFolder}\\{match.Groups["file"].Value}\")",
-                RegexOptions.CultureInvariant);
+            foreach (var file in Directory.GetFiles(tablesPath, "*.tmdl", SearchOption.TopDirectoryOnly))
+            {
+                var text = File.ReadAllText(file, Encoding.UTF8);
+                var patched = Regex.Replace(
+                    text,
+                    @"File\.Contents\(DataFolder\s*&\s*\"\\(?<file>[^\"]+)\"\)",
+                    match => $"File.Contents(\"{escapedFolder}\\{match.Groups["file"].Value}\")",
+                    RegexOptions.CultureInvariant);
+                if (!string.Equals(text, patched, StringComparison.Ordinal)) File.WriteAllText(file, patched, new UTF8Encoding(false));
+            }
         }
 
         private static string FindRepositoryRoot(string startingPath)
