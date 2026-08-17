@@ -15,7 +15,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var model = BuildModel(metadata);
             ValidateModel(model);
             WriteMetadata(model, options);
-            WriteSemanticModel(options);
+            WriteSemanticModel(model, options);
             WriteReport(options);
             MigrateAndValidateReportMeasures(options);
             var pbipFilePath = WritePbipProjectFile(options);
@@ -57,11 +57,11 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             File.WriteAllText(options.MetadataOutputPath, MetadataSerializer.ToJson(metadataDocument, true));
         }
 
-        private static void WriteSemanticModel(PipelineOptions options)
+        private static void WriteSemanticModel(ModelBuildResult model, PipelineOptions options)
         {
             var dataFolder = Path.GetFullPath(options.DataDirectoryPath);
             var writer = new TemplateSemanticModelWriter();
-            writer.Write(options.SemanticModelTemplateRootPath, options.SemanticModelRootPath, dataFolder, options.Logger);
+            writer.Write(options.SemanticModelTemplateRootPath, options.SemanticModelRootPath, dataFolder, model, options.Logger);
         }
 
         private static void WriteReport(PipelineOptions options) => new PbirReportWriter().WriteFromTemplate(options.ReportTemplateRootPath, options.ReportRootPath, options.SemanticModelRelativePath);
@@ -81,10 +81,21 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             return new PbipProjectWriter().Write(options.ReportRootPath, reportParent);
         }
 
-        private static void ValidateOutput(PipelineOptions options, string pbipFilePath)
+        private static void ValidateOutput(ModelBuildResult model, PipelineOptions options, string pbipFilePath)
         {
             var requiredFiles = new[] { Path.Combine(options.SemanticModelRootPath, "definition.pbism"), Path.Combine(options.SemanticModelRootPath, "definition", "model.tmdl"), Path.Combine(options.SemanticModelRootPath, "definition", "database.tmdl"), Path.Combine(options.ReportRootPath, "definition.pbir"), Path.Combine(options.ReportRootPath, "definition", "report.json"), Path.Combine(options.ReportRootPath, "definition", "pages", "pages.json"), pbipFilePath };
             foreach (var filePath in requiredFiles) if (!File.Exists(filePath)) throw new InvalidOperationException($"Generated pipeline output is missing required file '{filePath}'.");
+
+            var factPath = Path.Combine(options.SemanticModelRootPath, "definition", "tables", "Fact_Pipeline_SampleData.tmdl");
+            if (!File.Exists(factPath)) throw new InvalidOperationException($"Generated pipeline output is missing required fact table '{factPath}'.");
+            var factText = File.ReadAllText(factPath);
+            var factTable = model.Tables.FirstOrDefault(table => string.Equals(table.Name, "Fact_Pipeline_SampleData", StringComparison.OrdinalIgnoreCase));
+            if (factTable is null) throw new InvalidOperationException("Generated model does not contain Fact_Pipeline_SampleData.");
+            foreach (var column in factTable.Columns)
+            {
+                var token = $"\tcolumn {column.Name}";
+                if (!factText.Contains(token, StringComparison.Ordinal)) throw new InvalidOperationException($"Generated fact table is missing model column '{column.Name}'.");
+            }
         }
     }
 }
