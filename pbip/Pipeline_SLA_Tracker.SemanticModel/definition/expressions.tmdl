@@ -1,1 +1,1 @@
-expression DataFolder = "data" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+expression DataFolder = "data" meta [IsParameterQuery=false, Type="Text", IsParameterQueryRequired=false]
