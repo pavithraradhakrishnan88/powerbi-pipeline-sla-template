@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using System.Text.Json;
 using Xunit;
+using PowerBiPipelineSlaTemplate.Core;
 
 namespace PowerBiPipelineSlaTemplate.Tests;
 
@@ -66,8 +66,11 @@ public sealed class PatchMeasuresExpressionReconciliationTests
 
     private static void InvokePatchMeasures(string factPath, string definitionsPath)
     {
-        var assembly = typeof(PatchMeasuresExpressionReconciliationTests).Assembly;
-        var type = assembly.GetType("PowerBiPipelineSlaTemplate.Core.Pbip.TemplateSemanticModelMetadataPatcher", throwOnError: true)!;
+        // Resolve the production type from the referenced Core assembly, not the test assembly.
+        var coreAssembly = typeof(PipelineOrchestrator).Assembly;
+        var type = coreAssembly.GetType(
+            "PowerBiPipelineSlaTemplate.Core.Pbip.TemplateSemanticModelMetadataPatcher",
+            throwOnError: true)!;
         var method = type.GetMethod("PatchMeasures", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);
         method!.Invoke(null, new object?[] { factPath, definitionsPath, null });
