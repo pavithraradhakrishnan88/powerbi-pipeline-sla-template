@@ -89,15 +89,25 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
             var additions = string.Join(newline + newline, columnBlocks).TrimEnd('\r', '\n');
 
-            var insertionIndex = text.IndexOf("\tcolumn ", StringComparison.Ordinal);
-            if (insertionIndex < 0)
-                insertionIndex = text.IndexOf("\tmeasure ", StringComparison.Ordinal);
-            if (insertionIndex < 0)
-                insertionIndex = text.IndexOf("\tpartition ", StringComparison.Ordinal);
-            if (insertionIndex < 0)
-                insertionIndex = text.Length;
+            // The authoritative template keeps its authored measure/comment section intact.
+            // Insert columns immediately after the table header/lineage blank line and before
+            // the first authored child object, then explicitly own the separator before that object.
+            var firstChildIndex = text.IndexOf("\t/// ", StringComparison.Ordinal);
+            if (firstChildIndex < 0)
+                firstChildIndex = text.IndexOf("\tmeasure ", StringComparison.Ordinal);
+            if (firstChildIndex < 0)
+                firstChildIndex = text.IndexOf("\tpartition ", StringComparison.Ordinal);
+            if (firstChildIndex < 0)
+                firstChildIndex = text.Length;
 
-            text = text.Insert(insertionIndex, additions);
+            // Keep the template's existing blank line before the first authored child, but move
+            // the child start after the generated columns so the layout becomes:
+            // table/lineage, blank, first column, ..., blank, authored comment/measure.
+            var prefix = text[..firstChildIndex];
+            var suffix = text[firstChildIndex..];
+            prefix = prefix.TrimEnd('\r', '\n');
+            text = prefix + newline + newline + additions + newline + newline + suffix.TrimStart('\r', '\n');
+
             File.WriteAllText(factPath, text, new UTF8Encoding(false));
             logger?.Invoke($"SEMANTIC-MODEL-PATCH|Columns|Fact={FactTable}|Added={addedCount}|Total={existingColumns.Count}");
         }
