@@ -256,7 +256,6 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 logger?.Invoke($"SEMANTIC-MODEL-PATCH|Added measure|{name}");
             }
 
-            // Apply expression replacements from the end of the file backwards so spans remain valid.
             foreach (var replacement in replacements.OrderByDescending(r => r.Start))
                 text = text[..replacement.Start] + replacement.Expression + text[replacement.End..];
 
@@ -300,7 +299,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
             var block = string.Join(newline, new[] { "relationship Category_Fact_Dimension", $"\tfromColumn: {FactTable}.{FactColumn}", $"\ttoColumn: {DimensionTable}.{DimensionColumn}", string.Empty, string.Empty });
             File.WriteAllText(path, text.TrimEnd('\r', '\n') + newline + block, new UTF8Encoding(false));
-            logger?.Invoke("SEMANTIC-MODEL-PATCH|Relationship|Dim_Category->Fact_Pipeline_SLA|Added");
+            logger?.Invoke("SEMANTIC-MODEL-PATCH|Relationship|Dim_Category->Fact_Pipeline_SampleData|Added");
         }
 
         private static void RemoveLegacyMeasuresTable(string tablesPath, string modelPath, Action<string>? logger)
