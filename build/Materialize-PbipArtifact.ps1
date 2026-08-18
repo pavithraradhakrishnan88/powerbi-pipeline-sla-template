@@ -36,12 +36,13 @@ if (!(Test-Path $SemanticModelRoot -PathType Container)) {
     throw "PBIP semantic-model root was not found: $SemanticModelRoot."
 }
 if (!(Test-Path $DataRoot -PathType Container)) {
-    throw "Artifact data directory was not found: $DataRoot."
+    throw "Artifact data directory was not found: $DataRoot"
 }
 
 $expectedFact = Join-Path $DataRoot "Fact_Pipeline_SampleData.csv"
 $expectedFactPath = [IO.Path]::GetFullPath($expectedFact)
 $factPath = Join-Path $SemanticModelRoot "definition\tables\Fact_Pipeline_SampleData.tmdl"
+$expressionsPath = Join-Path $SemanticModelRoot "definition\expressions.tmdl"
 
 if (!(Test-Path $expectedFact -PathType Leaf)) {
     throw "Artifact Fact source file was not found: $expectedFact"
@@ -54,9 +55,39 @@ $tmdlFiles = @(Get-ChildItem $SemanticModelRoot -Recurse -Filter "*.tmdl" -File)
 $replacementRoot = $DataRoot.TrimEnd('\')
 $replacementCount = 0
 $factReplacementCount = 0
+$dataFolderReferenceCount = 0
 
-# Materialize any Fact CSV File.Contents expression regardless of its current
-# absolute, runner, placeholder, or relative path representation.
+# Resolve the shared DataFolder expression before rewriting dependent M expressions.
+# The generated model may define DataFolder in expressions.tmdl and reference it as:
+# File.Contents(DataFolder & "\\Dim_Category.csv")
+$dataFolderValue = $null
+if (Test-Path $expressionsPath -PathType Leaf) {
+    $expressionsText = [IO.File]::ReadAllText($expressionsPath)
+    $dataFolderMatch = [regex]::Match(
+        $expressionsText,
+        '(?im)^\s*expression\s+DataFolder\s*=\s*"((?:""|[^"\r\n])*)"'
+    )
+
+    if ($dataFolderMatch.Success) {
+        $dataFolderValue = $dataFolderMatch.Groups[1].Value.Replace('""', '"')
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($dataFolderValue)) {
+    # Keep materialization deterministic even when the expression declaration is absent.
+    # The artifact-local data directory is the only valid Desktop target.
+    $dataFolderValue = $replacementRoot
+}
+
+# Normalize the resolved expression value. This is intentionally only used to
+# identify the shared source root; all generated references are rewritten to
+# artifact-local files below.
+$dataFolderValue = $dataFolderValue.Replace('/', '\').TrimEnd('\')
+
+# Materialize DataFolder-based File.Contents expressions and any existing Fact
+# File.Contents path to artifact-local absolute paths. This leaves the generated
+# report/model structure unchanged.
+$fileContentsDataFolderPattern = '(?i)File\.Contents\(\s*DataFolder\s*&\s*"([^"]+)"\s*\)'
 $factPattern = '(?i)File\.Contents\("(?:[^"\r\n]*[\\/])?Fact_Pipeline_SampleData\.csv"\)'
 
 foreach ($file in $tmdlFiles) {
@@ -66,6 +97,21 @@ foreach ($file in $tmdlFiles) {
     if ($updated.Contains($PlaceholderRoot)) {
         $updated = $updated.Replace($PlaceholderRoot, $replacementRoot)
     }
+
+    $updated = [regex]::Replace(
+        $updated,
+        $fileContentsDataFolderPattern,
+        [System.Text.RegularExpressions.MatchEvaluator]{
+            param($match)
+            $relativeFile = $match.Groups[1].Value.Replace('/', '\').TrimStart('\')
+            $targetPath = [IO.Path]::GetFullPath((Join-Path $replacementRoot $relativeFile))
+            if (!(Test-Path $targetPath -PathType Leaf)) {
+                throw "DataFolder materialization target was not found: $targetPath"
+            }
+            $script:dataFolderReferenceCount++
+            return 'File.Contents("' + $targetPath + '")'
+        }
+    )
 
     $updated = [regex]::Replace(
         $updated,
@@ -85,7 +131,7 @@ foreach ($file in $tmdlFiles) {
     [IO.File]::WriteAllText($file.FullName, $updated, $utf8NoBom)
 }
 
-# Enforce placeholder and runner-path gates after materialization.
+# Enforce placeholder, DataFolder, and runner-path gates after materialization.
 foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
 
@@ -97,6 +143,10 @@ foreach ($file in $tmdlFiles) {
         if ($text -match $runnerPattern) {
             throw "Artifact materialization failed: runner-specific path remains in '$($file.FullName)'. Pattern: $runnerPattern"
         }
+    }
+
+    if ($text -match '(?i)\bDataFolder\b') {
+        throw "Artifact materialization failed: unresolved DataFolder reference remains in '$($file.FullName)'."
     }
 }
 
@@ -122,14 +172,25 @@ if (!(Test-Path $expectedFact -PathType Leaf)) {
     throw "Materialized Fact source file was not found: $expectedFact"
 }
 
+$platformFiles = @(Get-ChildItem $ArtifactRoot -Recurse -Filter ".platform" -File)
+if ($platformFiles.Count -lt 2) {
+    throw "Artifact materialization failed: expected both PBIP and semantic-model .platform files; found $($platformFiles.Count)."
+}
+
 Write-Host "PBIP artifact materialized for Desktop." -ForegroundColor Green
 Write-Host "Artifact root: $ArtifactRoot"
 Write-Host "Data root: $DataRoot"
+Write-Host "Resolved DataFolder: $dataFolderValue"
 Write-Host "TMDL files materialized: $replacementCount"
+Write-Host "DataFolder File.Contents replacements: $dataFolderReferenceCount"
 Write-Host "Fact path replacements: $factReplacementCount"
 Write-Host "Fact source: $expectedFactPath"
 Write-Host "ARTIFACT-FACT-PATH-GATE|PASS" -ForegroundColor Green
 Write-Host "TMDL-UTF8-NOBOM-GATE|PASS" -ForegroundColor Green
+Write-Host "DataFolderReferences=0" -ForegroundColor Green
+Write-Host "PlatformFiles=$($platformFiles.Count)"
+Write-Host "PlatformFiles=PASS" -ForegroundColor Green
 Write-Host "RunnerPaths=0"
 Write-Host "BomFiles=0"
 Write-Host "CsvExists=True"
+Write-Host "Materialize-PbipArtifact ........ PASS" -ForegroundColor Green
