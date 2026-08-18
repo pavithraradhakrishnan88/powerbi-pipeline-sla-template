@@ -34,9 +34,6 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     env:
-      # CI validates against the checkout-local data directory. The authoritative
-      # template remains path-free; a developer running build.ps1 locally uses the
-      # local repository data directory instead.
       PBIP_DATA_DIRECTORY: ${{ github.workspace }}\data
 
     steps:
@@ -74,6 +71,12 @@ jobs:
           $ErrorActionPreference = "Stop"
           ./build/build.ps1
 
+      - name: Prepare Desktop-consumable artifact
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          ./build/Prepare-DesktopArtifact.ps1
+
       - name: Assert measure expression parity
         shell: pwsh
         run: |
@@ -98,11 +101,11 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          if (!(Test-Path "artifacts")) {
-              throw "artifacts folder was not created."
-          }
-
+          if (!(Test-Path "artifacts")) { throw "artifacts folder was not created." }
           Get-ChildItem artifacts -Recurse
+          if (!(Test-Path "artifacts\Pipeline_SLA_Tracker.Report\.platform" -PathType Leaf)) { throw "Packaged report .platform is missing." }
+          if (!(Test-Path "artifacts\Pipeline_SLA_Tracker.SemanticModel\.platform" -PathType Leaf)) { throw "Packaged semantic-model .platform is missing." }
+          if (!(Test-Path "DesktopValidation\PBIP\Pipeline_SLA_Tracker.pbip" -PathType Leaf)) { throw "Desktop validation PBIP was not prepared." }
 
       - name: Upload Build Artifacts
         if: success()
@@ -110,6 +113,15 @@ jobs:
         with:
           name: PBIP-Build
           path: artifacts/**
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Desktop validation tree
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DesktopValidation-PBIP
+          path: DesktopValidation/PBIP/**
           if-no-files-found: error
           retention-days: 30
 
