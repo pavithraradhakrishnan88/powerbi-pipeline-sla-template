@@ -57,8 +57,8 @@ $replacementCount = 0
 $factReplacementCount = 0
 $dataFolderReferenceCount = 0
 
-# Resolve the shared DataFolder expression before rewriting dependent M expressions.
-# The generated model may define DataFolder in expressions.tmdl and reference it as:
+# Resolve the shared DataFolder expression first. The generated model may define
+# DataFolder in expressions.tmdl and consume it from table partitions such as:
 # File.Contents(DataFolder & "\\Dim_Category.csv")
 $dataFolderValue = $null
 if (Test-Path $expressionsPath -PathType Leaf) {
@@ -74,19 +74,14 @@ if (Test-Path $expressionsPath -PathType Leaf) {
 }
 
 if ([string]::IsNullOrWhiteSpace($dataFolderValue)) {
-    # Keep materialization deterministic even when the expression declaration is absent.
-    # The artifact-local data directory is the only valid Desktop target.
     $dataFolderValue = $replacementRoot
 }
 
-# Normalize the resolved expression value. This is intentionally only used to
-# identify the shared source root; all generated references are rewritten to
-# artifact-local files below.
 $dataFolderValue = $dataFolderValue.Replace('/', '\').TrimEnd('\')
 
 # Materialize DataFolder-based File.Contents expressions and any existing Fact
-# File.Contents path to artifact-local absolute paths. This leaves the generated
-# report/model structure unchanged.
+# File.Contents path to artifact-local absolute paths. This changes only source
+# paths; generated report/model structure is otherwise preserved.
 $fileContentsDataFolderPattern = '(?i)File\.Contents\(\s*DataFolder\s*&\s*"([^"]+)"\s*\)'
 $factPattern = '(?i)File\.Contents\("(?:[^"\r\n]*[\\/])?Fact_Pipeline_SampleData\.csv"\)'
 
@@ -127,11 +122,12 @@ foreach ($file in $tmdlFiles) {
         $replacementCount++
     }
 
-    # Always rewrite as UTF-8 without BOM so Desktop receives deterministic TMDL.
     [IO.File]::WriteAllText($file.FullName, $updated, $utf8NoBom)
 }
 
-# Enforce placeholder, DataFolder, and runner-path gates after materialization.
+# Enforce placeholder and runner-path gates after materialization. The DataFolder
+# declaration itself is allowed, but it must resolve to the artifact-local data
+# root. Any remaining DataFolder use in File.Contents is a materialization failure.
 foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
 
@@ -145,8 +141,23 @@ foreach ($file in $tmdlFiles) {
         }
     }
 
-    if ($text -match '(?i)\bDataFolder\b') {
+    if ($text -match '(?i)File\.Contents\(\s*DataFolder\b') {
         throw "Artifact materialization failed: unresolved DataFolder reference remains in '$($file.FullName)'."
+    }
+}
+
+# Verify the shared DataFolder declaration, when present, is artifact-local.
+if (Test-Path $expressionsPath -PathType Leaf) {
+    $materializedExpressionsText = [IO.File]::ReadAllText($expressionsPath)
+    $materializedDataFolderMatch = [regex]::Match(
+        $materializedExpressionsText,
+        '(?im)^\s*expression\s+DataFolder\s*=\s*"((?:""|[^"\r\n])*)"'
+    )
+    if ($materializedDataFolderMatch.Success) {
+        $materializedDataFolderValue = $materializedDataFolderMatch.Groups[1].Value.Replace('""', '"').Replace('/', '\').TrimEnd('\')
+        if ($materializedDataFolderValue -ne $replacementRoot) {
+            throw "Artifact materialization failed: DataFolder declaration does not resolve to artifact data root '$replacementRoot'. Actual: '$materializedDataFolderValue'"
+        }
     }
 }
 
