@@ -79,6 +79,21 @@ if ([string]::IsNullOrWhiteSpace($dataFolderValue)) {
 
 $dataFolderValue = $dataFolderValue.Replace('/', '\').TrimEnd('\')
 
+# Materialize the shared DataFolder declaration itself to the artifact-local
+# data directory before rewriting any dependent File.Contents expressions.
+if (Test-Path $expressionsPath -PathType Leaf) {
+    $expressionsText = [IO.File]::ReadAllText($expressionsPath)
+    $materializedExpressions = [regex]::Replace(
+        $expressionsText,
+        '(?im)^(\s*expression\s+DataFolder\s*=\s*")[^"]*(".*)$',
+        '${1}' + $replacementRoot.Replace('\', '\\') + '${2}'
+    )
+    if ($materializedExpressions -ne $expressionsText) {
+        [IO.File]::WriteAllText($expressionsPath, $materializedExpressions, $utf8NoBom)
+        $replacementCount++
+    }
+}
+
 # Materialize DataFolder-based File.Contents expressions and any existing Fact
 # File.Contents path to artifact-local absolute paths. This changes only source
 # paths; generated report/model structure is otherwise preserved.
@@ -125,9 +140,8 @@ foreach ($file in $tmdlFiles) {
     [IO.File]::WriteAllText($file.FullName, $updated, $utf8NoBom)
 }
 
-# Enforce placeholder and runner-path gates after materialization. The DataFolder
-# declaration itself is allowed, but it must resolve to the artifact-local data
-# root. Any remaining DataFolder use in File.Contents is a materialization failure.
+# Enforce placeholder and runner-path gates after materialization. Any remaining
+# DataFolder use in File.Contents is a materialization failure.
 foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
 
