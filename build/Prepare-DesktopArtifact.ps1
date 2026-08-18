@@ -35,8 +35,10 @@ if (Test-Path $DesktopValidationRoot) { Remove-Item $DesktopValidationRoot -Recu
 New-Item -ItemType Directory -Force -Path $DesktopValidationRoot | Out-Null
 Copy-Item (Join-Path $ArtifactRoot '*') $DesktopValidationRoot -Recurse -Force
 
+# Materialize the disposable validation copy. The materializer is a PowerShell script,
+# so use its observable output/artifact validation below rather than relying on
+# $LASTEXITCODE, which is only meaningful for native process invocations.
 & (Join-Path $PSScriptRoot "Materialize-PbipArtifact.ps1") -ArtifactRoot $DesktopValidationRoot
-if ($LASTEXITCODE -ne 0) { throw "Desktop artifact materialization failed with exit code $LASTEXITCODE." }
 
 $semanticRoot = Join-Path $DesktopValidationRoot "$pbipName.SemanticModel"
 $dataRoot = Join-Path $DesktopValidationRoot "data"
