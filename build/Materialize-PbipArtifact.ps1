@@ -5,9 +5,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# When executed as a .ps1 file, use the directory containing the script.
-# When pasted into an interactive PowerShell session, PSScriptRoot is empty,
-# so use the current directory instead. An explicit -ArtifactRoot always wins.
 if ([string]::IsNullOrWhiteSpace($ArtifactRoot)) {
     if (![string]::IsNullOrWhiteSpace($PSScriptRoot)) {
         $ArtifactRoot = $PSScriptRoot
@@ -26,8 +23,6 @@ $DataRoot = Join-Path $ArtifactRoot "data"
 $PlaceholderRoot = "C:\__PBIP_ARTIFACT_ROOT__"
 $utf8NoBom = [Text.UTF8Encoding]::new($false)
 
-# Block paths that identify GitHub-hosted runners or other CI workspaces.
-# Include the known GitHub Actions Windows path form used by this project.
 $RunnerPathPatterns = @(
     '(?i)[A-Z]:\\[^\r\n"]*\\_work\\',
     '(?i)[A-Z]:\\a\\[^\r\n"]*',
@@ -38,10 +33,10 @@ $RunnerPathPatterns = @(
 )
 
 if (!(Test-Path $SemanticModelRoot -PathType Container)) {
-    throw "PBIP semantic-model root was not found: $SemanticModelRoot. Make sure ArtifactRoot points to the extracted artifact directory."
+    throw "PBIP semantic-model root was not found: $SemanticModelRoot."
 }
 if (!(Test-Path $DataRoot -PathType Container)) {
-    throw "Artifact data directory was not found: $DataRoot. Make sure ArtifactRoot points to the extracted artifact directory."
+    throw "Artifact data directory was not found: $DataRoot."
 }
 
 $expectedFact = Join-Path $DataRoot "Fact_Pipeline_SampleData.csv"
@@ -60,14 +55,11 @@ $replacementRoot = $DataRoot.TrimEnd('\')
 $replacementCount = 0
 $factReplacementCount = 0
 
-# Match any File.Contents(...) expression whose filename is Fact_Pipeline_SampleData.csv,
-# regardless of whether the current source is a CI runner path, placeholder path, or
-# another absolute/relative path. This makes Fact materialization deterministic.
+# Materialize any Fact CSV File.Contents expression regardless of its current
+# absolute, runner, placeholder, or relative path representation.
 $factPattern = '(?i)File\.Contents\("(?:[^"\r\n]*[\\/])?Fact_Pipeline_SampleData\.csv"\)'
 
 foreach ($file in $tmdlFiles) {
-    # ReadAllText normalizes away an existing UTF-8 BOM for the in-memory string.
-    # Every write below explicitly uses UTF8Encoding(false), guaranteeing no BOM.
     $text = [IO.File]::ReadAllText($file.FullName)
     $updated = $text
 
@@ -86,16 +78,14 @@ foreach ($file in $tmdlFiles) {
     )
 
     if ($updated -ne $text) {
-        [IO.File]::WriteAllText($file.FullName, $updated, $utf8NoBom)
         $replacementCount++
-    } else {
-        # Existing TMDL files may already contain a UTF-8 BOM. Rewrite them even when
-        # their text content is unchanged because Power BI Desktop requires BOM-free UTF-8.
-        [IO.File]::WriteAllText($file.FullName, $text, $utf8NoBom)
     }
+
+    # Always rewrite as UTF-8 without BOM so Desktop receives deterministic TMDL.
+    [IO.File]::WriteAllText($file.FullName, $updated, $utf8NoBom)
 }
 
-# Re-read every TMDL after materialization and enforce placeholder/runner-path gates.
+# Enforce placeholder and runner-path gates after materialization.
 foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
 
@@ -110,24 +100,18 @@ foreach ($file in $tmdlFiles) {
     }
 }
 
-# Byte-level encoding gate. Power BI Desktop July 2026 rejects UTF-8 TMDL files
-# containing an EF BB BF BOM, so verify the actual bytes rather than trusting the reader.
+# Byte-level UTF-8 BOM gate.
 $bomFiles = @()
 foreach ($file in $tmdlFiles) {
     $bytes = [IO.File]::ReadAllBytes($file.FullName)
-    if (
-        $bytes.Length -ge 3 -and
-        $bytes[0] -eq 0xEF -and
-        $bytes[1] -eq 0xBB -and
-        $bytes[2] -eq 0xBF
-    ) {
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
         $bomFiles += $file.FullName
     }
 }
 
 if ($bomFiles.Count -gt 0) {
     $bomFiles | ForEach-Object { Write-Host "UTF-8 BOM detected: $_" -ForegroundColor Red }
-    throw "Artifact materialization failed: $($bomFiles.Count) TMDL file(s) contain UTF-8 BOM. Power BI Desktop requires UTF-8 without BOM."
+    throw "Artifact materialization failed: $($bomFiles.Count) TMDL file(s) contain UTF-8 BOM."
 }
 
 $factText = [IO.File]::ReadAllText($factPath)
