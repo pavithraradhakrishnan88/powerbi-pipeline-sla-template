@@ -86,7 +86,7 @@ if (Test-Path $expressionsPath -PathType Leaf) {
     $materializedExpressions = [regex]::Replace(
         $expressionsText,
         '(?im)^(\s*expression\s+DataFolder\s*=\s*")[^"]*(".*)$',
-        '${1}' + $replacementRoot.Replace('\', '\\') + '${2}'
+        '${1}' + $replacementRoot + '${2}'
     )
     if ($materializedExpressions -ne $expressionsText) {
         [IO.File]::WriteAllText($expressionsPath, $materializedExpressions, $utf8NoBom)
