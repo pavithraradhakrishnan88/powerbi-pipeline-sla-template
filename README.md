@@ -16,6 +16,25 @@ A source-controlled Power BI PBIP/PBIR template for monitoring pipeline executio
 - PBIR validation plus a hard 28/28 visual JSON artifact gate.
 - Registered report resources/images carried through the published artifact.
 
+## Current stabilization status
+
+The following previously pending stabilization issues are closed and are part of the known-good template behavior:
+
+- Semantic-model template artifacts required for Desktop loading were restored, including the authoritative `en-US.tmdl`, required `LocalDateTable_*.tmdl` files, and platform metadata.
+- PBIP artifact preparation/copy now preserves the required `.platform` files for the report and semantic model.
+- The report is materialized from the authoritative report template rather than reconstructed from a reduced/generated visual tree.
+- The generated report preserves the authoritative 28-visual inventory and validates the exact published artifact.
+- Every published `visual.json` is parsed as JSON and the 28/28 visual artifact gate remains mandatory.
+- The report-extension path no longer synthesizes an empty/fake `reportExtensions.json`. If the authoritative template contains a real extension definition, `WriteFromTemplate()` copies it naturally.
+- The test/template path is aligned with the actual authoritative report template; production validation is not weakened to accommodate a reduced fixture.
+- Power BI Desktop UAT now reaches the usable report state: visuals load and the report is interactive. The former `ModelAuthoringHostService.UpdateModelExtensions` failure caused by the synthetic extension artifact is closed.
+
+### Remaining validation item
+
+The only remaining known issue is a schema-analyzer compatibility mismatch for the July 2026 Desktop `visualContainer/2.10.0` format. The authoritative template legitimately contains `visual.sortDefinition` and `visual.visualContainerObjects.columnHeaders`, while the analyzer currently reports them as additional properties.
+
+The required resolution is limited to the analyzer/schema compatibility definition: explicitly allow those two properties for the corresponding 2.10.0 format while retaining strict `additionalProperties: false` everywhere else. Do not modify the two authoritative `visual.json` files, downgrade their `$schema`, or add a blanket additional-properties exception.
+
 ## Successful Version 1 baseline
 
 The released Version 1 baseline is the PR #11 resolved integration that was successfully validated before being merged to `main`.
