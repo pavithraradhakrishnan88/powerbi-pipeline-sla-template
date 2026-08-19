@@ -46,9 +46,12 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
             try
             {
+                // The real template is the authoritative report structure. Copy it first and
+                // deliberately do not reconstruct pages, visuals, resources, or extensions.
                 CopyDirectoryRecursively(templateReportRootPath, staging);
                 Console.WriteLine($"Established generated PBIP from authoritative report template '{templateReportRootPath}'.");
 
+                // Dataset reference and registered-image metadata are the only report-level patches.
                 var definitionPbirPath = Path.Combine(staging, "definition.pbir");
                 if (!File.Exists(definitionPbirPath))
                     throw new InvalidOperationException($"Template is missing required file '{definitionPbirPath}'.");
