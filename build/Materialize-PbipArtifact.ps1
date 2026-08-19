@@ -99,15 +99,16 @@ if (Test-Path $expressionsPath -PathType Leaf) {
 
 # STEP 3: Detect runner absolute paths.
 # STEP 4: Normalize ONLY legitimate Windows runner paths that point into a data
-# directory. The matcher is intentionally anchored to a Windows drive root and
-# requires the path segment \data\ immediately before the CSV filename.
+# directory. The matcher is intentionally scoped to a known GitHub runner root
+# and requires a CSV filename directly under a data directory.
 # Examples accepted:
 #   D:\a\repo\repo\data\Dim_Category.csv
-#   C:\a\_work\repo\repo\data\Fact_Pipeline_SampleData.csv
+#   C:\a\repo\repo\data\Fact_Pipeline_SampleData.csv
+#   D:\_work\repo\repo\data\Dim_Category.csv
+#   D:\actions\repo\repo\data\Dim_Category.csv
 # The strict RunnerPathPatterns gate below remains unchanged and rejects every
 # runner path that is not normalized by this explicit data-file mapping.
-$runnerWindowsDataFilePattern = '(?i)(?<runnerRoot>[A-Z]:\\(?:[^\r\n"\\]+\\)*?)(?:_work\\[^\r\n"\\]+\\[^\r\n"\\]+\\|a\\[^\r\n"\\]+\\[^\r\n"\\]+\\|actions\\[^\r\n"\\]+\\)data\\(?<fileName>[^\\/\r\n"]+\.csv)'
-$runnerWindowsDataFilePatternSimple = '(?i)[A-Z]:\\(?:[^\r\n"\\]+\\)*data\\(?<fileName>[^\\/\r\n"]+\.csv)'
+$runnerWindowsDataFilePattern = '(?i)[A-Z]:\\(?:a|_work|actions)\\.*?\\data\\(?<fileName>[^\\/\r\n"]+\.csv)'
 $runnerUnixDataFilePattern = '(?i)(?:/home/runner/[^\r\n"]*/data/)(?<fileName>[^/\r\n"]+\.csv)'
 
 # STEP 5: Map placeholder paths and runner data paths, then resolve DataFolder-based
@@ -119,28 +120,12 @@ foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
     $updated = $text
 
-    # Normalize a legitimate GitHub-hosted Windows runner data path. The first
-    # matcher handles the standard GitHub Actions D:\a\<repo>\<repo>\data path;
-    # the simple matcher also handles equivalent C:\a\...\data paths. Both
-    # require a CSV filename directly under a data directory.
+    # Normalize only a legitimate GitHub-hosted runner data path. The single
+    # matcher requires a known runner root (a, _work, or actions) and a CSV
+    # immediately under a data directory.
     $updated = [regex]::Replace(
         $updated,
         $runnerWindowsDataFilePattern,
-        [System.Text.RegularExpressions.MatchEvaluator]{
-            param($match)
-            $fileName = $match.Groups['fileName'].Value
-            $targetPath = [IO.Path]::GetFullPath((Join-Path $DataRoot $fileName))
-            if (!(Test-Path $targetPath -PathType Leaf)) {
-                throw "Runner data-path normalization failed: '$fileName' was referenced by '$($file.FullName)' but '$targetPath' does not exist in the artifact data folder."
-            }
-            $script:runnerDataPathCount++
-            return $targetPath
-        }
-    )
-
-    $updated = [regex]::Replace(
-        $updated,
-        $runnerWindowsDataFilePatternSimple,
         [System.Text.RegularExpressions.MatchEvaluator]{
             param($match)
             $fileName = $match.Groups['fileName'].Value
