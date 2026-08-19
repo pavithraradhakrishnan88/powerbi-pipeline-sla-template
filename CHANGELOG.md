@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented here. The project follows semantic versioning.
 
+## [Unreleased] - 2026-08-19
+
+### Stabilized / Closed
+
+- Restored the authoritative semantic-model template artifacts required for reliable Power BI Desktop loading, including the localization/date-table and platform metadata files.
+- Corrected artifact preparation so the report and semantic-model `.platform` files are preserved in the PBIP build artifact.
+- Standardized report generation/testing on the actual authoritative report template instead of a reduced synthetic test fixture.
+- Preserved the exact 28/28 visual inventory and continued parsing every published `visual.json` as JSON.
+- Kept the final artifact gate strict and pointed at the exact package that is published.
+- Removed unconditional synthetic `reportExtensions.json` generation from the normal generated-report path.
+- Removed `reportExtensions.json` from unconditional generated-output required-file validation.
+- Preserved `WriteFromTemplate()` as a true template copier so a real future extension definition is copied only when it exists in the authoritative template.
+- Closed the Power BI Desktop `ModelAuthoringHostService.UpdateModelExtensions` failures caused by fake/empty extension artifacts; current UAT reaches the usable report state with visuals loading and report interactions working.
+
+### Remaining
+
+- The only known remaining validation issue is schema compatibility for the July 2026 Power BI Desktop `visualContainer/2.10.0` format. The authoritative template legitimately contains `visual.sortDefinition` and `visual.visualContainerObjects.columnHeaders`, while the analyzer reports them as additional properties.
+- The required follow-up is limited to the analyzer/schema compatibility definition: explicitly allow those two properties for 2.10.0 while retaining strict `additionalProperties: false` everywhere else.
+- The two authoritative `visual.json` files, their `$schema`, the visual tree, and the 28/28 production gate must not be changed to suppress these warnings.
+
 ## [1.0.0] - 2026-08-16
 
 ### Added
