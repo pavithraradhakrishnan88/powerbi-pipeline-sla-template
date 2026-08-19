@@ -60,9 +60,7 @@ $dataFolderReferenceCount = 0
 $runnerDataPathCount = 0
 $placeholderReplacementCount = 0
 
-# STEP 2: Resolve the shared DataFolder expression first. The generated model may
-# define DataFolder in expressions.tmdl and consume it from table partitions such as:
-#   File.Contents(DataFolder & "\\Dim_Category.csv")
+# STEP 2: Resolve the shared DataFolder expression first.
 $dataFolderValue = $null
 if (Test-Path $expressionsPath -PathType Leaf) {
     $expressionsText = [IO.File]::ReadAllText($expressionsPath)
@@ -82,8 +80,6 @@ if ([string]::IsNullOrWhiteSpace($dataFolderValue)) {
 
 $dataFolderValue = $dataFolderValue.Replace('/', '\').TrimEnd('\')
 
-# Materialize the DataFolder declaration itself to the artifact-local data directory.
-# This is deliberately done before dependent File.Contents expressions are rewritten.
 if (Test-Path $expressionsPath -PathType Leaf) {
     $expressionsText = [IO.File]::ReadAllText($expressionsPath)
     $materializedExpressions = [regex]::Replace(
@@ -97,57 +93,39 @@ if (Test-Path $expressionsPath -PathType Leaf) {
     }
 }
 
-# STEP 3: Detect runner absolute paths.
-# STEP 4: Normalize ONLY legitimate Windows runner paths that point into a data
-# directory. The matcher is intentionally scoped to a known GitHub runner root
-# and requires a CSV filename directly under a data directory.
-# Examples accepted:
-#   D:\a\repo\repo\data\Dim_Category.csv
-#   C:\a\repo\repo\data\Fact_Pipeline_SampleData.csv
-#   D:\_work\repo\repo\data\Dim_Category.csv
-#   D:\actions\repo\repo\data\Dim_Category.csv
-# The strict RunnerPathPatterns gate below remains unchanged and rejects every
-# runner path that is not normalized by this explicit data-file mapping.
-$runnerWindowsDataFilePattern = '(?i)[A-Z]:\\(?:a|_work|actions)\\.*?\\data\\(?<fileName>[^\\/\r\n"]+\.csv)'
-$runnerUnixDataFilePattern = '(?i)(?:/home/runner/[^\r\n"]*/data/)(?<fileName>[^/\r\n"]+\.csv)'
+# STEP 3/4: Detect and normalize ONLY a legitimate Windows GitHub runner data file.
+# This is the single Windows normalization matcher. It deliberately requires:
+#   <drive>:\a\...
+#   <drive>:\_work\...
+#   <drive>:\actions\...
+# followed by \data\<file>.csv.
+# No other absolute Windows path is transformed.
+$runnerWindowsDataFilePattern = '(?i)[A-Z]:\\(?:a|_work|actions)\\[^\r\n"]*?\\data\\(?<fileName>[^\\/\r\n"]+\.csv)'
 
-# STEP 5: Map placeholder paths and runner data paths, then resolve DataFolder-based
-# File.Contents expressions. No other runner path is permitted to be transformed.
+# STEP 5: Map the known placeholder and DataFolder expressions.
 $fileContentsDataFolderPattern = '(?i)File\.Contents\(\s*DataFolder\s*&\s*"([^"]+)"\s*\)'
 $factPattern = '(?i)File\.Contents\("(?:[^"\r\n]*[\\/])?Fact_Pipeline_SampleData\.csv"\)'
 
 foreach ($file in $tmdlFiles) {
+    # Read TMDL before any transformation.
     $text = [IO.File]::ReadAllText($file.FullName)
     $updated = $text
 
-    # Normalize only a legitimate GitHub-hosted runner data path. The single
-    # matcher requires a known runner root (a, _work, or actions) and a CSV
-    # immediately under a data directory.
+    # Normalize the actual Windows GitHub runner path directly. The entire
+    # absolute path is replaced by the artifact-local data path.
     $updated = [regex]::Replace(
         $updated,
         $runnerWindowsDataFilePattern,
         [System.Text.RegularExpressions.MatchEvaluator]{
             param($match)
-            $fileName = $match.Groups['fileName'].Value
-            $targetPath = [IO.Path]::GetFullPath((Join-Path $DataRoot $fileName))
-            if (!(Test-Path $targetPath -PathType Leaf)) {
-                throw "Runner data-path normalization failed: '$fileName' was referenced by '$($file.FullName)' but '$targetPath' does not exist in the artifact data folder."
-            }
-            $script:runnerDataPathCount++
-            return $targetPath
-        }
-    )
 
-    $updated = [regex]::Replace(
-        $updated,
-        $runnerUnixDataFilePattern,
-        [System.Text.RegularExpressions.MatchEvaluator]{
-            param($match)
             $fileName = $match.Groups['fileName'].Value
             $targetPath = [IO.Path]::GetFullPath((Join-Path $DataRoot $fileName))
+
             if (!(Test-Path $targetPath -PathType Leaf)) {
-                throw "Runner data-path normalization failed: '$fileName' was referenced by '$($file.FullName)' but '$targetPath' does not exist in the artifact data folder."
+                throw "Runner data-path normalization failed: '$fileName' does not exist at '$targetPath'."
             }
+
             $script:runnerDataPathCount++
             return $targetPath
         }
@@ -159,16 +137,21 @@ foreach ($file in $tmdlFiles) {
         $placeholderReplacementCount++
     }
 
+    # Resolve any remaining shared DataFolder File.Contents expression directly
+    # against the artifact-local data directory.
     $updated = [regex]::Replace(
         $updated,
         $fileContentsDataFolderPattern,
         [System.Text.RegularExpressions.MatchEvaluator]{
             param($match)
+
             $relativeFile = $match.Groups[1].Value.Replace('/', '\').TrimStart('\')
             $targetPath = [IO.Path]::GetFullPath((Join-Path $replacementRoot $relativeFile))
+
             if (!(Test-Path $targetPath -PathType Leaf)) {
                 throw "DataFolder materialization target was not found: $targetPath"
             }
+
             $script:dataFolderReferenceCount++
             return 'File.Contents("' + $targetPath + '")'
         }
@@ -207,8 +190,8 @@ if (!(Test-Path $expectedFact -PathType Leaf)) {
     throw "Materialization CSV verification failed: Fact source file was not found: $expectedFact"
 }
 
-# STEP 7: Strict runner-path and placeholder gates. These remain intentionally
-# unchanged in policy: ANY runner-specific path left after normalization is fatal.
+# STEP 7: STRICT runner-path and placeholder gates. These remain unchanged.
+# Any runner-specific path that survives normalization is fatal.
 foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
 
@@ -227,7 +210,6 @@ foreach ($file in $tmdlFiles) {
     }
 }
 
-# Verify the shared DataFolder declaration, when present, is artifact-local.
 if (Test-Path $expressionsPath -PathType Leaf) {
     $materializedExpressionsText = [IO.File]::ReadAllText($expressionsPath)
     $materializedDataFolderMatch = [regex]::Match(
