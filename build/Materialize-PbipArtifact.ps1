@@ -40,24 +40,41 @@ if (!(Test-Path $DataRoot -PathType Container)) {
 }
 
 $expectedFact = Join-Path $DataRoot "Fact_Pipeline_SampleData.csv"
+$expectedCategory = Join-Path $DataRoot "Dim_Category.csv"
 $expectedFactPath = [IO.Path]::GetFullPath($expectedFact)
+$expectedCategoryPath = [IO.Path]::GetFullPath($expectedCategory)
 $factPath = Join-Path $SemanticModelRoot "definition\tables\Fact_Pipeline_SampleData.tmdl"
+$categoryPath = Join-Path $SemanticModelRoot "definition\tables\Dim_Category.tmdl"
 
-if (!(Test-Path $expectedFact -PathType Leaf)) {
-    throw "Artifact Fact source file was not found: $expectedFact"
+foreach ($source in @($expectedFact,$expectedCategory)) {
+    if (!(Test-Path $source -PathType Leaf)) {
+        throw "Artifact source file was not found: $source"
+    }
 }
-if (!(Test-Path $factPath -PathType Leaf)) {
-    throw "Materialized Fact_Pipeline_SampleData.tmdl was not found: $factPath"
+foreach ($table in @($factPath,$categoryPath)) {
+    if (!(Test-Path $table -PathType Leaf)) {
+        throw "Materialized table TMDL was not found: $table"
+    }
 }
 
 $tmdlFiles = @(Get-ChildItem $SemanticModelRoot -Recurse -Filter "*.tmdl" -File)
 $replacementRoot = $DataRoot.TrimEnd('\')
 $replacementCount = 0
 $factReplacementCount = 0
+$categoryReplacementCount = 0
 
-# Materialize any Fact CSV File.Contents expression regardless of its current
-# absolute, runner, placeholder, or relative path representation.
-$factPattern = '(?i)File\.Contents\("(?:[^"\r\n]*[\\/])?Fact_Pipeline_SampleData\.csv"\)'
+# Resolve the shared DataFolder expression first. PBIP templates commonly use:
+#   File.Contents(DataFolder & "\Dim_Category.csv")
+# or:
+#   File.Contents(DataFolder & "\Fact_Pipeline_SampleData.csv")
+# The Desktop validation copy must contain concrete local paths before any
+# downstream validation/visual checks run.
+$dataFolderExpressionPattern = '(?i)\bDataFolder\s*&\s*"'
+
+# Materialize every supported CSV File.Contents expression to the artifact-local
+# data folder. This deliberately handles both the shared DataFolder expression and
+# already-materialized absolute/placeholder paths.
+$csvPattern = '(?i)File\.Contents\("(?:[^"\r\n]*[\\/])?([^"\\/]+\.csv)"\)'
 
 foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
@@ -67,13 +84,38 @@ foreach ($file in $tmdlFiles) {
         $updated = $updated.Replace($PlaceholderRoot, $replacementRoot)
     }
 
+    # First resolve the shared M expression variable without changing the
+    # surrounding query shape. This is the critical materialization boundary.
     $updated = [regex]::Replace(
         $updated,
-        $factPattern,
+        $dataFolderExpressionPattern,
         [System.Text.RegularExpressions.MatchEvaluator]{
             param($match)
-            $script:factReplacementCount++
-            return 'File.Contents("' + $expectedFactPath + '")'
+            return '"' + $replacementRoot + '" & "'
+        }
+    )
+
+    $updated = [regex]::Replace(
+        $updated,
+        $csvPattern,
+        [System.Text.RegularExpressions.MatchEvaluator]{
+            param($match)
+            $fileName = $match.Groups[1].Value
+            $sourcePath = Join-Path $DataRoot $fileName
+            $sourcePath = [IO.Path]::GetFullPath($sourcePath)
+
+            if (!(Test-Path $sourcePath -PathType Leaf)) {
+                throw "Materialization failed: File.Contents references '$fileName' but '$sourcePath' does not exist in the artifact data folder."
+            }
+
+            if ($fileName -ieq 'Fact_Pipeline_SampleData.csv') {
+                $script:factReplacementCount++
+            }
+            if ($fileName -ieq 'Dim_Category.csv') {
+                $script:categoryReplacementCount++
+            }
+            $script:replacementCount++
+            return 'File.Contents("' + $sourcePath + '")'
         }
     )
 
@@ -81,7 +123,6 @@ foreach ($file in $tmdlFiles) {
         $replacementCount++
     }
 
-    # Always rewrite as UTF-8 without BOM so Desktop receives deterministic TMDL.
     [IO.File]::WriteAllText($file.FullName, $updated, $utf8NoBom)
 }
 
@@ -97,6 +138,10 @@ foreach ($file in $tmdlFiles) {
         if ($text -match $runnerPattern) {
             throw "Artifact materialization failed: runner-specific path remains in '$($file.FullName)'. Pattern: $runnerPattern"
         }
+    }
+
+    if ($text -match $dataFolderExpressionPattern) {
+        throw "Artifact materialization failed: unresolved shared DataFolder expression remains in '$($file.FullName)'."
     }
 }
 
@@ -115,11 +160,12 @@ if ($bomFiles.Count -gt 0) {
 }
 
 $factText = [IO.File]::ReadAllText($factPath)
+$categoryText = [IO.File]::ReadAllText($categoryPath)
 if ($factText -notmatch [regex]::Escape($expectedFactPath)) {
     throw "Materialized Fact partition does not contain the artifact-local data path '$expectedFactPath'."
 }
-if (!(Test-Path $expectedFact -PathType Leaf)) {
-    throw "Materialized Fact source file was not found: $expectedFact"
+if ($categoryText -notmatch [regex]::Escape($expectedCategoryPath)) {
+    throw "Materialized Dim_Category partition does not contain the artifact-local data path '$expectedCategoryPath'."
 }
 
 Write-Host "PBIP artifact materialized for Desktop." -ForegroundColor Green
@@ -127,7 +173,10 @@ Write-Host "Artifact root: $ArtifactRoot"
 Write-Host "Data root: $DataRoot"
 Write-Host "TMDL files materialized: $replacementCount"
 Write-Host "Fact path replacements: $factReplacementCount"
+Write-Host "Dim_Category path replacements: $categoryReplacementCount"
 Write-Host "Fact source: $expectedFactPath"
+Write-Host "Dim_Category source: $expectedCategoryPath"
+Write-Host "DATA-MATERIALIZATION-GATE|PASS|Fact=PASS|Dim_Category=PASS|DataFolderResolved=PASS" -ForegroundColor Green
 Write-Host "ARTIFACT-FACT-PATH-GATE|PASS" -ForegroundColor Green
 Write-Host "TMDL-UTF8-NOBOM-GATE|PASS" -ForegroundColor Green
 Write-Host "RunnerPaths=0"
