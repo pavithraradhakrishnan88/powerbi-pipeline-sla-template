@@ -4,6 +4,20 @@
 
 Version 1 is a template-first Power BI PBIP/PBIR pipeline. The checked-in report and semantic-model templates are authoritative; automation materializes the semantic model and validates the exact artifact that is released.
 
+## Current stabilization status
+
+The previously blocking PBIP/Desktop issues are closed:
+
+- Required semantic-model template artifacts and platform metadata are restored.
+- Artifact preparation preserves the report and semantic-model `.platform` files.
+- Report materialization is template-first and uses the actual authoritative report template.
+- The exact 28-visual inventory is preserved and enforced.
+- Every published visual is parsed as JSON.
+- Fake/empty report-extension materialization has been removed. A real extension definition is copied only if the authoritative template contains one.
+- The former `ModelAuthoringHostService.UpdateModelExtensions` failure associated with the synthetic extension artifact is closed; current UAT loads the report and visuals.
+
+The remaining validation issue is isolated to schema compatibility for the July 2026 Desktop `visualContainer/2.10.0` format. The authoritative template emits `visual.sortDefinition` and `visual.visualContainerObjects.columnHeaders`, but the analyzer currently treats them as additional properties. Compatibility must be added for exactly those two properties without weakening strict validation elsewhere.
+
 ## Flow
 
 ```mermaid
@@ -60,6 +74,7 @@ The model exposes a `DataFolder` expression. The fact partition consumes `File.C
 - Exact 28 visual JSON inventory.
 - JSON parsing and BOM checks.
 - Final artifact gate.
+- Explicit 2.10.0 compatibility for `sortDefinition` and `columnHeaders` once the analyzer compatibility layer is applied; all other additional properties remain rejected.
 
 ### Power BI Desktop
 
