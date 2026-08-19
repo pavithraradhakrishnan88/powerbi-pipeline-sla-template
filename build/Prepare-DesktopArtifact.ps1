@@ -54,7 +54,7 @@ foreach ($platform in @(
 # deliberately a separate step so table loading precedes visual/UAT validation.
 if (Test-Path $DesktopValidationRoot) { Remove-Item $DesktopValidationRoot -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $DesktopValidationRoot | Out-Null
-Copy-Item (Join-Path $ArtifactRoot '*') $DesktopValidationRoot -Recurse -Force
+Get-ChildItem $ArtifactRoot -Force | Copy-Item -Destination $DesktopValidationRoot -Recurse -Force
 
 $pbip = Join-Path $DesktopValidationRoot "$pbipName.pbip"
 if (!(Test-Path $pbip -PathType Leaf)) { throw "Desktop validation artifact is missing '$pbip'." }
