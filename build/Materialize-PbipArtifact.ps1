@@ -93,11 +93,10 @@ if (Test-Path $expressionsPath -PathType Leaf) {
     }
 }
 
-# STEP 3/4: Detect and normalize ONLY a legitimate Windows GitHub runner data file.
-# The TMDL may contain one or more literal backslashes in a serialized Windows path,
-# so each path separator is matched as one-or-more literal backslashes. The recognized
-# runner roots remain restricted to X:\a\, X:\_work\, or X:\actions\.
-# No other absolute Windows path is transformed.
+# STEP 3/4: Directly normalize a legitimate Windows GitHub runner data file.
+# The whole absolute runner path is matched in one operation. Only the recognized
+# runner roots X:\a\, X:\_work\, and X:\actions\ are eligible. The match must
+# contain \data\ followed by a CSV filename; arbitrary Windows paths are untouched.
 $runnerWindowsDataFilePattern = '(?i)[A-Z]:\\+(?:a|_work|actions)\\+[^\r\n"]*?\\+data\\+(?<fileName>[^\\/\r\n"]+\.csv)'
 
 # STEP 5: Map the known placeholder and DataFolder expressions.
@@ -109,8 +108,7 @@ foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
     $updated = $text
 
-    # Normalize the actual Windows GitHub runner path directly. The entire
-    # absolute path is replaced by the artifact-local data path.
+    # Normalize the entire absolute Windows runner data path directly.
     $updated = [regex]::Replace(
         $updated,
         $runnerWindowsDataFilePattern,
