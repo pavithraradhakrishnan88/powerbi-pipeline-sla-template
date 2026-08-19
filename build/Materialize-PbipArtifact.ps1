@@ -94,10 +94,10 @@ if (Test-Path $expressionsPath -PathType Leaf) {
 }
 
 # STEP 3/4: Directly normalize a legitimate Windows GitHub runner data file.
-# The whole absolute runner path is matched in one operation. Only the recognized
-# runner roots X:\a\, X:\_work\, and X:\actions\ are eligible. The match must
-# contain \data\ followed by a CSV filename; arbitrary Windows paths are untouched.
-$runnerWindowsDataFilePattern = '(?i)[A-Z]:\\+(?:a|_work|actions)\\+[^\r\n"]*?\\+data\\+(?<fileName>[^\\/\r\n"]+\.csv)'
+# The matcher is intentionally applied to the resulting File.Contents(...) path,
+# not to arbitrary text. Only X:\a\, X:\_work\, and X:\actions\ are eligible,
+# and the matched path must contain \data\ followed by a CSV filename.
+$runnerWindowsDataFilePattern = '(?i)File\.Contents\(\s*"(?<runnerPath>[A-Z]:\\+(?:a|_work|actions)\\+[^\r\n"]*?\\+data\\+(?<fileName>[^\\/\r\n"]+\.csv))"\s*\)'
 
 # STEP 5: Map the known placeholder and DataFolder expressions.
 $fileContentsDataFolderPattern = '(?i)File\.Contents\(\s*DataFolder\s*&\s*"([^"]+)"\s*\)'
@@ -123,7 +123,7 @@ foreach ($file in $tmdlFiles) {
             }
 
             $script:runnerDataPathCount++
-            return $targetPath
+            return 'File.Contents("' + $targetPath + '")'
         }
     )
 
@@ -186,8 +186,10 @@ if (!(Test-Path $expectedFact -PathType Leaf)) {
     throw "Materialization CSV verification failed: Fact source file was not found: $expectedFact"
 }
 
-# STEP 7: STRICT runner-path and placeholder gates. These remain unchanged.
-# Any runner-specific path that survives normalization is fatal.
+# STEP 7: STRICT runner-path and placeholder gates.
+# Artifact-local paths are allowed even when the artifact itself lives under
+# D:\a\... on a GitHub runner. Any runner path outside the artifact-local data
+# paths remains fatal.
 foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
 
@@ -195,8 +197,36 @@ foreach ($file in $tmdlFiles) {
         throw "Artifact materialization failed: placeholder remains in '$($file.FullName)'."
     }
 
+    # Inspect every resulting File.Contents(...) path. A path is runner-specific
+    # only when it matches the direct runner-data matcher and is not the current
+    # artifact-local data root. This avoids falsely classifying
+    # D:\a\...\DesktopValidation\PBIP\data\*.csv as a surviving CI source path.
+    $fileContentMatches = [regex]::Matches(
+        $text,
+        '(?i)File\.Contents\(\s*"([^"]+\.csv)"\s*\)'
+    )
+    foreach ($match in $fileContentMatches) {
+        $csvPath = [IO.Path]::GetFullPath($match.Groups[1].Value)
+        $isArtifactLocal = $csvPath.StartsWith($replacementRoot + '\', [StringComparison]::OrdinalIgnoreCase) -or
+                           $csvPath.Equals($replacementRoot, [StringComparison]::OrdinalIgnoreCase)
+
+        if (!$isArtifactLocal -and $csvPath -match '(?i)^[A-Z]:\\+(?:a|_work|actions)\\+') {
+            throw "Artifact materialization failed: runner-specific File.Contents path remains in '$($file.FullName)': $csvPath"
+        }
+    }
+
+    # Remove the known-good artifact-local File.Contents paths before the broad
+    # textual runner-path gate. This preserves the strict gate for every other
+    # runner path without flagging the artifact's own local path merely because
+    # DesktopValidation happens to reside below D:\a\ on CI.
+    $runnerGateText = [regex]::Replace(
+        $text,
+        '(?i)File\.Contents\(\s*"' + [regex]::Escape($replacementRoot) + '\\[^"]+\.csv"\s*\)',
+        ''
+    )
+
     foreach ($runnerPattern in $RunnerPathPatterns) {
-        if ($text -match $runnerPattern) {
+        if ($runnerGateText -match $runnerPattern) {
             throw "Artifact materialization failed: runner-specific path remains in '$($file.FullName)'. Pattern: $runnerPattern"
         }
     }
