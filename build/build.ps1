@@ -19,7 +19,8 @@ function Write-VisualBomDiagnostics {
     foreach ($file in $visualFiles) {
         $bytes = [IO.File]::ReadAllBytes($file.FullName)
         $first3 = if ($bytes.Length -ge 3) { (($bytes[0..2] | % { $_.ToString('X2') }) -join ' ') } else { '<SHORT>' }
-        Write-Host "BOM-DIAG|Stage=$Stage|File=$([IO.Path]::GetRelativePath($definitionRoot,$file.FullName))|Length=$($bytes.Length)|First3=$first3|UTF8BOM=$($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)"
+        $relativePath = $file.FullName.Substring($definitionRoot.Length).TrimStart('\','/')
+        Write-Host "BOM-DIAG|Stage=$Stage|File=$relativePath|Length=$($bytes.Length)|First3=$first3|UTF8BOM=$($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)"
     }
 }
 
