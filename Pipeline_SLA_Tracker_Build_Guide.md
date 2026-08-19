@@ -4,6 +4,20 @@
 **Power BI project:** `pbip/Pipeline_SLA_Tracker.pbip`  
 **Measure source of truth:** `scripts/metadata/MeasureDefinitions.json`
 
+## Current stabilization status
+
+The previously pending build/Desktop blockers are closed:
+
+- The semantic-model template contains the restored authoritative localization/date-table artifacts and required platform metadata.
+- Artifact preparation preserves both report and semantic-model `.platform` files.
+- The build uses the actual authoritative report template as the materialization/test path.
+- The final artifact is protected by the exact 28/28 visual gate and every `visual.json` is parsed.
+- `WriteFromTemplate()` remains a true template copier.
+- No fake/empty `reportExtensions.json` is generated. A real extension file is copied only when present in the authoritative template.
+- The prior `ModelAuthoringHostService.UpdateModelExtensions` Desktop error from the synthetic extension artifact is closed. Current UAT reaches the usable report state with visuals loading and report interactions working.
+
+The only remaining known issue is the schema analyzer's compatibility with the July 2026 Desktop `visualContainer/2.10.0` format. The authoritative template contains `visual.sortDefinition` and `visual.visualContainerObjects.columnHeaders`; these must be explicitly recognized by the 2.10.0 compatibility definition while `additionalProperties: false` remains strict everywhere else.
+
 ## 1. Prerequisites
 
 Install:
@@ -145,13 +159,13 @@ CI proves structural/semantic conditions; Desktop validation proves interactive 
 Before releasing Version 1, confirm:
 
 ```text
-CSV validation             PASS
-Semantic model validation  PASS
-Measure validation         PASS
-PBIR validation             PASS
-28/28 visual JSON gate      PASS
-Artifact gate               PASS
-Power BI Desktop smoke test PASS
+CSV validation              PASS
+Semantic model validation   PASS
+Measure validation           PASS
+PBIR validation              PASS
+28/28 visual JSON gate       PASS
+Artifact gate                PASS
+Power BI Desktop smoke test  PASS
 ```
 
 The release artifact must be the same build output that passed these gates; do not validate one generated tree and publish a different tree.
@@ -166,3 +180,13 @@ When replacing the sample data:
 4. Run `build/build.ps1`.
 5. Open the resulting PBIP in Power BI Desktop.
 6. Recheck slicers, visuals, images/resources, and KPI calculations.
+
+## 11. Stabilization troubleshooting
+
+### `ModelAuthoringHostService.UpdateModelExtensions`
+
+This failure was traced to synthetic empty extension materialization and is closed. Do not recreate a placeholder `reportExtensions.json`. If a real extension is added in the future, it must originate in the authoritative template and be copied naturally.
+
+### `sortDefinition` / `columnHeaders` analyzer errors
+
+These are schema-compatibility errors, not evidence that the authoritative visual files are malformed. Do not edit the two visual files or downgrade `$schema`. Update only the July 2026/2.10.0 analyzer compatibility definition to allow these exact properties.
