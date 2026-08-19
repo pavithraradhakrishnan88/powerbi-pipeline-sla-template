@@ -77,6 +77,66 @@ jobs:
           $ErrorActionPreference = "Stop"
           ./build/Prepare-DesktopArtifact.ps1
 
+      # STEP 1: Resolve the shared DataFolder expression and materialize the
+      # disposable Desktop-validation copy to the local data folder.
+      - name: "STEP 1 - Load data from data folder using materialization"
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $desktopRoot = "${{ github.workspace }}\DesktopValidation\PBIP"
+          ./build/Materialize-PbipArtifact.ps1 -ArtifactRoot $desktopRoot
+          if (!(Test-Path "$desktopRoot\data\Fact_Pipeline_SampleData.csv" -PathType Leaf)) {
+            throw "Materialized data load failed: Fact_Pipeline_SampleData.csv is missing."
+          }
+          Write-Host "DATA-LOAD-STEP|PASS|Materialization=PASS|FactCsv=PASS|DataFolderReferences=0" -ForegroundColor Green
+
+      # STEP 2: Only after STEP 1 succeeds, verify the loaded tables/data and
+      # then validate the visual definitions that consume those tables.
+      # GitHub Actions cannot drive the Power BI Desktop UI itself, so this is
+      # the CI equivalent of the post-refresh visual trigger: table data is
+      # loaded/verified first, then every visual artifact is parsed and checked.
+      - name: "STEP 2 - Refresh tables and trigger visual validation"
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $desktopRoot = "${{ github.workspace }}\DesktopValidation\PBIP"
+          $dataRoot = Join-Path $desktopRoot "data"
+          $semanticRoot = Join-Path $desktopRoot "Pipeline_SLA_Tracker.SemanticModel"
+          $reportRoot = Join-Path $desktopRoot "Pipeline_SLA_Tracker.Report"
+
+          $factCsv = Join-Path $dataRoot "Fact_Pipeline_SampleData.csv"
+          $categoryCsv = Join-Path $dataRoot "Dim_Category.csv"
+          foreach ($csv in @($factCsv, $categoryCsv)) {
+            if (!(Test-Path $csv -PathType Leaf)) { throw "Loaded table source is missing: $csv" }
+          }
+
+          $factRows = @(Import-Csv -LiteralPath $factCsv).Count
+          $categoryRows = @(Import-Csv -LiteralPath $categoryCsv).Count
+          if ($factRows -le 0) { throw "Fact table refresh gate failed: zero Fact rows loaded." }
+          if ($categoryRows -le 0) { throw "Dimension table refresh gate failed: zero Dim_Category rows loaded." }
+
+          $factTmdl = Join-Path $semanticRoot "definition\tables\Fact_Pipeline_SampleData.tmdl"
+          $categoryTmdl = Join-Path $semanticRoot "definition\tables\Dim_Category.tmdl"
+          $factPath = [IO.Path]::GetFullPath($factCsv)
+          $categoryPath = [IO.Path]::GetFullPath($categoryCsv)
+          $factText = Get-Content -Raw $factTmdl
+          $categoryText = Get-Content -Raw $categoryTmdl
+          if ($factText -notmatch [regex]::Escape($factPath)) { throw "Fact table is not bound to the loaded materialized CSV." }
+          if ($categoryText -notmatch [regex]::Escape($categoryPath)) { throw "Dim_Category table is not bound to the loaded materialized CSV." }
+
+          Write-Host "TABLE-REFRESH-GATE|PASS|FactRows=$factRows|DimCategoryRows=$categoryRows" -ForegroundColor Green
+
+          $visualFiles = @(Get-ChildItem $reportRoot -Recurse -Filter "visual.json" -File)
+          if ($visualFiles.Count -ne 28) { throw "Visual trigger gate failed: expected 28 visual.json files, found $($visualFiles.Count)." }
+          foreach ($visual in $visualFiles) {
+            try {
+              $null = Get-Content -Raw -LiteralPath $visual.FullName | ConvertFrom-Json
+            } catch {
+              throw "Visual trigger gate failed: malformed visual JSON '$($visual.FullName)': $($_.Exception.Message)"
+            }
+          }
+          Write-Host "VISUAL-TRIGGER-GATE|PASS|VisualsParsed=$($visualFiles.Count)|TablesLoaded=PASS" -ForegroundColor Green
+
       - name: Assert measure expression parity
         shell: pwsh
         run: |
