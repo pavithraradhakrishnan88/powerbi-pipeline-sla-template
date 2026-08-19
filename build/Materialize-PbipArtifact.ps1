@@ -94,13 +94,11 @@ if (Test-Path $expressionsPath -PathType Leaf) {
 }
 
 # STEP 3/4: Detect and normalize ONLY a legitimate Windows GitHub runner data file.
-# This is the single Windows normalization matcher. It deliberately requires:
-#   <drive>:\a\...
-#   <drive>:\_work\...
-#   <drive>:\actions\...
-# followed by \data\<file>.csv.
+# The TMDL may contain one or more literal backslashes in a serialized Windows path,
+# so each path separator is matched as one-or-more literal backslashes. The recognized
+# runner roots remain restricted to X:\a\, X:\_work\, or X:\actions\.
 # No other absolute Windows path is transformed.
-$runnerWindowsDataFilePattern = '(?i)[A-Z]:\\(?:a|_work|actions)\\[^\r\n"]*?\\data\\(?<fileName>[^\\/\r\n"]+\.csv)'
+$runnerWindowsDataFilePattern = '(?i)[A-Z]:\\+(?:a|_work|actions)\\+[^\r\n"]*?\\+data\\+(?<fileName>[^\\/\r\n"]+\.csv)'
 
 # STEP 5: Map the known placeholder and DataFolder expressions.
 $fileContentsDataFolderPattern = '(?i)File\.Contents\(\s*DataFolder\s*&\s*"([^"]+)"\s*\)'
