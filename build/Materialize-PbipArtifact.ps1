@@ -51,15 +51,18 @@ if (!(Test-Path $factPath -PathType Leaf)) {
     throw "Materialized Fact_Pipeline_SampleData.tmdl was not found: $factPath"
 }
 
+# STEP 1: Read TMDL.
 $tmdlFiles = @(Get-ChildItem $SemanticModelRoot -Recurse -Filter "*.tmdl" -File)
 $replacementRoot = $DataRoot.TrimEnd('\')
 $replacementCount = 0
 $factReplacementCount = 0
 $dataFolderReferenceCount = 0
+$runnerDataPathCount = 0
+$placeholderReplacementCount = 0
 
-# Resolve the shared DataFolder expression first. The generated model may define
-# DataFolder in expressions.tmdl and consume it from table partitions such as:
-# File.Contents(DataFolder & "\\Dim_Category.csv")
+# STEP 2: Resolve the shared DataFolder expression first. The generated model may
+# define DataFolder in expressions.tmdl and consume it from table partitions such as:
+#   File.Contents(DataFolder & "\\Dim_Category.csv")
 $dataFolderValue = $null
 if (Test-Path $expressionsPath -PathType Leaf) {
     $expressionsText = [IO.File]::ReadAllText($expressionsPath)
@@ -79,8 +82,8 @@ if ([string]::IsNullOrWhiteSpace($dataFolderValue)) {
 
 $dataFolderValue = $dataFolderValue.Replace('/', '\').TrimEnd('\')
 
-# Materialize the shared DataFolder declaration itself to the artifact-local
-# data directory before rewriting any dependent File.Contents expressions.
+# Materialize the DataFolder declaration itself to the artifact-local data directory.
+# This is deliberately done before dependent File.Contents expressions are rewritten.
 if (Test-Path $expressionsPath -PathType Leaf) {
     $expressionsText = [IO.File]::ReadAllText($expressionsPath)
     $materializedExpressions = [regex]::Replace(
@@ -94,9 +97,16 @@ if (Test-Path $expressionsPath -PathType Leaf) {
     }
 }
 
-# Materialize DataFolder-based File.Contents expressions and any existing Fact
-# File.Contents path to artifact-local absolute paths. This changes only source
-# paths; generated report/model structure is otherwise preserved.
+# STEP 3: Detect runner absolute paths.
+# STEP 4: Normalize ONLY legitimate runner paths that point into the runner's data
+# directory. They are mapped to the extracted artifact's local data directory.
+# The strict RunnerPathPatterns gate below remains unchanged and will reject every
+# runner path that is not normalized by this explicit data-file mapping.
+$runnerDataFilePattern = '(?i)(?:[A-Z]:\\(?:[^\r\n"\\]+\\)*(?:_work|a|actions)\\[^\r\n"]*?\\data\\)([^\\/\r\n"]+\.csv)'
+$runnerUnixDataFilePattern = '(?i)(?:/home/runner/[^\r\n"]*/data/)([^/\r\n"]+\.csv)'
+
+# STEP 5: Map placeholder paths and runner data paths, then resolve DataFolder-based
+# File.Contents expressions. No other runner path is permitted to be transformed.
 $fileContentsDataFolderPattern = '(?i)File\.Contents\(\s*DataFolder\s*&\s*"([^"]+)"\s*\)'
 $factPattern = '(?i)File\.Contents\("(?:[^"\r\n]*[\\/])?Fact_Pipeline_SampleData\.csv"\)'
 
@@ -104,8 +114,41 @@ foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
     $updated = $text
 
+    # Detect and normalize only runner-generated absolute paths under ...\data\*.csv.
+    $updated = [regex]::Replace(
+        $updated,
+        $runnerDataFilePattern,
+        [System.Text.RegularExpressions.MatchEvaluator]{
+            param($match)
+            $fileName = $match.Groups[1].Value
+            $targetPath = [IO.Path]::GetFullPath((Join-Path $DataRoot $fileName))
+            if (!(Test-Path $targetPath -PathType Leaf)) {
+                throw "Runner data-path normalization failed: '$fileName' was referenced by '$($file.FullName)' but '$targetPath' does not exist in the artifact data folder."
+            }
+            $script:runnerDataPathCount++
+            return $targetPath
+        }
+    )
+
+    $updated = [regex]::Replace(
+        $updated,
+        $runnerUnixDataFilePattern,
+        [System.Text.RegularExpressions.MatchEvaluator]{
+            param($match)
+            $fileName = $match.Groups[1].Value
+            $targetPath = [IO.Path]::GetFullPath((Join-Path $DataRoot $fileName))
+            if (!(Test-Path $targetPath -PathType Leaf)) {
+                throw "Runner data-path normalization failed: '$fileName' was referenced by '$($file.FullName)' but '$targetPath' does not exist in the artifact data folder."
+            }
+            $script:runnerDataPathCount++
+            return $targetPath
+        }
+    )
+
+    # Map the known placeholder root only. Arbitrary absolute paths are not rewritten.
     if ($updated.Contains($PlaceholderRoot)) {
         $updated = $updated.Replace($PlaceholderRoot, $replacementRoot)
+        $placeholderReplacementCount++
     }
 
     $updated = [regex]::Replace(
@@ -140,8 +183,24 @@ foreach ($file in $tmdlFiles) {
     [IO.File]::WriteAllText($file.FullName, $updated, $utf8NoBom)
 }
 
-# Enforce placeholder and runner-path gates after materialization. Any remaining
-# DataFolder use in File.Contents is a materialization failure.
+# STEP 6: Verify every materialized CSV path exists before declaring the gate passed.
+foreach ($file in $tmdlFiles) {
+    $text = [IO.File]::ReadAllText($file.FullName)
+    $fileMatches = [regex]::Matches($text, '(?i)File\.Contents\(\s*"([^"]+\.csv)"\s*\)')
+    foreach ($match in $fileMatches) {
+        $csvPath = $match.Groups[1].Value
+        if (!(Test-Path $csvPath -PathType Leaf)) {
+            throw "CSV verification failed: File.Contents path '$csvPath' referenced by '$($file.FullName)' does not exist."
+        }
+    }
+}
+
+if (!(Test-Path $expectedFact -PathType Leaf)) {
+    throw "Materialization CSV verification failed: Fact source file was not found: $expectedFact"
+}
+
+# STEP 7: Strict runner-path and placeholder gates. These remain intentionally
+# unchanged in policy: ANY runner-specific path left after normalization is fatal.
 foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
 
@@ -193,23 +252,24 @@ $factText = [IO.File]::ReadAllText($factPath)
 if ($factText -notmatch [regex]::Escape($expectedFactPath)) {
     throw "Materialized Fact partition does not contain the artifact-local data path '$expectedFactPath'."
 }
-if (!(Test-Path $expectedFact -PathType Leaf)) {
-    throw "Materialized Fact source file was not found: $expectedFact"
-}
 
 $platformFiles = @(Get-ChildItem $ArtifactRoot -Recurse -Filter ".platform" -File)
 if ($platformFiles.Count -lt 2) {
     throw "Artifact materialization failed: expected both PBIP and semantic-model .platform files; found $($platformFiles.Count)."
 }
 
+# STEP 8: Materialization gate. Only after this PASS may the workflow enter Step 2.
 Write-Host "PBIP artifact materialized for Desktop." -ForegroundColor Green
 Write-Host "Artifact root: $ArtifactRoot"
 Write-Host "Data root: $DataRoot"
 Write-Host "Resolved DataFolder: $dataFolderValue"
 Write-Host "TMDL files materialized: $replacementCount"
+Write-Host "Runner data-path normalizations: $runnerDataPathCount"
+Write-Host "Placeholder replacements: $placeholderReplacementCount"
 Write-Host "DataFolder File.Contents replacements: $dataFolderReferenceCount"
 Write-Host "Fact path replacements: $factReplacementCount"
 Write-Host "Fact source: $expectedFactPath"
+Write-Host "DATA-MATERIALIZATION-GATE|PASS|RunnerPaths=0|DataFolderResolved=PASS|CsvExists=True" -ForegroundColor Green
 Write-Host "ARTIFACT-FACT-PATH-GATE|PASS" -ForegroundColor Green
 Write-Host "TMDL-UTF8-NOBOM-GATE|PASS" -ForegroundColor Green
 Write-Host "DataFolderReferences=0" -ForegroundColor Green
@@ -219,3 +279,6 @@ Write-Host "RunnerPaths=0"
 Write-Host "BomFiles=0"
 Write-Host "CsvExists=True"
 Write-Host "Materialize-PbipArtifact ........ PASS" -ForegroundColor Green
+
+# STEP 9 is owned by the workflow: only after this script exits successfully does
+# the separate table-refresh / visual-validation step begin.
