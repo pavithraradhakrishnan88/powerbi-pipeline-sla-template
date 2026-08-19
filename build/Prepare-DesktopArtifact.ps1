@@ -12,22 +12,42 @@ if ([string]::IsNullOrWhiteSpace($BuildRoot)) { $BuildRoot = Join-Path $RepoRoot
 if ([string]::IsNullOrWhiteSpace($ArtifactRoot)) { $ArtifactRoot = Join-Path $RepoRoot "artifacts" }
 if ([string]::IsNullOrWhiteSpace($DesktopValidationRoot)) { $DesktopValidationRoot = Join-Path $RepoRoot "DesktopValidation\PBIP" }
 
-$reportTemplate = Join-Path $RepoRoot "pbip\$pbipName.Report\.platform"
-$semanticTemplate = Join-Path $RepoRoot "pbip\$pbipName.SemanticModel\.platform"
+$reportPlatform = Join-Path $RepoRoot "pbip\Pipeline_SLA_Tracker.Report\.platform"
+$semanticPlatform = Join-Path $RepoRoot "pbip\Pipeline_SLA_Tracker.SemanticModel\.platform"
 $generatedReport = Join-Path $BuildRoot "$pbipName.Report"
 $generatedSemantic = Join-Path $BuildRoot "$pbipName.SemanticModel"
 $artifactReport = Join-Path $ArtifactRoot "$pbipName.Report"
 $artifactSemantic = Join-Path $ArtifactRoot "$pbipName.SemanticModel"
 
-foreach ($path in @($reportTemplate,$semanticTemplate,$generatedReport,$generatedSemantic,$artifactReport,$artifactSemantic)) {
+foreach ($path in @($reportPlatform,$semanticPlatform,$generatedReport,$generatedSemantic)) {
     if (!(Test-Path $path -PathType Leaf) -and !(Test-Path $path -PathType Container)) { throw "Desktop artifact preparation: required path is missing: $path" }
 }
 
-# Preserve the authoritative Fabric/Git project metadata byte-for-byte.
-Copy-Item $reportTemplate (Join-Path $generatedReport ".platform") -Force
-Copy-Item $semanticTemplate (Join-Path $generatedSemantic ".platform") -Force
-Copy-Item $reportTemplate (Join-Path $artifactReport ".platform") -Force
-Copy-Item $semanticTemplate (Join-Path $artifactSemantic ".platform") -Force
+# Preserve the authoritative Fabric/Git project metadata byte-for-byte in the generated PBIP tree.
+Copy-Item $reportPlatform (Join-Path $generatedReport ".platform") -Force
+Copy-Item $semanticPlatform (Join-Path $generatedSemantic ".platform") -Force
+
+# Explicitly materialize the two platform files into the packaged artifact.
+# PBIP-Build uploads artifacts/**, so these are the exact files that must be present there.
+New-Item -ItemType Directory -Force -Path $artifactReport | Out-Null
+New-Item -ItemType Directory -Force -Path $artifactSemantic | Out-Null
+
+Copy-Item $reportPlatform `
+    (Join-Path $artifactReport ".platform") `
+    -Force
+
+Copy-Item $semanticPlatform `
+    (Join-Path $artifactSemantic ".platform") `
+    -Force
+
+foreach ($platform in @(
+    (Join-Path $artifactReport ".platform"),
+    (Join-Path $artifactSemantic ".platform")
+)) {
+    if (!(Test-Path $platform -PathType Leaf)) {
+        throw "Artifact preparation failed: missing $platform"
+    }
+}
 
 # Create a disposable local Desktop-validation tree from the packaged artifact.
 # IMPORTANT: this step only copies the portable artifact. Data materialization is
