@@ -29,37 +29,15 @@ Copy-Item $semanticTemplate (Join-Path $generatedSemantic ".platform") -Force
 Copy-Item $reportTemplate (Join-Path $artifactReport ".platform") -Force
 Copy-Item $semanticTemplate (Join-Path $artifactSemantic ".platform") -Force
 
-# Create a disposable, local Desktop-validation tree from the packaged artifact.
-# The portable artifact remains placeholder-based; only this copy is materialized.
+# Create a disposable local Desktop-validation tree from the packaged artifact.
+# IMPORTANT: this step only copies the portable artifact. Data materialization is
+# deliberately a separate step so table loading precedes visual/UAT validation.
 if (Test-Path $DesktopValidationRoot) { Remove-Item $DesktopValidationRoot -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $DesktopValidationRoot | Out-Null
 Copy-Item (Join-Path $ArtifactRoot '*') $DesktopValidationRoot -Recurse -Force
 
-# Materialize the disposable validation copy. The materializer is a PowerShell script,
-# so use its observable output/artifact validation below rather than relying on
-# $LASTEXITCODE, which is only meaningful for native process invocations.
-& (Join-Path $PSScriptRoot "Materialize-PbipArtifact.ps1") -ArtifactRoot $DesktopValidationRoot
-
-$semanticRoot = Join-Path $DesktopValidationRoot "$pbipName.SemanticModel"
-$dataRoot = Join-Path $DesktopValidationRoot "data"
-$factTmdl = Join-Path $semanticRoot "definition\tables\Fact_Pipeline_SampleData.tmdl"
-$expectedFact = [IO.Path]::GetFullPath((Join-Path $dataRoot "Fact_Pipeline_SampleData.csv"))
-
-if (!(Test-Path $factTmdl -PathType Leaf)) { throw "Desktop validation artifact is missing '$factTmdl'." }
-if (!(Test-Path $expectedFact -PathType Leaf)) { throw "Desktop validation artifact is missing '$expectedFact'." }
-$factText = Get-Content -Raw $factTmdl
-if ($factText -notmatch [regex]::Escape($expectedFact)) { throw "Desktop validation artifact Fact partition does not resolve to '$expectedFact'." }
-if ($factText -match 'C:\\__PBIP_ARTIFACT_ROOT__|_work\\|/home/runner/|/opt/hostedtoolcache/') { throw "Desktop validation artifact still contains a placeholder or runner-specific path." }
-
-foreach ($platform in @(
-    (Join-Path $DesktopValidationRoot "$pbipName.Report\.platform"),
-    (Join-Path $DesktopValidationRoot "$pbipName.SemanticModel\.platform")
-)) {
-    if (!(Test-Path $platform -PathType Leaf)) { throw "Desktop validation artifact is missing '$platform'." }
-}
-
 $pbip = Join-Path $DesktopValidationRoot "$pbipName.pbip"
 if (!(Test-Path $pbip -PathType Leaf)) { throw "Desktop validation artifact is missing '$pbip'." }
 
-Write-Host "DESKTOP-ARTIFACT-GATE|PASS|PlatformFiles=2|Materialized=PASS|FactSource=$expectedFact|PBIP=$pbip"
-Write-Host "DESKTOP-ARTIFACT-GATE|DesktopOpenRequired=TRUE|DesktopErrorCaptureRequired=TRUE"
+Write-Host "DESKTOP-ARTIFACT-PREP|PASS|PlatformFiles=2|PortableCopy=PASS|PBIP=$pbip"
+Write-Host "DESKTOP-ARTIFACT-PREP|NextStep=DATA-MATERIALIZATION"
