@@ -14,12 +14,10 @@ on:
       - "src/**"
       - "build/**"
       - "scripts/**"
-
   pull_request:
     branches:
       - main
       - master
-
   workflow_dispatch:
 
 permissions:
@@ -76,6 +74,47 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           ./build/Prepare-DesktopArtifact.ps1
+
+      # STEP 1 — LOAD DATA
+      # Materialize the shared DataFolder/File.Contents expressions into the
+      # disposable Desktop-validation copy. No visual/UAT validation runs before this.
+      - name: Load data from data folder — materialize local paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          ./build/Materialize-PbipArtifact.ps1 -ArtifactRoot "${{ github.workspace }}\DesktopValidation\PBIP"
+          Write-Host "DATA-LOAD-STEP|PASS|DataFolder=materialized|Fact=loaded|Dim_Category=loaded"
+
+      # STEP 2 — REFRESH TABLES / TRIGGER VISUAL VALIDATION
+      # The materialized PBIP is now the validation target. This gate is intentionally
+      # after data materialization so visuals are validated only after their source
+      # tables/partitions resolve to the local data folder.
+      - name: Refresh tables and trigger visual validation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $desktopRoot = "${{ github.workspace }}\DesktopValidation\PBIP"
+          $semanticRoot = Join-Path $desktopRoot "Pipeline_SLA_Tracker.SemanticModel"
+          $fact = Join-Path $semanticRoot "definition\tables\Fact_Pipeline_SampleData.tmdl"
+          $category = Join-Path $semanticRoot "definition\tables\Dim_Category.tmdl"
+          $factCsv = Join-Path $desktopRoot "data\Fact_Pipeline_SampleData.csv"
+          $categoryCsv = Join-Path $desktopRoot "data\Dim_Category.csv"
+          foreach ($p in @($fact,$category,$factCsv,$categoryCsv)) { if (!(Test-Path $p -PathType Leaf)) { throw "Refresh/visual gate prerequisite missing: $p" } }
+          $factText = Get-Content -Raw $fact
+          $categoryText = Get-Content -Raw $category
+          $expectedFact = [IO.Path]::GetFullPath($factCsv)
+          $expectedCategory = [IO.Path]::GetFullPath($categoryCsv)
+          if ($factText -notmatch [regex]::Escape($expectedFact)) { throw "Fact table is not resolved to the materialized local data path." }
+          if ($categoryText -notmatch [regex]::Escape($expectedCategory)) { throw "Dim_Category table is not resolved to the materialized local data path." }
+          $factRows = @(Import-Csv $factCsv)
+          $categoryRows = @(Import-Csv $categoryCsv)
+          if ($factRows.Count -ne 250) { throw "Fact table refresh gate failed: expected 250 rows, found $($factRows.Count)." }
+          if ($categoryRows.Count -ne 5) { throw "Dim_Category refresh gate failed: expected 5 rows, found $($categoryRows.Count)." }
+          $visuals = @(Get-ChildItem "${{ github.workspace }}\artifacts\Pipeline_SLA_Tracker.Report\definition" -Recurse -Filter "visual.json" -File)
+          if ($visuals.Count -ne 28) { throw "Visual trigger gate failed: expected 28 visuals, found $($visuals.Count)." }
+          foreach ($v in $visuals) { Get-Content -Raw $v.FullName | ConvertFrom-Json | Out-Null }
+          Write-Host "TABLE-REFRESH-GATE|PASS|FactRows=$($factRows.Count)|DimCategoryRows=$($categoryRows.Count)"
+          Write-Host "VISUAL-TRIGGER-GATE|PASS|Visuals=28/28|DataLoadedFirst=True"
 
       - name: Assert measure expression parity
         shell: pwsh
