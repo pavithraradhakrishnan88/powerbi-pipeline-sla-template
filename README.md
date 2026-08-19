@@ -84,6 +84,31 @@ Run the automated build:
 
 The automated build is not dependent on a CI installation of Tabular Editor. It materializes the authoritative measure definitions itself, while `GenerateMeasures.csx` remains the supported Tabular Editor 2.28 workflow for manual inspection/materialization.
 
+## PBIP artifact materialization for Desktop validation
+
+When validating a packaged/generated PBIP artifact locally, use the same materialization boundary used by CI. Run the PowerShell script from the extracted artifact directory, or pass the artifact directory explicitly:
+
+```powershell
+Set-Location "C:\path\to\extracted\artifact"
+powershell.exe -ExecutionPolicy Bypass -File ".\build\Materialize-PbipArtifact.ps1" -ArtifactRoot "C:\path\to\extracted\artifact"
+```
+
+If the script is already copied into the artifact directory, run:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File ".\Materialize-PbipArtifact.ps1" -ArtifactRoot "C:\path\to\extracted\artifact"
+```
+
+The script resolves the shared `DataFolder` expression, materializes CSV `File.Contents(...)` references to the artifact-local `data` directory, verifies the Fact and `Dim_Category` sources, rejects remaining runner-specific paths, rejects UTF-8 BOMs in TMDL, and emits the `DATA-MATERIALIZATION-GATE|PASS` result before Desktop validation.
+
+For the repository copy, the script is:
+
+```text
+build/Materialize-PbipArtifact.ps1
+```
+
+Do not modify `build.ps1`, PBIP generation, templates, report files, semantic-model generation, or artifact-integrity gates to perform this materialization. It is intentionally isolated to `Materialize-PbipArtifact.ps1`.
+
 ## Power BI Desktop validation
 
 Open:
