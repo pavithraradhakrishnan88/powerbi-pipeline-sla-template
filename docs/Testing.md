@@ -2,6 +2,19 @@
 
 Version 1 testing has two distinct layers: automated artifact/semantic validation and Power BI Desktop usability validation.
 
+## Current stabilization status
+
+The following previously pending issues are closed:
+
+- Required semantic-model template artifacts and platform metadata were restored so the authoritative PBIP opens correctly.
+- Artifact preparation preserves the report and semantic-model `.platform` files required by `PBIP-Build`.
+- Report generation is template-first; the authoritative report template is the test/reference path rather than a reduced synthetic visual fixture.
+- The exact 28/28 visual artifact gate remains enabled, and every published `visual.json` is parsed as JSON.
+- Empty/fake report-extension materialization was removed. `reportExtensions.json` is only present when the authoritative template contains a real extension definition.
+- The former `ModelAuthoringHostService.UpdateModelExtensions` Desktop error caused by the synthetic extension artifact is closed; current UAT reaches the usable report state with visuals loading and interactions working.
+
+The remaining known validation issue is limited to schema compatibility for the July 2026 Desktop `visualContainer/2.10.0` format: the authoritative template contains `visual.sortDefinition` and `visual.visualContainerObjects.columnHeaders`, while the analyzer reports them as additional properties. The intended fix is to allow exactly those properties for 2.10.0 while retaining strict `additionalProperties: false` elsewhere.
+
 ## 1. Prerequisites
 
 - Power BI Desktop
@@ -96,6 +109,10 @@ Verify:
 
 These Desktop checks cannot be proven solely by JSON parsing or semantic CI checks.
 
+### Known UAT/runtime outcome
+
+The previous extension-related Desktop failure is resolved. If Desktop reports `ModelAuthoringHostService.UpdateModelExtensions`, verify that no synthetic/empty `reportExtensions.json` was introduced. A real extension definition should come only from the authoritative template.
+
 ## 6. Release gate
 
 A Version 1 release is accepted only when:
@@ -109,6 +126,8 @@ PBIR                        PASS
 Published-artifact gate     PASS
 Power BI Desktop smoke test PASS
 ```
+
+The remaining schema-analyzer compatibility item must not be resolved by weakening these gates or modifying the authoritative visual files.
 
 ## 7. Troubleshooting
 
@@ -131,3 +150,7 @@ Inspect the named `visual.json` for malformed JSON or BOM content. The build int
 ### Desktop opens but visuals do not behave correctly
 
 Treat this as a Desktop UAT issue, not as proof that CI is wrong. Verify field bindings, slicer interactions, registered resources, and the published artifact in Power BI Desktop.
+
+### Analyzer reports `sortDefinition` or `columnHeaders` as additional properties
+
+These properties are present in the authoritative July 2026 Desktop template and are valid for its `visualContainer/2.10.0` format. Do not delete them, downgrade `$schema`, or disable additional-property validation globally. Update only the 2.10.0 compatibility definition to recognize these two properties.
