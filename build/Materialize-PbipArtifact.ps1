@@ -98,12 +98,17 @@ if (Test-Path $expressionsPath -PathType Leaf) {
 }
 
 # STEP 3: Detect runner absolute paths.
-# STEP 4: Normalize ONLY legitimate runner paths that point into the runner's data
-# directory. They are mapped to the extracted artifact's local data directory.
-# The strict RunnerPathPatterns gate below remains unchanged and will reject every
+# STEP 4: Normalize ONLY legitimate Windows runner paths that point into a data
+# directory. The matcher is intentionally anchored to a Windows drive root and
+# requires the path segment \data\ immediately before the CSV filename.
+# Examples accepted:
+#   D:\a\repo\repo\data\Dim_Category.csv
+#   C:\a\_work\repo\repo\data\Fact_Pipeline_SampleData.csv
+# The strict RunnerPathPatterns gate below remains unchanged and rejects every
 # runner path that is not normalized by this explicit data-file mapping.
-$runnerDataFilePattern = '(?i)(?:[A-Z]:\\(?:[^\r\n"\\]+\\)*(?:_work|a|actions)\\[^\r\n"]*?\\data\\)([^\\/\r\n"]+\.csv)'
-$runnerUnixDataFilePattern = '(?i)(?:/home/runner/[^\r\n"]*/data/)([^/\r\n"]+\.csv)'
+$runnerWindowsDataFilePattern = '(?i)(?<runnerRoot>[A-Z]:\\(?:[^\r\n"\\]+\\)*?)(?:_work\\[^\r\n"\\]+\\[^\r\n"\\]+\\|a\\[^\r\n"\\]+\\[^\r\n"\\]+\\|actions\\[^\r\n"\\]+\\)data\\(?<fileName>[^\\/\r\n"]+\.csv)'
+$runnerWindowsDataFilePatternSimple = '(?i)[A-Z]:\\(?:[^\r\n"\\]+\\)*data\\(?<fileName>[^\\/\r\n"]+\.csv)'
+$runnerUnixDataFilePattern = '(?i)(?:/home/runner/[^\r\n"]*/data/)(?<fileName>[^/\r\n"]+\.csv)'
 
 # STEP 5: Map placeholder paths and runner data paths, then resolve DataFolder-based
 # File.Contents expressions. No other runner path is permitted to be transformed.
@@ -114,13 +119,31 @@ foreach ($file in $tmdlFiles) {
     $text = [IO.File]::ReadAllText($file.FullName)
     $updated = $text
 
-    # Detect and normalize only runner-generated absolute paths under ...\data\*.csv.
+    # Normalize a legitimate GitHub-hosted Windows runner data path. The first
+    # matcher handles the standard GitHub Actions D:\a\<repo>\<repo>\data path;
+    # the simple matcher also handles equivalent C:\a\...\data paths. Both
+    # require a CSV filename directly under a data directory.
     $updated = [regex]::Replace(
         $updated,
-        $runnerDataFilePattern,
+        $runnerWindowsDataFilePattern,
         [System.Text.RegularExpressions.MatchEvaluator]{
             param($match)
-            $fileName = $match.Groups[1].Value
+            $fileName = $match.Groups['fileName'].Value
+            $targetPath = [IO.Path]::GetFullPath((Join-Path $DataRoot $fileName))
+            if (!(Test-Path $targetPath -PathType Leaf)) {
+                throw "Runner data-path normalization failed: '$fileName' was referenced by '$($file.FullName)' but '$targetPath' does not exist in the artifact data folder."
+            }
+            $script:runnerDataPathCount++
+            return $targetPath
+        }
+    )
+
+    $updated = [regex]::Replace(
+        $updated,
+        $runnerWindowsDataFilePatternSimple,
+        [System.Text.RegularExpressions.MatchEvaluator]{
+            param($match)
+            $fileName = $match.Groups['fileName'].Value
             $targetPath = [IO.Path]::GetFullPath((Join-Path $DataRoot $fileName))
             if (!(Test-Path $targetPath -PathType Leaf)) {
                 throw "Runner data-path normalization failed: '$fileName' was referenced by '$($file.FullName)' but '$targetPath' does not exist in the artifact data folder."
@@ -135,7 +158,7 @@ foreach ($file in $tmdlFiles) {
         $runnerUnixDataFilePattern,
         [System.Text.RegularExpressions.MatchEvaluator]{
             param($match)
-            $fileName = $match.Groups[1].Value
+            $fileName = $match.Groups['fileName'].Value
             $targetPath = [IO.Path]::GetFullPath((Join-Path $DataRoot $fileName))
             if (!(Test-Path $targetPath -PathType Leaf)) {
                 throw "Runner data-path normalization failed: '$fileName' was referenced by '$($file.FullName)' but '$targetPath' does not exist in the artifact data folder."
@@ -278,7 +301,3 @@ Write-Host "PlatformFiles=PASS" -ForegroundColor Green
 Write-Host "RunnerPaths=0"
 Write-Host "BomFiles=0"
 Write-Host "CsvExists=True"
-Write-Host "Materialize-PbipArtifact ........ PASS" -ForegroundColor Green
-
-# STEP 9 is owned by the workflow: only after this script exits successfully does
-# the separate table-refresh / visual-validation step begin.
