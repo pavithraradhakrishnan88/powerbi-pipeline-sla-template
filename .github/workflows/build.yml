@@ -154,6 +154,7 @@ jobs:
           path: artifacts/**
           if-no-files-found: error
           retention-days: 30
+          include-hidden-files: true
 
       - name: Upload Desktop validation tree
         if: success()
@@ -163,6 +164,7 @@ jobs:
           path: DesktopValidation/PBIP/**
           if-no-files-found: error
           retention-days: 30
+          include-hidden-files: true
 
       - name: Upload Logs on Failure
         if: failure()
