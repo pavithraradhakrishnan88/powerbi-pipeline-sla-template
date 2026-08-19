@@ -37,7 +37,7 @@
         "name": "slaExceptionsOnly",
         "field": {"Column":{"Expression":{"SourceRef":{"Entity":"Fact_Pipeline_SampleData"}},"Property":"SLAStatus"}},
         "type": "Categorical",
-        "filter": {"Version":2,"From":[{"Name":"f","Entity":"Fact_Pipeline_SampleData","Type":0}],"Where":[{"Condition":{"Not":{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"f"}},"Property":"SLAStatus"}}],"Values":[[{"Literal":{"Value":"'Met'"}}]]}}}}}]}
+        "filter": {"Version":2,"From":[{"Name":"f","Entity":"Fact_Pipeline_SampleData","Type":0}],"Where":[{"Condition":{"Not":{"Expression":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"f"}},"Property":"SLAStatus"}}],"Values":[[{"Literal":{"Value":"'Met'"}}]]}}}}}]}
       }
     ]
   }
