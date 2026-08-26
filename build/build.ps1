@@ -24,6 +24,23 @@ function Write-VisualBomDiagnostics {
     }
 }
 
+function Assert-CanonicalMeasureTable {
+    param([Parameter(Mandatory=$true)][string]$SemanticModelRoot)
+    $tablesRoot = Join-Path $SemanticModelRoot "definition\tables"
+    $canonicalPath = Join-Path $tablesRoot "_Measure Table.tmdl"
+    $legacyPath = Join-Path $tablesRoot "_Measures.tmdl"
+    if (Test-Path $legacyPath) { throw "Measure table validation failed: legacy '_Measures.tmdl' must not exist." }
+    if (!(Test-Path $canonicalPath -PathType Leaf)) { throw "Measure table validation failed: canonical '_Measure Table.tmdl' is missing." }
+    $canonicalText = Get-Content -Raw $canonicalPath
+    if ($canonicalText -notmatch "(?m)^table '_Measure Table'\s*$") { throw "Measure table validation failed: canonical artifact has the wrong table declaration." }
+    $modelPath = Join-Path $SemanticModelRoot "definition\model.tmdl"
+    if (!(Test-Path $modelPath -PathType Leaf)) { throw "Measure table validation failed: generated definition/model.tmdl is missing." }
+    $modelText = Get-Content -Raw $modelPath
+    if ($modelText -match "(?m)^ref table _Measures\s*$") { throw "Measure table validation failed: generated model.tmdl contains legacy '_Measures'." }
+    if ($modelText -notmatch "(?m)^ref table '_Measure Table'\s*$") { throw "Measure table validation failed: generated model.tmdl does not reference canonical '_Measure Table'." }
+    Write-Host "Measure-table gate passed: canonical _Measure Table present; legacy _Measures rejected."
+}
+
 function Assert-VisualJsonFiles {
     param([Parameter(Mandatory=$true)][string]$ReportRoot)
     $definitionRoot = Join-Path $ReportRoot "definition"
@@ -95,29 +112,32 @@ if ($dotnetExitCode -ne 0) { throw "Template-first .NET pipeline failed with exi
 
 if (!(Test-Path $generatedSemanticModelRoot -PathType Container)) { throw "Generated semantic model missing: $generatedSemanticModelRoot" }
 if (!(Test-Path $generatedReportRoot -PathType Container)) { throw "Generated report missing: $generatedReportRoot" }
+Assert-CanonicalMeasureTable -SemanticModelRoot $generatedSemanticModelRoot
 
 Write-Host "Validating generated semantic-model structure..."
 $factPath = Join-Path $generatedSemanticModelRoot "definition\tables\Fact_Pipeline_SampleData.tmdl"
 $expressionsPath = Join-Path $generatedSemanticModelRoot "definition\expressions.tmdl"
 $relationshipsPath = Join-Path $generatedSemanticModelRoot "definition\relationships.tmdl"
-$measuresPath = Join-Path $generatedSemanticModelRoot "definition\tables\_Measures.tmdl"
+$measuresPath = Join-Path $generatedSemanticModelRoot "definition\tables\_Measure Table.tmdl"
+$legacyMeasuresPath = Join-Path $generatedSemanticModelRoot "definition\tables\_Measures.tmdl"
 $measureDefinitionsPath = Join-Path $repoRoot "scripts\metadata\MeasureDefinitions.json"
 $dataFolderPath = [IO.Path]::GetFullPath((Join-Path $repoRoot "data"))
 if (!(Test-Path $factPath)) { throw "Generated semantic model is missing Fact_Pipeline_SampleData.tmdl." }
 if (!(Test-Path $measureDefinitionsPath)) { throw "Authoritative MeasureDefinitions.json is missing: $measureDefinitionsPath" }
-if (Test-Path $expressionsPath) { throw "Generated semantic model must not contain expressions.tmdl or a DataFolder Power BI parameter." }
-if (Test-Path $measuresPath) { throw "Generated semantic model must not contain _Measures.tmdl." }
+if (Test-Path $legacyMeasuresPath) { throw "Generated semantic model must not contain _Measures.tmdl." }
+if (!(Test-Path $measuresPath)) { throw "Generated semantic model is missing canonical _Measure Table.tmdl." }
+if (!(Test-Path $expressionsPath)) { throw "Generated semantic model is missing expressions.tmdl or the DataFolder Power BI parameter." }
 $factText = Get-Content -Raw $factPath
 $relationshipText = if (Test-Path $relationshipsPath) { Get-Content -Raw $relationshipsPath } else { "" }
+$measureText = Get-Content -Raw $measuresPath
 $measureMetadata = @(Get-Content -Raw $measureDefinitionsPath | ConvertFrom-Json).measures
 $expectedMeasureCount = $measureMetadata.Count
-$measureCount = ([regex]::Matches($factText,'(?m)^\s*measure\s+[^\r\n=]+\s*=')).Count
+$measureCount = ([regex]::Matches($measureText,'(?m)^\s*measure\s+[^\r\n=]+\s*=')).Count
 $relationshipCount = ([regex]::Matches($relationshipText,'(?m)^\s*relationship\s+')).Count
-Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|InlineMeasuresOnFact=$measureCount|ExpectedInlineMeasures=$expectedMeasureCount|Relationships=$relationshipCount|Expressions=0|Has_MeasuresTmdl=$([bool](Test-Path $measuresPath))"
-if ($measureCount -ne $expectedMeasureCount) { throw "Expected $expectedMeasureCount inline measures on Fact_Pipeline_SampleData from MeasureDefinitions.json; found $measureCount." }
+Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|Measures=$measureCount|ExpectedMeasures=$expectedMeasureCount|Relationships=$relationshipCount|Expressions=$([bool](Test-Path $expressionsPath))|Has_Legacy_MeasuresTmdl=$([bool](Test-Path $legacyMeasuresPath))"
+if ($measureCount -ne $expectedMeasureCount) { throw "Expected $expectedMeasureCount measures from MeasureDefinitions.json; found $measureCount in _Measure Table.tmdl." }
 if ($relationshipText -notmatch '(?s)relationship\s+[^\r\n]+\r?\n\s*fromColumn:\s*Fact_Pipeline_SampleData\.Category\r?\n\s*toColumn:\s*Dim_Category\.CategoryName') { throw "Expected Dim_Category[CategoryName] -> Fact_Pipeline_SampleData[Category] relationship is missing." }
 $expectedFactPath = $dataFolderPath + '\Fact_Pipeline_SampleData.csv'
-if ($factText -match 'DataFolder') { throw "Generated semantic model must not contain DataFolder references." }
 if ($factText -notmatch [regex]::Escape($expectedFactPath)) { throw "Generated Fact partition does not contain the build-time absolute data path '$expectedFactPath'." }
 if ($factText -match '(?i)[A-Z]:\\[^\r\n"]*\\_work\\|/home/runner/|/opt/hostedtoolcache/') { throw "Generated Fact partition contains a CI-runner-specific path pattern." }
 

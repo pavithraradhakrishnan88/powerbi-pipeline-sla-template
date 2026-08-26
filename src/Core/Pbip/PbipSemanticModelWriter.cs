@@ -88,7 +88,7 @@ Directory.CreateDirectory(culturesPath);
                 var relationshipFilePath = Path.Combine(definitionPath, "relationships.tmdl");
                 File.WriteAllText(relationshipFilePath, BuildRelationshipsTmdl(model.Relationships));
 
-            var measuresTablePath = Path.Combine(tablesPath, "_Measures.tmdl");
+            var measuresTablePath = Path.Combine(tablesPath, "_Measure Table.tmdl");
                 var measureDefinitionsPath = Path.Combine(
                 repositoryRootPath,
                 "scripts",
@@ -122,7 +122,7 @@ Directory.CreateDirectory(culturesPath);
                     builder.AppendLine($"ref table {SanitizeObjectName(table.Name)}");
                 }
 
-                builder.AppendLine("ref table _Measures");
+                builder.AppendLine("ref table '_Measure Table'");
                 builder.AppendLine();
                 builder.AppendLine("ref cultureInfo en-US");
                 return builder.ToString();
@@ -368,7 +368,7 @@ if (measures.Count != measureDefinitions.Count)
                 }
 
                 var builder = new StringBuilder();
-                builder.AppendLine("table _Measures");
+                builder.AppendLine("table '_Measure Table'");
                 builder.AppendLine();
 
                 foreach (var measure in measures)
@@ -402,7 +402,7 @@ builder.AppendLine(
                     builder.AppendLine();
                 }
 
-                builder.AppendLine("\tpartition _Measures = m");
+                builder.AppendLine("\tpartition '_Measure Table' = m");
                 builder.AppendLine("\t\tmode: import");
                 builder.AppendLine("\t\tsource =");
                 builder.AppendLine("\t\t\t\tlet");

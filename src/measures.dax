@@ -1,5 +1,5 @@
 // Pipeline SLA Tracker — DAX Measures
-// Place these in a measure table (e.g. _Measures) in Power BI Desktop
+// Place these in the canonical measure table (_Measure Table) in Power BI Desktop
 
 Actual Duration Hrs =
 DIVIDE(
@@ -12,7 +12,11 @@ IF([Actual Duration Hrs] > SELECTEDVALUE(Fact_Pipeline[SLA_Target_Hrs]), 1, 0)
 
 Total Pipelines = COUNTROWS(Fact_Pipeline)
 
-Breached Count = SUMX(Fact_Pipeline, [SLA Breach Flag])
+Breached Count =
+CALCULATE(
+    COUNTROWS(Fact_Pipeline),
+    Fact_Pipeline[SLAStatus] = "Missed"
+)
 
 SLA Compliance % =
 DIVIDE([Total Pipelines] - [Breached Count], [Total Pipelines])
