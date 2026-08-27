@@ -75,7 +75,7 @@ public class MeasureBuilderTests
     }
 
     [Fact]
-    public void PbipWriter_ShouldEmitMetadataDrivenMeasuresIntoTmdl()
+    public void PbipWriter_ShouldEmitMetadataDrivenMeasuresIntoCanonicalMeasureTable()
     {
         using var workspace = new TemporaryWorkspace();
         var pbipRoot = workspace.CreateDirectory("pbip");
@@ -85,13 +85,22 @@ public class MeasureBuilderTests
 
         writer.WriteSemanticModel(model, semanticModelPath);
 
-        var measuresPath = Path.Combine(semanticModelPath, "definition", "tables", "_Measures.tmdl");
+        var tablesPath = Path.Combine(semanticModelPath, "definition", "tables");
+        var measuresPath = Path.Combine(tablesPath, "_Measure Table.tmdl");
+        var legacyMeasuresPath = Path.Combine(tablesPath, "_Measures.tmdl");
+
         File.Exists(measuresPath).Should().BeTrue();
+        File.Exists(legacyMeasuresPath).Should().BeFalse();
 
         var content = File.ReadAllText(measuresPath);
+        content.Should().Contain("table '_Measure Table'");
         content.Should().Contain("measure 'SLA Breach %'");
         content.Should().Contain("measure 'Timeline Base'");
         content.Should().Contain("measure 'Floating Bar Duration'");
         content.Should().Contain("measure 'Average Runtime'");
+
+        var modelTmdl = File.ReadAllText(Path.Combine(semanticModelPath, "definition", "model.tmdl"));
+        modelTmdl.Should().Contain("ref table '_Measure Table'");
+        modelTmdl.Should().NotContain("ref table _Measures");
     }
 }
