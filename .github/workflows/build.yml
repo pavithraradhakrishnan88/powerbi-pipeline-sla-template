@@ -69,6 +69,12 @@ jobs:
           $ErrorActionPreference = "Stop"
           ./build/build.ps1
 
+      - name: Validate generated TMDL structural empty lines
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          ./build/Assert-TmdlNoInvalidEmptyLines.ps1 -PbipRoot "${{ github.workspace }}\BuildResult\PBIP"
+
       - name: Prepare Desktop-consumable artifact
         shell: pwsh
         run: |
