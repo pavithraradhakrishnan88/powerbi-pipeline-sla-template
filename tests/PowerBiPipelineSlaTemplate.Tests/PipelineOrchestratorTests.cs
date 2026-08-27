@@ -60,6 +60,21 @@ public class PipelineOrchestratorTests
         factText.Should().NotContain("measure 'SLA Breach Color'");
         factText.Should().Contain("partition Fact_Pipeline_SampleData = m");
 
+        var partitionLine = "\tpartition Fact_Pipeline_SampleData = m";
+        var partitionIndex = factText.IndexOf(partitionLine, StringComparison.Ordinal);
+        partitionIndex.Should().BeGreaterThanOrEqualTo(0, "the Fact partition must be a direct child of the table");
+        factText.Should().NotContain("\npartition Fact_Pipeline_SampleData = m", "the Fact partition must not be root-level");
+        factText.Should().Contain("\t\tmode: import", "partition mode must be a direct child of the partition");
+        factText.Should().Contain("\t\tsource =", "partition source must be a direct child of the partition");
+
+        var modeIndex = factText.IndexOf("\t\tmode: import", partitionIndex, StringComparison.Ordinal);
+        var sourceIndex = factText.IndexOf("\t\tsource =", partitionIndex, StringComparison.Ordinal);
+        modeIndex.Should().BeGreaterThan(partitionIndex);
+        sourceIndex.Should().BeGreaterThan(partitionIndex);
+        factText.Should().NotContain("\n\tmode: import", "partition mode must not be at table scope");
+        factText.Should().NotContain("\n\tsource =", "partition source must not be at table scope");
+        factText.Should().Contain("File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\")");
+
         var modelText = File.ReadAllText(Path.Combine(fixture.SemanticModelRootPath, "definition", "model.tmdl"));
         modelText.Should().Contain("ref table '_Measure Table'");
         modelText.Should().NotContain("ref table _Measures");
