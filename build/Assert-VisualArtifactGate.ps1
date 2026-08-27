@@ -52,6 +52,42 @@ function Test-AllowedMeasureTransformation {
     return $false
 }
 
+function Copy-JsonNode {
+    param($Node)
+    if ($null -eq $Node) { return $null }
+    if ($Node -is [System.Collections.IDictionary]) {
+        $copy = [ordered]@{}
+        foreach ($key in $Node.Keys) { $copy[[string]$key] = Copy-JsonNode $Node[$key] }
+        return $copy
+    }
+    if ($Node -is [System.Array]) {
+        $copy = New-Object System.Collections.Generic.List[object]
+        foreach ($item in $Node) { [void]$copy.Add((Copy-JsonNode $item)) }
+        return ,$copy.ToArray()
+    }
+    $Node
+}
+
+function Normalize-KnownMeasureObject {
+    param(
+        $Node,
+        [Parameter(Mandatory=$true)][System.Collections.Generic.HashSet[string]]$MeasureNames
+    )
+    if ($null -eq $Node -or $Node -isnot [System.Collections.IDictionary]) { return $Node }
+    if (!$Node.Contains('Expression')) { return $Node }
+    $expression = $Node['Expression']
+    if ($expression -isnot [System.Collections.IDictionary] -or !$expression.Contains('SourceRef')) { return $Node }
+    $sourceRef = $expression['SourceRef']
+    if ($sourceRef -isnot [System.Collections.IDictionary] -or !$sourceRef.Contains('Entity') -or !$sourceRef.Contains('Property')) { return $Node }
+    $property = [string]$sourceRef['Property']
+    if (!$MeasureNames.Contains($property)) { return $Node }
+    $entity = [string]$sourceRef['Entity']
+    if ($entity -notin @('_Measures','Fact_Pipeline_SampleData','_Measure Table')) { return $Node }
+    $normalized = Copy-JsonNode $Node
+    $normalized['Expression']['SourceRef']['Entity'] = '_Measure Table'
+    return $normalized
+}
+
 function Convert-JsonNode {
     param($Node)
     if ($null -eq $Node) { return $null }
@@ -80,6 +116,14 @@ function Compare-JsonNode {
         if ($null -ne $TemplateNode -or $null -ne $GeneratedNode) { $differences.Add(("{0}: value differs (template={1}; generated={2})" -f $Path,$TemplateNode,$GeneratedNode)) }
         return $differences
     }
+
+    # Normalize only the complete PBIR Measure object. Generic SourceRef.Entity
+    # values are never normalized because they lack the exact measure identity.
+    if ($Path -match '\.Measure$' -and $TemplateNode -is [System.Collections.IDictionary] -and $GeneratedNode -is [System.Collections.IDictionary]) {
+        $TemplateNode = Normalize-KnownMeasureObject $TemplateNode $MeasureNames
+        $GeneratedNode = Normalize-KnownMeasureObject $GeneratedNode $MeasureNames
+    }
+
     if ($TemplateNode -is [string] -and $GeneratedNode -is [string]) {
         if ($TemplateNode -ne $GeneratedNode -and !(Test-AllowedMeasureTransformation $TemplateNode $GeneratedNode $MeasureNames)) { $differences.Add(("{0}: string differs (template='{1}'; generated='{2}')" -f $Path,$TemplateNode,$GeneratedNode)) }
         return $differences
