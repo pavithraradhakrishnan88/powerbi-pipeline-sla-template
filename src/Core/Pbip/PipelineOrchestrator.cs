@@ -81,6 +81,9 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var dataFolder = Path.GetFullPath(options.DataDirectoryPath);
             var writer = new TemplateSemanticModelWriter();
             writer.Write(options.SemanticModelTemplateRootPath, options.SemanticModelRootPath, dataFolder, model, options.Logger);
+            var repositoryRoot = Directory.GetParent(Path.GetFullPath(options.SemanticModelTemplateRootPath))?.Parent?.FullName;
+            if (string.IsNullOrWhiteSpace(repositoryRoot)) throw new InvalidOperationException("Could not resolve repository root for canonical measure materialization.");
+            CanonicalMeasureTableMaterializer.Materialize(options.SemanticModelRootPath, repositoryRoot, options.Logger);
         }
 
         private static void WriteReport(PipelineOptions options) => new PbirReportWriter().WriteFromTemplate(options.ReportTemplateRootPath, options.ReportRootPath, options.SemanticModelRelativePath);
