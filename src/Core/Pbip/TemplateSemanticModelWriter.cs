@@ -29,10 +29,6 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             LogScheduledStartRelationshipDiagnostics(outputRoot, logger);
             TemplateSemanticModelMetadataPatcher.Patch(model, outputRoot, repositoryRootPath, logger);
             NormalizeGeneratedTmdl(outputRoot, logger);
-
-            // Preserve the authoritative template's partition/source expressions exactly.
-            // The last-known-good template does not use a DataFolder parameter, so this
-            // writer deliberately does not inject, rewrite, or require expressions.tmdl.
             LogDiagnostics(outputRoot, "after-template-metadata-patch", logger);
         }
 
@@ -50,10 +46,10 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var start = text.IndexOf($"relationship {relationshipId}", StringComparison.Ordinal);
             var end = start >= 0 ? text.IndexOf("relationship ", start + 1, StringComparison.Ordinal) : -1;
             var block = start >= 0 ? text[start..(end >= 0 ? end : text.Length)].TrimEnd('\r', '\n') : "<NOT FOUND>";
-            logger?.Invoke($"TMDL-RELATIONSHIP-DIAGNOSTIC|Path={path}|Exists={exists}|Size={size}|Newline={newline}");
-            logger?.Invoke($"TMDL-RELATIONSHIP-DIAGNOSTIC|ScheduledStartBlock={block.Replace("\r", "\\r", StringComparison.Ordinal).Replace("\n", "\\n", StringComparison.Ordinal)}");
-            logger?.Invoke($"TMDL-RELATIONSHIP-DIAGNOSTIC|Pattern={pattern}");
-            logger?.Invoke($"TMDL-RELATIONSHIP-DIAGNOSTIC|IsMatch={match}");
+            Console.WriteLine($"TMDL-RELATIONSHIP-DIAGNOSTIC|Path={path}|Exists={exists}|Size={size}|Newline={newline}");
+            Console.WriteLine($"TMDL-RELATIONSHIP-DIAGNOSTIC|ScheduledStartBlock={block.Replace("\r", "\\r", StringComparison.Ordinal).Replace("\n", "\\n", StringComparison.Ordinal)}");
+            Console.WriteLine($"TMDL-RELATIONSHIP-DIAGNOSTIC|Pattern={pattern}");
+            Console.WriteLine($"TMDL-RELATIONSHIP-DIAGNOSTIC|IsMatch={match}");
         }
 
         private static void NormalizeGeneratedTmdl(string semanticModelRootPath, Action<string>? logger)
@@ -81,21 +77,16 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 if (File.Exists(Path.Combine(directory.FullName, "scripts", "metadata", "MeasureDefinitions.json"))) return directory.FullName;
                 directory = directory.Parent;
             }
-            throw new DirectoryNotFoundException($"Could not locate repository root from template path '{startingPath}'.");
+            throw new DirectoryNotFoundException($"Could not locate repository root containing scripts/metadata/MeasureDefinitions.json above template path '{startingPath}'.");
         }
 
-        private static void CopyDirectoryRecursively(string source, string destination)
-        {
-            Directory.CreateDirectory(destination);
-            foreach (var directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories)) Directory.CreateDirectory(directory.Replace(source, destination, StringComparison.OrdinalIgnoreCase));
-            foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories)) { var target = file.Replace(source, destination, StringComparison.OrdinalIgnoreCase); Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Copy(file, target, true); }
-        }
+        private static void CopyDirectoryRecursively(string source, string destination) { Directory.CreateDirectory(destination); foreach (var directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories)) Directory.CreateDirectory(directory.Replace(source, destination, StringComparison.OrdinalIgnoreCase)); foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories)) { var target = file.Replace(source, destination, StringComparison.OrdinalIgnoreCase); Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Copy(file, target, true); } }
 
-        private static void LogDiagnostics(string root, string phase, Action<string>? logger)
+        private static void LogDiagnostics(string root, string stage, Action<string>? logger)
         {
-            if (logger is null) return;
-            var definition = Path.Combine(root, "definition");
-            logger($"SEMANTIC-MODEL-WRITER|Phase={phase}|DefinitionExists={Directory.Exists(definition)}");
+            var definition = Path.Combine(root, "definition"); var tables = Path.Combine(definition, "tables"); var fact = Path.Combine(tables, "Fact_Pipeline_SampleData.tmdl"); var relationships = Path.Combine(definition, "relationships.tmdl"); var expressions = Path.Combine(definition, "expressions.tmdl"); var measures = Path.Combine(tables, "_Measures.tmdl");
+            var tableCount = Directory.Exists(tables) ? Directory.GetFiles(tables, "*.tmdl", SearchOption.TopDirectoryOnly).Length : 0; var relationshipCount = File.Exists(relationships) ? RelationshipRegex.Matches(File.ReadAllText(relationships, Encoding.UTF8)).Count : 0; var inlineMeasureCount = File.Exists(fact) ? MeasureRegex.Matches(File.ReadAllText(fact, Encoding.UTF8)).Count : 0; var expressionCount = File.Exists(expressions) ? Regex.Matches(File.ReadAllText(expressions, Encoding.UTF8), @"(?m)^\s*expression\s+").Count : 0;
+            logger?.Invoke($"SEMANTIC-MODEL-DIAG|Stage={stage}|Tables={tableCount}|InlineMeasuresOnFact={inlineMeasureCount}|Relationships={relationshipCount}|Expressions={expressionCount}|Has_MeasuresTmdl={File.Exists(measures)}");
         }
     }
 }
