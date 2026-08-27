@@ -74,6 +74,26 @@ function Normalize-DefinitionSchema {
     [IO.File]::WriteAllText($Path,$json,[Text.UTF8Encoding]::new($false))
 }
 
+function Normalize-GeneratedTmdl {
+    param([Parameter(Mandatory=$true)][string]$SemanticModelRoot)
+    $definition = Join-Path $SemanticModelRoot "definition"
+    if (!(Test-Path $definition -PathType Container)) { return }
+    $files = @(Get-ChildItem $definition -Recurse -Filter '*.tmdl' -File | Sort-Object FullName)
+    foreach ($file in $files) {
+        $text = [IO.File]::ReadAllText($file.FullName, [Text.UTF8Encoding]::new($false))
+        $newline = if ($text.Contains("`r`n", [StringComparison]::Ordinal)) { "`r`n" } else { "`n" }
+        $normalized = [Regex]::Replace(
+            $text,
+            "(?:\\r?\\n[ \\t]*)+(?=[ \\t]*partition\\s+\\S+\\s*=)",
+            $newline,
+            [Text.RegularExpressions.RegexOptions]::CultureInvariant)
+        if ($normalized -ne $text) {
+            [IO.File]::WriteAllText($file.FullName, $normalized, [Text.UTF8Encoding]::new($false))
+            Write-Host "TMDL-FINAL-NORMALIZE|RemovedInvalidEmptyLineBeforePartition|File=$($file.FullName)"
+        }
+    }
+}
+
 function Materialize-ArtifactDataPath {
     param([Parameter(Mandatory=$true)][string]$ArtifactRoot,[Parameter(Mandatory=$true)][string]$BuildDataPath)
     $placeholder = 'C:\__PBIP_ARTIFACT_ROOT__'
@@ -142,6 +162,9 @@ Write-VisualBomDiagnostics -Stage "after-dotnet-regeneration" -ReportRoot $gener
 Assert-PbirDefinition -ReportRoot $generatedReportRoot -SemanticModelRoot $generatedSemanticModelRoot
 Assert-VisualJsonFiles -ReportRoot $generatedReportRoot
 Write-VisualBomDiagnostics -Stage "final-buildresult" -ReportRoot $generatedReportRoot
+
+Write-Host "Finalizing generated TMDL before artifact packaging and structural validation..."
+Normalize-GeneratedTmdl -SemanticModelRoot $generatedSemanticModelRoot
 
 $artifactPath = Join-Path $repoRoot "artifacts"
 if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
