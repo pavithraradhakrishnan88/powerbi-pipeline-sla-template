@@ -116,7 +116,6 @@ Assert-CanonicalMeasureTable -SemanticModelRoot $generatedSemanticModelRoot
 
 Write-Host "Validating generated semantic-model structure..."
 $factPath = Join-Path $generatedSemanticModelRoot "definition\tables\Fact_Pipeline_SampleData.tmdl"
-$expressionsPath = Join-Path $generatedSemanticModelRoot "definition\expressions.tmdl"
 $relationshipsPath = Join-Path $generatedSemanticModelRoot "definition\relationships.tmdl"
 $measuresPath = Join-Path $generatedSemanticModelRoot "definition\tables\_Measure Table.tmdl"
 $legacyMeasuresPath = Join-Path $generatedSemanticModelRoot "definition\tables\_Measures.tmdl"
@@ -126,7 +125,6 @@ if (!(Test-Path $factPath)) { throw "Generated semantic model is missing Fact_Pi
 if (!(Test-Path $measureDefinitionsPath)) { throw "Authoritative MeasureDefinitions.json is missing: $measureDefinitionsPath" }
 if (Test-Path $legacyMeasuresPath) { throw "Generated semantic model must not contain _Measures.tmdl." }
 if (!(Test-Path $measuresPath)) { throw "Generated semantic model is missing canonical _Measure Table.tmdl." }
-if (!(Test-Path $expressionsPath)) { throw "Generated semantic model is missing expressions.tmdl or the DataFolder Power BI parameter." }
 $factText = Get-Content -Raw $factPath
 $relationshipText = if (Test-Path $relationshipsPath) { Get-Content -Raw $relationshipsPath } else { "" }
 $measureText = Get-Content -Raw $measuresPath
@@ -134,11 +132,9 @@ $measureMetadata = @(Get-Content -Raw $measureDefinitionsPath | ConvertFrom-Json
 $expectedMeasureCount = $measureMetadata.Count
 $measureCount = ([regex]::Matches($measureText,'(?m)^\s*measure\s+[^\r\n=]+\s*=')).Count
 $relationshipCount = ([regex]::Matches($relationshipText,'(?m)^\s*relationship\s+')).Count
-Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|Measures=$measureCount|ExpectedMeasures=$expectedMeasureCount|Relationships=$relationshipCount|Expressions=$([bool](Test-Path $expressionsPath))|Has_Legacy_MeasuresTmdl=$([bool](Test-Path $legacyMeasuresPath))"
+Write-Host "SEMANTIC-MODEL-DIAG|Stage=build-validation|Tables=$(@(Get-ChildItem (Join-Path $generatedSemanticModelRoot 'definition\tables') -Filter '*.tmdl').Count)|Measures=$measureCount|ExpectedMeasures=$expectedMeasureCount|Relationships=$relationshipCount|Expressions=False|Has_Legacy_MeasuresTmdl=$([bool](Test-Path $legacyMeasuresPath))"
 if ($measureCount -ne $expectedMeasureCount) { throw "Expected $expectedMeasureCount measures from MeasureDefinitions.json; found $measureCount in _Measure Table.tmdl." }
 if ($relationshipText -notmatch '(?s)relationship\s+[^\r\n]+\r?\n\s*fromColumn:\s*Fact_Pipeline_SampleData\.Category\r?\n\s*toColumn:\s*Dim_Category\.CategoryName') { throw "Expected Dim_Category[CategoryName] -> Fact_Pipeline_SampleData[Category] relationship is missing." }
-$expectedFactPath = $dataFolderPath + '\Fact_Pipeline_SampleData.csv'
-if ($factText -notmatch [regex]::Escape($expectedFactPath)) { throw "Generated Fact partition does not contain the build-time absolute data path '$expectedFactPath'." }
 if ($factText -match '(?i)[A-Z]:\\[^\r\n"]*\\_work\\|/home/runner/|/opt/hostedtoolcache/') { throw "Generated Fact partition contains a CI-runner-specific path pattern." }
 
 Normalize-DefinitionSchema -Path (Join-Path $generatedReportRoot "definition.pbir")
@@ -166,4 +162,4 @@ if ($LASTEXITCODE -ne 0) { throw "Artifact integrity gate failed with exit code 
 & "$PSScriptRoot\Assert-VisualArtifactGate.ps1" -BuildRoot $artifactPath
 if ($LASTEXITCODE -ne 0) { throw "Published visual artifact gate failed with exit code $LASTEXITCODE." }
 
-Write-Host "Build complete. Main template remains untouched; CI generated PBIP uses the build-time absolute path only during validation, while the packaged Desktop artifact contains no CI-runner path and is materialized locally after extraction."
+Write-Host "Build complete. Main template remains untouched; CI generated PBIP preserves the template's partition/source expressions, and the packaged Desktop artifact contains no CI-runner path."
