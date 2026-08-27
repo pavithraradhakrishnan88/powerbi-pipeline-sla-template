@@ -53,28 +53,32 @@ internal static class PbirMeasureReferenceMigrator
             if (obj["Measure"] is JsonObject measure && measure["Expression"] is JsonObject expression && expression["SourceRef"] is JsonObject sourceRef)
             {
                 var entity = sourceRef["Entity"]?.GetValue<string>(); var property = measure["Property"]?.GetValue<string>();
-                if (!string.IsNullOrWhiteSpace(entity) && !string.IsNullOrWhiteSpace(property))
+                if (!string.IsNullOrWhiteSpace(entity) && !string.IsNullOrWhiteSpace(property) &&
+                    TryResolveKnownMeasure(entity!, property!, measures, out var canonicalName))
                 {
-                    var mappedProperty = ResolveMeasureName(property!);
-                    if (IsMeasureTableAlias(entity!))
-                    {
-                        sourceRef["Entity"] = GeneratedMeasuresTable;
-                        measure["Property"] = mappedProperty;
-                        changed = !string.Equals(entity, GeneratedMeasuresTable, StringComparison.OrdinalIgnoreCase) || !string.Equals(property, mappedProperty, StringComparison.Ordinal);
-                    }
-                    ValidateMeasureReference(visualPath, GeneratedMeasuresTable, mappedProperty, measures, errors);
+                    sourceRef["Entity"] = GeneratedMeasuresTable;
+                    measure["Property"] = canonicalName;
+                    changed = !string.Equals(entity, GeneratedMeasuresTable, StringComparison.OrdinalIgnoreCase) || !string.Equals(property, canonicalName, StringComparison.Ordinal);
+                    ValidateMeasureReference(visualPath, GeneratedMeasuresTable, canonicalName, measures, errors);
                 }
             }
+
             foreach (var property in obj.ToList())
             {
                 var value = property.Value; if (value is null) continue;
                 if (property.Key is "queryRef" or "nativeQueryRef" or "metadata")
                 {
                     var text = value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : null;
-                    if (!string.IsNullOrWhiteSpace(text) && TryParseMeasureReference(text!, out var table, out var name) && IsMeasureTableAlias(table))
+                    if (!string.IsNullOrWhiteSpace(text) && TryParseMeasureReference(text!, out var table, out var name) &&
+                        TryResolveKnownMeasure(table, name, measures, out var canonicalName))
                     {
-                        obj[property.Key] = $"{GeneratedMeasuresTable}.{ResolveMeasureName(name)}";
-                        changed = true;
+                        var canonicalReference = $"{GeneratedMeasuresTable}.{canonicalName}";
+                        if (!string.Equals(text, canonicalReference, StringComparison.Ordinal))
+                        {
+                            obj[property.Key] = canonicalReference;
+                            changed = true;
+                        }
+                        ValidateMeasureReference(visualPath, GeneratedMeasuresTable, canonicalName, measures, errors);
                         continue;
                     }
                 }
@@ -86,6 +90,17 @@ internal static class PbirMeasureReferenceMigrator
             foreach (var item in array) if (item is not null && MigrateNode(item, visualPath, errors, measures)) changed = true;
         }
         return changed;
+    }
+
+    /// <summary>
+    /// Resolves only an exact known measure. A table alias by itself is not sufficient:
+    /// ordinary Fact_Pipeline_SampleData columns must remain byte-for-byte semantically unchanged.
+    /// </summary>
+    private static bool TryResolveKnownMeasure(string table, string name, HashSet<(string Table, string Measure)> measures, out string canonicalName)
+    {
+        canonicalName = ResolveMeasureName(name);
+        if (!IsMeasureTableAlias(table)) return false;
+        return measures.Contains((GeneratedMeasuresTable, canonicalName));
     }
 
     private static bool IsMeasureTableAlias(string entity) =>
