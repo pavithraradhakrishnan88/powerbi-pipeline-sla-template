@@ -31,7 +31,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         private static readonly IReadOnlyDictionary<string, string> DateVariationRelationships =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                ["ScheduledStart"] = "db2083da-0a18-4176-ab57-a096ce539554",
+                ["ScheduledStart"] = "db2083da-0a18-4172-ab57-a096ce539554",
                 ["ActualStart"] = "c7324c3f-573c-4a3b-9563-7a1dcc4b99a3",
                 ["ScheduledEnd"] = "5fcd5823-e6b0-472e-bf09-57997645718c",
                 ["ActualEnd"] = "6bbc152f-49b4-4e1a-ad36-e50fd87530d8"
@@ -242,8 +242,25 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 return;
             }
 
-            const string partition = "\n\tpartition Fact_Pipeline_SampleData = m\n\t\tmode: import\n\t\tsource =\n\t\t\t\tlet\n\t\t\t\t  Source = Csv.Document(File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\"), [Delimiter = \",\", Columns = 17, QuoteStyle = QuoteStyle.None]),\n\t\t\t\t  #\"Promoted headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),\n\t\t\t\t  #\"Changed column type\" = Table.TransformColumnTypes(#\"Promoted headers\", {{\"PipelineID\", Int64.Type}, {\"PipelineName\", type text}, {\"Category\", type text}, {\"Status\", type text}, {\"ScheduledStart\", type datetime}, {\"ActualStart\", type datetime}, {\"ScheduledEnd\", type datetime}, {\"ActualEnd\", type datetime}, {\"SLAHours\", type number}, {\"DurationHours\", type number}, {\"StartDelayMinutes\", Int64.Type}, {\"EndDelayMinutes\", Int64.Type}, {\"SLAStatus\", type text}, {\"Environment\", type text}, {\"Owner\", type text}, {\"Region\", type text}, {\"RetryCount\", Int64.Type}})\n\t\t\t\tin\n\t\t\t\t  #\"Changed column type\"\n\n\tannotation PBI_NavigationStepName = Navigation\n\n\tannotation PBI_ResultType = Table\n";
-            File.WriteAllText(factPath, text.TrimEnd('\r', '\n') + partition, new UTF8Encoding(false));
+            var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+            var insertionIndex = text.Length;
+
+            // Keep the partition inside the table, immediately after its
+            // existing table children. Do not reconstruct the document.
+            var partitionBlock =
+                newline +
+                $"{TableIndent}partition {FactTable} = m" + newline +
+                $"{PartitionChildIndent}mode: import" + newline +
+                $"{PartitionChildIndent}source =" + newline +
+                $"{PartitionSourceIndent}let" + newline +
+                $"{PartitionSourceIndent}  Source = Csv.Document(File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\"), [Delimiter = \",\", Columns = 17, QuoteStyle = QuoteStyle.None])," + newline +
+                $"{PartitionSourceIndent}  #\"Promoted headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars = true])," + newline +
+                $"{PartitionSourceIndent}  #\"Changed column type\" = Table.TransformColumnTypes(#\"Promoted headers\", {{\"PipelineID\", Int64.Type}, {{\"PipelineName\", type text}}, {{\"Category\", type text}}, {{\"Status\", type text}}, {{\"ScheduledStart\", type datetime}}, {{\"ActualStart\", type datetime}}, {{\"ScheduledEnd\", type datetime}}, {{\"ActualEnd\", type datetime}}, {{\"SLAHours\", type number}}, {{\"DurationHours\", type number}}, {{\"StartDelayMinutes\", Int64.Type}}, {{\"EndDelayMinutes\", Int64.Type}}, {{\"SLAStatus\", type text}}, {{\"Environment\", type text}}, {{\"Owner\", type text}}, {{\"Region\", type text}}, {{\"RetryCount\", Int64.Type}})" + newline +
+                $"{PartitionSourceIndent}in" + newline +
+                $"{PartitionSourceIndent}  #\"Changed column type\"" + newline;
+
+            text = text.Insert(insertionIndex, partitionBlock);
+            File.WriteAllText(factPath, text, new UTF8Encoding(false));
             logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|Added|DataFolder");
         }
 
