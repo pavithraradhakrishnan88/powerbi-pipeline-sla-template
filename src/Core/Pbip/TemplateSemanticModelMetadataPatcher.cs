@@ -60,9 +60,38 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             PatchDateVariations(factPath, relationshipsPath, logger);
             PatchMeasures(factPath, measureDefinitionsPath, logger);
             EnsureFactPartition(factPath, logger);
+            NormalizeTmdlStructuralBlankLines(factPath, logger);
             PatchCategoryRelationship(relationshipsPath, logger);
             RemoveLegacyMeasuresTable(tables, modelPath, logger);
             RemoveDanglingMeasureTableAnnotation(modelPath, expressionsPath, logger);
+        }
+
+        private static string NormalizeTmdlStructuralBlankLines(string factPath, Action<string>? logger)
+        {
+            var text = File.ReadAllText(factPath, Encoding.UTF8);
+            var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+
+            // Power BI Desktop 2.156.951.0 reports InvalidLineType/Empty when a
+            // blank TMDL line occurs immediately before the partition declaration.
+            // Normalize only this known-invalid structural boundary; preserve all
+            // other intentional TMDL whitespace and formatting.
+            var normalized = Regex.Replace(
+                text,
+                "(?:\r?\n)[ \t]*(?:\r?\n)(?=[ \t]*partition\\s+Fact_Pipeline_SampleData\\s*=)",
+                newline,
+                RegexOptions.CultureInvariant);
+
+            if (!string.Equals(text, normalized, StringComparison.Ordinal))
+            {
+                File.WriteAllText(factPath, normalized, new UTF8Encoding(false));
+                logger?.Invoke($"SEMANTIC-MODEL-PATCH|TmdlNormalize|RemovedInvalidEmptyLineBeforePartition|Table={FactTable}");
+            }
+            else
+            {
+                logger?.Invoke($"SEMANTIC-MODEL-PATCH|TmdlNormalize|NoInvalidEmptyLineBeforePartition|Table={FactTable}");
+            }
+
+            return normalized;
         }
 
         private static void PatchColumns(ModelBuildResult model, string factPath, Action<string>? logger)
