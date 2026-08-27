@@ -20,33 +20,21 @@ public sealed class PipelineTestFixture : IDisposable
         var pbipRoot = _workspace.CreateDirectory("pbip");
         var repoRoot = WorkspacePaths.FindRepoRoot();
 
-        var sourceMeasureDefinitionsPath = Path.Combine(
-            repoRoot,
-            "scripts",
-            "metadata",
-            "MeasureDefinitions.json");
-
-        var destinationMeasureDefinitionsPath = _workspace.GetPath(
-            Path.Combine("scripts", "metadata", "MeasureDefinitions.json"));
-
+        var sourceMeasureDefinitionsPath = Path.Combine(repoRoot, "scripts", "metadata", "MeasureDefinitions.json");
+        var destinationMeasureDefinitionsPath = _workspace.GetPath(Path.Combine("scripts", "metadata", "MeasureDefinitions.json"));
         Directory.CreateDirectory(Path.GetDirectoryName(destinationMeasureDefinitionsPath)!);
         File.Copy(sourceMeasureDefinitionsPath, destinationMeasureDefinitionsPath, overwrite: true);
 
-        var sourceReportTemplatePath = Path.Combine(
-            repoRoot,
-            "pbip",
-            "Pipeline_SLA_Tracker.Report");
-
+        var sourceReportTemplatePath = Path.Combine(repoRoot, "pbip", "Pipeline_SLA_Tracker.Report");
         ReportTemplateRootPath = Path.Combine(pbipRoot, "Pipeline_SLA_Tracker.Report");
         CopyDirectory(sourceReportTemplatePath, ReportTemplateRootPath);
 
-        var sourceSemanticModelTemplatePath = Path.Combine(
-            repoRoot,
-            "pbip",
-            "Pipeline_SLA_Tracker.SemanticModel");
-
+        var sourceSemanticModelTemplatePath = Path.Combine(repoRoot, "pbip", "Pipeline_SLA_Tracker.SemanticModel");
         SemanticModelTemplateRootPath = Path.Combine(pbipRoot, "Pipeline_SLA_Tracker.SemanticModel");
         CopyDirectory(sourceSemanticModelTemplatePath, SemanticModelTemplateRootPath);
+
+        // Fixture-boundary diagnostics: capture the exact relationships.tmdl that will be
+        // supplied to the orchestrator before PatchDateVariations() consumes it.
         EmitScheduledStartRelationshipDiagnostics(
             Path.Combine(SemanticModelTemplateRootPath, "definition", "relationships.tmdl"));
 
@@ -75,10 +63,7 @@ public sealed class PipelineTestFixture : IDisposable
     public string ReportTemplateRootPath { get; }
     public string MetadataOutputPath { get; }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-    }
+    public void Dispose() => _workspace.Dispose();
 
     private static void EmitScheduledStartRelationshipDiagnostics(string relationshipsPath)
     {
@@ -117,30 +102,26 @@ public sealed class PipelineTestFixture : IDisposable
             Console.WriteLine("TMDL-RELATIONSHIP-DIAGNOSTIC|ScheduledStartBlock=NOT_FOUND");
         }
 
-        var relationshipPattern = $"relationship[ \\t]+{Regex.Escape(relationshipId)}[ \\t]+\\r?\\n[ \\t]*joinOnDateBehavior:[ \\t]*datePartOnly[ \\t]*\\r?\\n[ \\t]*fromColumn:[ \\t]*{Regex.Escape(factTable)}\\.{Regex.Escape(columnName)}[ \\t]*\\r?\\n[ \\t]*toColumn:[ \\t]*{Regex.Escape(localDateTable)}\\.Date";
+        // Mirror the known-good PatchDateVariations() matcher exactly so the diagnostic
+        // reports the same expression being evaluated by production code.
+        var relationshipPattern = $"relationship\\s+{Regex.Escape(relationshipId)}\\s+\\r?\\n" +
+            "\\s*joinOnDateBehavior:\\s*datePartOnly\\s+\\r?\\n" +
+            "\\s*fromColumn:\\s*" + Regex.Escape(factTable) + "\\." + Regex.Escape(columnName) + "\\s+\\r?\\n" +
+            "\\s*toColumn:\\s*" + Regex.Escape(localDateTable) + "\\.Date";
         Console.WriteLine($"TMDL-RELATIONSHIP-DIAGNOSTIC|RegexPattern={relationshipPattern}");
         Console.WriteLine($"TMDL-RELATIONSHIP-DIAGNOSTIC|RegexIsMatch={Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant)}");
     }
 
     private static void CopyDirectory(string sourcePath, string destinationPath)
     {
-        if (!Directory.Exists(sourcePath))
-        {
-            throw new DirectoryNotFoundException($"Source directory was not found: {sourcePath}");
-        }
-
+        if (!Directory.Exists(sourcePath)) throw new DirectoryNotFoundException($"Source directory was not found: {sourcePath}");
         Directory.CreateDirectory(destinationPath);
-
         foreach (var sourceFile in Directory.GetFiles(sourcePath, "*", SearchOption.AllDirectories))
         {
             var relativePath = Path.GetRelativePath(sourcePath, sourceFile);
             var destinationFile = Path.Combine(destinationPath, relativePath);
             var destinationDirectory = Path.GetDirectoryName(destinationFile);
-            if (!string.IsNullOrWhiteSpace(destinationDirectory))
-            {
-                Directory.CreateDirectory(destinationDirectory);
-            }
-
+            if (!string.IsNullOrWhiteSpace(destinationDirectory)) Directory.CreateDirectory(destinationDirectory);
             File.Copy(sourceFile, destinationFile, overwrite: true);
         }
     }
