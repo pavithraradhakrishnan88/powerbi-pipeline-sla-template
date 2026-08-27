@@ -107,12 +107,10 @@ table DateTableTemplate_cf167393-0340-4e38-a664-9c425a0a3643
 			column: Day
 
 		annotation TemplateId = DateHierarchy
-
-	partition DateTableTemplate_cf167393-0340-4e38-a664-9c425a0a3643 = calculated
+partition DateTableTemplate_cf167393-0340-4e38-a664-9c425a0a3643 = calculated
 		mode: import
 		source = Calendar(Date(2015,1,1), Date(2015,1,1))
 
 	annotation __PBI_TemplateDateTable = true
 
 	annotation DefaultItem = DateHierarchy
-
