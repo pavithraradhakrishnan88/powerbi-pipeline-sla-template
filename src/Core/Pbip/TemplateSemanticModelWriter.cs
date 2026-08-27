@@ -26,11 +26,40 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
             var repositoryRootPath = FindRepositoryRoot(templateRoot);
             TemplateSemanticModelMetadataPatcher.Patch(model, outputRoot, repositoryRootPath, logger);
+            NormalizeGeneratedTmdl(outputRoot, logger);
 
             // Preserve the authoritative template's partition/source expressions exactly.
             // The last-known-good template does not use a DataFolder parameter, so this
             // writer deliberately does not inject, rewrite, or require expressions.tmdl.
             LogDiagnostics(outputRoot, "after-template-metadata-patch", logger);
+        }
+
+        private static void NormalizeGeneratedTmdl(string semanticModelRootPath, Action<string>? logger)
+        {
+            var definition = Path.Combine(semanticModelRootPath, "definition");
+            if (!Directory.Exists(definition)) return;
+
+            foreach (var file in Directory.GetFiles(definition, "*.tmdl", SearchOption.AllDirectories))
+            {
+                var text = File.ReadAllText(file, Encoding.UTF8);
+                var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+
+                // Power BI Desktop 2.156.951.0 reports InvalidLineType/Empty for
+                // empty structural lines immediately before partition declarations.
+                // Normalize only that invalid boundary; do not strip arbitrary TMDL
+                // whitespace elsewhere in the generated model.
+                var normalized = Regex.Replace(
+                    text,
+                    "(?:\\r?\\n[ \\t]*)+(?=[ \\t]*partition\\s+\\S+\\s*=)",
+                    newline,
+                    RegexOptions.CultureInvariant);
+
+                if (!string.Equals(text, normalized, StringComparison.Ordinal))
+                {
+                    File.WriteAllText(file, normalized, new UTF8Encoding(false));
+                    logger?.Invoke($"TMDL-NORMALIZE|RemovedInvalidEmptyLineBeforePartition|File={file}");
+                }
+            }
         }
 
         private static string FindRepositoryRoot(string startingPath)
