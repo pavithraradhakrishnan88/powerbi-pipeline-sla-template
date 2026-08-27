@@ -82,11 +82,7 @@ function Normalize-GeneratedTmdl {
     foreach ($file in $files) {
         $text = [IO.File]::ReadAllText($file.FullName, [Text.UTF8Encoding]::new($false))
         $newline = if ($text.Contains("`r`n", [StringComparison]::Ordinal)) { "`r`n" } else { "`n" }
-        $normalized = [Regex]::Replace(
-            $text,
-            "(?:\\r?\\n[ \\t]*)+(?=[ \\t]*partition\\s+\\S+\\s*=)",
-            $newline,
-            [Text.RegularExpressions.RegexOptions]::CultureInvariant)
+        $normalized = [Regex]::Replace($text, "(?:\\r?\\n[ \\t]*)+(?=[ \\t]*partition\\s+\\S+\\s*=)", $newline, [Text.RegularExpressions.RegexOptions]::CultureInvariant)
         if ($normalized -ne $text) {
             [IO.File]::WriteAllText($file.FullName, $normalized, [Text.UTF8Encoding]::new($false))
             Write-Host "TMDL-FINAL-NORMALIZE|RemovedInvalidEmptyLineBeforePartition|File=$($file.FullName)"
@@ -163,8 +159,11 @@ Assert-PbirDefinition -ReportRoot $generatedReportRoot -SemanticModelRoot $gener
 Assert-VisualJsonFiles -ReportRoot $generatedReportRoot
 Write-VisualBomDiagnostics -Stage "final-buildresult" -ReportRoot $generatedReportRoot
 
-Write-Host "Finalizing generated TMDL before artifact packaging and structural validation..."
+Write-Host "Finalizing generated TMDL before structural validation and artifact packaging..."
 Normalize-GeneratedTmdl -SemanticModelRoot $generatedSemanticModelRoot
+& "$PSScriptRoot\Assert-TmdlNoInvalidEmptyLines.ps1" -PbipRoot $pbipOutputRoot
+if ($LASTEXITCODE -ne 0) { throw "TMDL empty-line validation failed with exit code $LASTEXITCODE." }
+Write-Host "TMDL-FINAL-GATE|PASS|Generated BuildResult/PBIP contains no InvalidLineType / Empty partition-boundary conditions."
 
 $artifactPath = Join-Path $repoRoot "artifacts"
 if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
