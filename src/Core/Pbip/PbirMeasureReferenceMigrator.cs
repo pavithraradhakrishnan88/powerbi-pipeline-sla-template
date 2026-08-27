@@ -11,7 +11,8 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip;
 internal static class PbirMeasureReferenceMigrator
 {
     private const string LegacyMeasuresTable = "_Measures";
-    private const string GeneratedMeasuresTable = "Fact_Pipeline_SampleData";
+    private const string GeneratedMeasuresTable = "_Measure Table";
+    private const string PreviousGeneratedMeasuresTable = "Fact_Pipeline_SampleData";
 
     private static readonly IReadOnlyDictionary<string, string> MeasureNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -41,7 +42,7 @@ internal static class PbirMeasureReferenceMigrator
             if (changed) { File.WriteAllText(visualPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), new System.Text.UTF8Encoding(false)); migrated++; }
         }
         if (errors.Count > 0) throw new InvalidOperationException("PBIR measure-reference validation failed:" + Environment.NewLine + string.Join(Environment.NewLine, errors.Select(x => " - " + x)));
-        Console.WriteLine($"PBIR measure-reference validation passed: {visualCount} visual(s), {migrated} visual(s) migrated from '{LegacyMeasuresTable}' to '{GeneratedMeasuresTable}'.");
+        Console.WriteLine($"PBIR measure-reference validation passed: {visualCount} visual(s), {migrated} visual(s) migrated to '{GeneratedMeasuresTable}'.");
     }
 
     private static bool MigrateNode(JsonNode node, string visualPath, List<string> errors, HashSet<(string Table, string Measure)> measures)
@@ -55,9 +56,13 @@ internal static class PbirMeasureReferenceMigrator
                 if (!string.IsNullOrWhiteSpace(entity) && !string.IsNullOrWhiteSpace(property))
                 {
                     var mappedProperty = ResolveMeasureName(property!);
-                    if (string.Equals(entity, LegacyMeasuresTable, StringComparison.OrdinalIgnoreCase)) { sourceRef["Entity"] = GeneratedMeasuresTable; measure["Property"] = mappedProperty; changed = true; }
-                    else if (string.Equals(entity, GeneratedMeasuresTable, StringComparison.OrdinalIgnoreCase)) { measure["Property"] = mappedProperty; changed |= !string.Equals(property, mappedProperty, StringComparison.Ordinal); ValidateMeasureReference(visualPath, GeneratedMeasuresTable, mappedProperty, measures, errors); }
-                    else ValidateMeasureReference(visualPath, entity!, mappedProperty, measures, errors);
+                    if (IsMeasureTableAlias(entity!))
+                    {
+                        sourceRef["Entity"] = GeneratedMeasuresTable;
+                        measure["Property"] = mappedProperty;
+                        changed = !string.Equals(entity, GeneratedMeasuresTable, StringComparison.OrdinalIgnoreCase) || !string.Equals(property, mappedProperty, StringComparison.Ordinal);
+                    }
+                    ValidateMeasureReference(visualPath, GeneratedMeasuresTable, mappedProperty, measures, errors);
                 }
             }
             foreach (var property in obj.ToList())
@@ -66,10 +71,9 @@ internal static class PbirMeasureReferenceMigrator
                 if (property.Key is "queryRef" or "nativeQueryRef" or "metadata")
                 {
                     var text = value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : null;
-                    if (!string.IsNullOrWhiteSpace(text) && text.StartsWith(LegacyMeasuresTable + ".", StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrWhiteSpace(text) && TryParseMeasureReference(text!, out var table, out var name) && IsMeasureTableAlias(table))
                     {
-                        var oldName = text[(LegacyMeasuresTable.Length + 1)..];
-                        obj[property.Key] = $"{GeneratedMeasuresTable}.{ResolveMeasureName(oldName)}";
+                        obj[property.Key] = $"{GeneratedMeasuresTable}.{ResolveMeasureName(name)}";
                         changed = true;
                         continue;
                     }
@@ -82,6 +86,20 @@ internal static class PbirMeasureReferenceMigrator
             foreach (var item in array) if (item is not null && MigrateNode(item, visualPath, errors, measures)) changed = true;
         }
         return changed;
+    }
+
+    private static bool IsMeasureTableAlias(string entity) =>
+        string.Equals(entity, LegacyMeasuresTable, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(entity, PreviousGeneratedMeasuresTable, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(entity, GeneratedMeasuresTable, StringComparison.OrdinalIgnoreCase);
+
+    private static bool TryParseMeasureReference(string value, out string table, out string measure)
+    {
+        table = string.Empty; measure = string.Empty;
+        var separator = value.IndexOf('.');
+        if (separator <= 0 || separator == value.Length - 1) return false;
+        table = value[..separator]; measure = value[(separator + 1)..];
+        return true;
     }
 
     private static string ResolveMeasureName(string name) => MeasureNameMap.TryGetValue(name, out var mapped) ? mapped : name;
