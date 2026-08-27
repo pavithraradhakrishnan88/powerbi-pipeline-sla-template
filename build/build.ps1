@@ -76,16 +76,39 @@ function Normalize-DefinitionSchema {
 
 function Normalize-GeneratedTmdl {
     param([Parameter(Mandatory=$true)][string]$SemanticModelRoot)
+
     $definition = Join-Path $SemanticModelRoot "definition"
     if (!(Test-Path $definition -PathType Container)) { return }
+
     $files = @(Get-ChildItem $definition -Recurse -Filter '*.tmdl' -File | Sort-Object FullName)
+
     foreach ($file in $files) {
-        $text = [IO.File]::ReadAllText($file.FullName, [Text.UTF8Encoding]::new($false))
-        $newline = if ($text.Contains("`r`n", [StringComparison]::Ordinal)) { "`r`n" } else { "`n" }
-        $normalized = [Regex]::Replace($text, "(?:\\r?\\n[ \\t]*)+(?=[ \\t]*partition\\s+\\S+\\s*=)", $newline, [Text.RegularExpressions.RegexOptions]::CultureInvariant)
-        if ($normalized -ne $text) {
-            [IO.File]::WriteAllText($file.FullName, $normalized, [Text.UTF8Encoding]::new($false))
-            Write-Host "TMDL-FINAL-NORMALIZE|RemovedInvalidEmptyLineBeforePartition|File=$($file.FullName)"
+        $lines = [IO.File]::ReadAllLines($file.FullName)
+        $output = [Collections.Generic.List[string]]::new()
+        $changed = $false
+
+        for ($i = 0; $i -lt $lines.Count; $i++) {
+            $line = $lines[$i]
+
+            if (
+                $line -match '^[ \t]*$' -and
+                ($i + 1) -lt $lines.Count -and
+                $lines[$i + 1] -match '^[ \t]*partition\s+\S+\s*='
+            ) {
+                $changed = $true
+                Write-Host "TMDL-FINAL-NORMALIZE|RemovedInvalidEmptyLineBeforePartition|File=$($file.FullName)|Line=$($i + 1)"
+                continue
+            }
+
+            $output.Add($line)
+        }
+
+        if ($changed) {
+            [IO.File]::WriteAllLines(
+                $file.FullName,
+                $output,
+                [Text.UTF8Encoding]::new($false)
+            )
         }
     }
 }
