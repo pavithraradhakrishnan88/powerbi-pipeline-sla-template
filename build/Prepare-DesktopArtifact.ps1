@@ -16,11 +16,20 @@ $reportPlatform = Join-Path $RepoRoot "pbip\Pipeline_SLA_Tracker.Report\.platfor
 $semanticPlatform = Join-Path $RepoRoot "pbip\Pipeline_SLA_Tracker.SemanticModel\.platform"
 $generatedReport = Join-Path $BuildRoot "$pbipName.Report"
 $generatedSemantic = Join-Path $BuildRoot "$pbipName.SemanticModel"
+$generatedDefinition = Join-Path $generatedReport "definition.pbir"
 $artifactReport = Join-Path $ArtifactRoot "$pbipName.Report"
 $artifactSemantic = Join-Path $ArtifactRoot "$pbipName.SemanticModel"
+$artifactDefinition = Join-Path $artifactReport "definition.pbir"
 
 foreach ($path in @($reportPlatform,$semanticPlatform,$generatedReport,$generatedSemantic)) {
     if (!(Test-Path $path -PathType Leaf) -and !(Test-Path $path -PathType Container)) { throw "Desktop artifact preparation: required path is missing: $path" }
+}
+
+# definition.pbir is a required Power BI Report artifact. Preserve it explicitly
+# through the generated -> packaged -> DesktopValidation boundaries rather than
+# relying only on recursive directory copying.
+if (!(Test-Path $generatedDefinition -PathType Leaf)) {
+    throw "Desktop artifact preparation failed: generated report definition.pbir is missing: $generatedDefinition"
 }
 
 # Preserve the authoritative Fabric/Git project metadata byte-for-byte in the generated PBIP tree.
@@ -39,6 +48,13 @@ Copy-Item $reportPlatform `
 Copy-Item $semanticPlatform `
     (Join-Path $artifactSemantic ".platform") `
     -Force
+
+# Explicit required-artifact preservation. This also makes the package boundary
+# deterministic if a prior copy operation omitted or replaced the report definition.
+Copy-Item $generatedDefinition $artifactDefinition -Force
+if (!(Test-Path $artifactDefinition -PathType Leaf)) {
+    throw "Desktop artifact preparation failed: packaged report definition.pbir is missing: $artifactDefinition"
+}
 
 foreach ($platform in @(
     (Join-Path $artifactReport ".platform"),
@@ -59,5 +75,11 @@ Get-ChildItem $ArtifactRoot -Force | Copy-Item -Destination $DesktopValidationRo
 $pbip = Join-Path $DesktopValidationRoot "$pbipName.pbip"
 if (!(Test-Path $pbip -PathType Leaf)) { throw "Desktop validation artifact is missing '$pbip'." }
 
-Write-Host "DESKTOP-ARTIFACT-PREP|PASS|PlatformFiles=2|PortableCopy=PASS|PBIP=$pbip"
+$desktopDefinition = Join-Path $DesktopValidationRoot "$pbipName.Report\definition.pbir"
+if (!(Test-Path $desktopDefinition -PathType Leaf)) {
+    throw "Desktop artifact preparation failed: DesktopValidation report definition.pbir is missing: $desktopDefinition"
+}
+
+Write-Host "DESKTOP-REPORT-DEFINITION-GATE|PASS|definition.pbir preserved through generated->packaged->DesktopValidation"
+Write-Host "DESKTOP-ARTIFACT-PREP|PASS|PlatformFiles=2|ReportDefinition=PASS|PortableCopy=PASS|PBIP=$pbip"
 Write-Host "DESKTOP-ARTIFACT-PREP|NextStep=DATA-MATERIALIZATION"
