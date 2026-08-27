@@ -144,13 +144,23 @@ public class PbipSemanticModelWriterTests
         var writer = new PbipSemanticModelWriter();
         writer.WriteSemanticModel(model, semanticModelPath);
 
-        var measuresPath = Path.Combine(semanticModelPath, "definition", "tables", "_Measures.tmdl");
+        var tablesPath = Path.Combine(semanticModelPath, "definition", "tables");
+        var measuresPath = Path.Combine(tablesPath, "_Measure Table.tmdl");
+        var legacyMeasuresPath = Path.Combine(tablesPath, "_Measures.tmdl");
+
         File.Exists(measuresPath).Should().BeTrue();
+        File.Exists(legacyMeasuresPath).Should().BeFalse();
+
         var content = File.ReadAllText(measuresPath);
+        content.Should().Contain("table '_Measure Table'");
         content.Should().NotContain("SUM(Fact_Pipeline_SampleData[PipelineID])");
         content.Should().Contain("measure 'Total Runtime' = SUM(Fact_Pipeline_SampleData[DurationHours])");
         content.Should().Contain("measure 'Average Runtime' = AVERAGE(Fact_Pipeline_SampleData[DurationHours])");
         content.Should().Contain("measure 'Success Rate %' = DIVIDE([Successful Runs],[Active Pipelines])");
+
+        var modelTmdl = File.ReadAllText(Path.Combine(semanticModelPath, "definition", "model.tmdl"));
+        modelTmdl.Should().Contain("ref table '_Measure Table'");
+        modelTmdl.Should().NotContain("ref table _Measures");
     }
 
     [Fact]
