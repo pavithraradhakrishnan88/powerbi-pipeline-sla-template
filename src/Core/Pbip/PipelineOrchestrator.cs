@@ -54,8 +54,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         {
             var fullPath = Path.GetFullPath(Path.TrimEndingDirectorySeparator(path));
             var parent = Path.GetDirectoryName(fullPath);
-            if (string.IsNullOrWhiteSpace(parent))
-                throw new InvalidOperationException($"Cannot determine parent directory for PBIP path '{path}'.");
+            if (string.IsNullOrWhiteSpace(parent)) throw new InvalidOperationException($"Cannot determine parent directory for PBIP path '{path}'.");
             return Path.GetFullPath(parent);
         }
 
@@ -78,27 +77,19 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
         private static void WriteSemanticModel(ModelBuildResult model, PipelineOptions options)
         {
-            var dataFolder = Path.GetFullPath(options.DataDirectoryPath);
             var writer = new TemplateSemanticModelWriter();
-            writer.Write(options.SemanticModelTemplateRootPath, options.SemanticModelRootPath, dataFolder, model, options.Logger);
+            writer.Write(options.SemanticModelTemplateRootPath, options.SemanticModelRootPath, model, options.Logger);
+            var repositoryRoot = Directory.GetParent(Path.GetFullPath(options.SemanticModelTemplateRootPath))?.Parent?.FullName;
+            if (string.IsNullOrWhiteSpace(repositoryRoot)) throw new InvalidOperationException("Could not resolve repository root for canonical measure materialization.");
+            CanonicalMeasureTableMaterializer.Materialize(options.SemanticModelRootPath, repositoryRoot, options.Logger);
         }
 
         private static void WriteReport(PipelineOptions options) => new PbirReportWriter().WriteFromTemplate(options.ReportTemplateRootPath, options.ReportRootPath, options.SemanticModelRelativePath);
-
-        private static void MigrateAndValidateReportMeasures(PipelineOptions options)
-        {
-            PbirMeasureReferenceMigrator.MigrateAndValidate(options.ReportRootPath, options.SemanticModelRootPath);
-        }
-
-        private static void NormalizeAndValidateReportVisuals(PipelineOptions options)
-        {
-            // Keep the authoritative template visual tree intact; normalize only model references and reject malformed PBIR.
-            PbirVisualContainerNormalizer.NormalizeReport(options.ReportRootPath);
-        }
+        private static void MigrateAndValidateReportMeasures(PipelineOptions options) => PbirMeasureReferenceMigrator.MigrateAndValidate(options.ReportRootPath, options.SemanticModelRootPath);
+        private static void NormalizeAndValidateReportVisuals(PipelineOptions options) => PbirVisualContainerNormalizer.NormalizeReport(options.ReportRootPath);
 
         private static string WritePbipProjectFile(PipelineOptions options)
         {
-            // Root relationship is deliberately validated before any generated artifact is written.
             var reportParent = GetParentDirectory(options.ReportRootPath);
             return new PbipProjectWriter().Write(options.ReportRootPath, reportParent);
         }

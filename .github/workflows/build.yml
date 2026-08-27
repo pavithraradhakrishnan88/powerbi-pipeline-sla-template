@@ -122,7 +122,7 @@ jobs:
           $ErrorActionPreference = "Stop"
           ./scripts/Assert-MeasureExpressionParity.ps1 `
             -RepoRoot "${{ github.workspace }}" `
-            -TmdlPath "${{ github.workspace }}\BuildResult\PBIP\Pipeline_SLA_Tracker.SemanticModel\definition\tables\Fact_Pipeline_SampleData.tmdl"
+            -TmdlPath "${{ github.workspace }}\BuildResult\PBIP\Pipeline_SLA_Tracker.SemanticModel\definition\tables\_Measure Table.tmdl"
 
       - name: Assert exact generated artifact materialization
         shell: pwsh

@@ -8,6 +8,7 @@ $publishedRoot = Join-Path $RepoRoot "artifacts"
 $pbipRoot = $publishedRoot
 $semanticRoot = Join-Path $pbipRoot "Pipeline_SLA_Tracker.SemanticModel"
 $reportRoot = Join-Path $pbipRoot "Pipeline_SLA_Tracker.Report"
+$measureTablePath = Join-Path $semanticRoot "definition\tables\_Measure Table.tmdl"
 $factPath = Join-Path $semanticRoot "definition\tables\Fact_Pipeline_SampleData.tmdl"
 $relationshipsPath = Join-Path $semanticRoot "definition\relationships.tmdl"
 $measureDefinitionsPath = Join-Path $RepoRoot "scripts\metadata\MeasureDefinitions.json"
@@ -17,19 +18,22 @@ $categoryCsvPath = Join-Path $RepoRoot "data\Dim_Category.csv"
 if (!(Test-Path $publishedRoot -PathType Container)) { throw "Published-artifact UAT failed: artifacts folder is missing: $publishedRoot" }
 if (!(Test-Path $semanticRoot -PathType Container)) { throw "Published-artifact UAT failed: semantic model is missing from artifacts: $semanticRoot" }
 if (!(Test-Path $reportRoot -PathType Container)) { throw "Published-artifact UAT failed: report is missing from artifacts: $reportRoot" }
-foreach ($path in @($factPath,$relationshipsPath,$measureDefinitionsPath,$factCsvPath,$categoryCsvPath)) { if (!(Test-Path $path)) { throw "UAT prerequisite missing: $path" } }
+foreach ($path in @($measureTablePath,$factPath,$relationshipsPath,$measureDefinitionsPath,$factCsvPath,$categoryCsvPath)) { if (!(Test-Path $path)) { throw "UAT prerequisite missing: $path" } }
 
+$measureTableText = Get-Content -Raw $measureTablePath
 $factText = Get-Content -Raw $factPath
 $relationshipText = Get-Content -Raw $relationshipsPath
 $definitions = (Get-Content -Raw $measureDefinitionsPath | ConvertFrom-Json).measures
+$canonicalNames = @([regex]::Matches($measureTableText, "(?m)^\s*measure\s+('(?:''|[^'])+'|[^\r\n=]+)\s*=") | ForEach-Object { $_.Groups[1].Value.Trim("'").Replace("''", "'") })
 $inlineNames = @([regex]::Matches($factText, "(?m)^\s*measure\s+('(?:''|[^'])+'|[^\r\n=]+)\s*=") | ForEach-Object { $_.Groups[1].Value.Trim("'").Replace("''", "'") })
-if ($inlineNames.Count -ne $definitions.Count) { throw "KPI UAT failed: metadata defines $($definitions.Count) measures but published Fact_Pipeline_SampleData contains $($inlineNames.Count) inline measures." }
-$missing = @($definitions | Where-Object { $_.Table -eq 'Fact_Pipeline_SampleData' -and $inlineNames -notcontains $_.Name })
-if ($missing.Count -gt 0) { throw "KPI UAT failed: published artifact is missing inline measures: $($missing.Name -join ', ')" }
+if ($canonicalNames.Count -ne $definitions.Count) { throw "KPI UAT failed: metadata defines $($definitions.Count) measures but published _Measure Table contains $($canonicalNames.Count) measures." }
+$missing = @($definitions | Where-Object { $canonicalNames -notcontains $_.Name })
+if ($missing.Count -gt 0) { throw "KPI UAT failed: published _Measure Table is missing measures: $($missing.Name -join ', ')" }
+if ($inlineNames.Count -ne 0) { throw "KPI UAT failed: published Fact_Pipeline_SampleData contains $($inlineNames.Count) inline measures; canonical measures must reside only in _Measure Table." }
 
 $sla = $definitions | Where-Object Name -eq 'SLA Compliance %' | Select-Object -First 1
 if ($null -eq $sla) { throw "KPI UAT failed: SLA Compliance % is absent from MeasureDefinitions.json." }
-if ($inlineNames -notcontains 'SLA Compliance %') { throw "KPI UAT failed: SLA Compliance % is not inline on published Fact_Pipeline_SampleData." }
+if ($canonicalNames -notcontains 'SLA Compliance %') { throw "KPI UAT failed: SLA Compliance % is absent from published _Measure Table." }
 if ($sla.Folder -ne '02 SLA' -or $sla.KPI -ne $true -or $sla.Format -ne '0.00%') { throw "KPI UAT failed: SLA Compliance % metadata is not in the expected KPI hierarchy." }
 
 $breachedCountDefinition = $definitions | Where-Object Name -eq 'Breached Count' | Select-Object -First 1
@@ -38,7 +42,7 @@ $floatingColorDefinition = $definitions | Where-Object Name -eq 'SLA Breach Colo
 foreach ($definition in @($breachedCountDefinition,$floatingStatusDefinition,$floatingColorDefinition)) {
     if ($null -eq $definition) { throw "SLA semantic UAT failed: required SLA measure definition is missing." }
 }
-if ($inlineNames -contains '_Measures') { throw "KPI UAT failed: _Measures was emitted as a measure/table artifact." }
+if ($canonicalNames -contains '_Measures' -or $inlineNames -contains '_Measures') { throw "KPI UAT failed: _Measures was emitted as a measure/table artifact." }
 if (Test-Path (Join-Path $semanticRoot 'definition\tables\_Measures.tmdl')) { throw "KPI UAT failed: published artifact contains _Measures.tmdl." }
 if ($factText -match "ref table _Measures") { throw "KPI UAT failed: published semantic model still references _Measures." }
 
@@ -79,11 +83,9 @@ $missedRow = $factRows | Where-Object { [string]$_.SLAStatus -eq 'Missed' } | Se
 $metRow = $factRows | Where-Object { [string]$_.SLAStatus -eq 'Met' } | Select-Object -First 1
 if ($null -eq $missedRow -or $null -eq $metRow) { throw "Floating-bar UAT failed: both Missed and Met source rows are required." }
 
-# Validate the actual generated semantic-model expressions in the published artifact.
-# Known-good run 31931247792 generated these exact mappings on Fact_Pipeline_SampleData.
-$statusMatch = [regex]::Match($factText, "(?m)^\s*measure\s+'Floating Bar Status'\s*=\s*(?<expr>[^\r\n]+)")
-$colorMatch = [regex]::Match($factText, "(?m)^\s*measure\s+'SLA Breach Color'\s*=\s*(?<expr>[^\r\n]+)")
-if (!$statusMatch.Success -or !$colorMatch.Success) { throw "Floating-bar UAT failed: generated Floating Bar Status/SLA Breach Color measures are missing from the published Fact_Pipeline_SampleData TMDL." }
+$statusMatch = [regex]::Match($measureTableText, "(?m)^\s*measure\s+'Floating Bar Status'\s*=\s*(?<expr>[^\r\n]+)")
+$colorMatch = [regex]::Match($measureTableText, "(?m)^\s*measure\s+'SLA Breach Color'\s*=\s*(?<expr>[^\r\n]+)")
+if (!$statusMatch.Success -or !$colorMatch.Success) { throw "Floating-bar UAT failed: generated Floating Bar Status/SLA Breach Color measures are missing from the published _Measure Table.tmdl." }
 $statusExpression = ($statusMatch.Groups['expr'].Value -replace '\s+', '')
 $colorExpression = ($colorMatch.Groups['expr'].Value -replace '\s+', '')
 $expectedStatusExpression = 'IF(MAX(Fact_Pipeline_SampleData[SLAStatus])="Missed","Breach","WithinSLA")'
@@ -92,10 +94,10 @@ if ($statusExpression -ne $expectedStatusExpression) { throw "Floating-bar UAT f
 if ($colorExpression -ne $expectedColorExpression) { throw "Floating-bar UAT failed: generated SLA Breach Color expression differs from known-good semantic expression. Actual=$colorExpression Expected=$expectedColorExpression" }
 
 Write-Host "PUBLISHED-ARTIFACT-UAT|Root=$publishedRoot|SourceUnderTest=artifacts"
-Write-Host "KPI-UAT|MeasureCount=$($definitions.Count)|InlineFactCount=$($inlineNames.Count)|SLACompliancePresent=True|Hierarchy=PASS"
+Write-Host "KPI-UAT|MeasureCount=$($definitions.Count)|CanonicalMeasureCount=$($canonicalNames.Count)|InlineFactCount=$($inlineNames.Count)|SLACompliancePresent=True|Hierarchy=PASS"
 Write-Host "SLA-DOMAIN-UAT|TotalRuns=$totalRuns|Missed=$overallMissed|Met=$overallMet|BreachedCount=$overallMissed|SLACompliance=$overallCompliance|ExpectedCompliance=0.208"
 Write-Host "SLA-DOMAIN-UAT|Category=ETL|FilteredRows=$($filteredRows.Count)|Missed=$filteredMissed|Met=$filteredMet|BreachedCount=$filteredMissed|SLACompliance=$filteredCompliance|ExpectedCompliance=$([math]::Round(14.0/54.0,6))"
-Write-Host "FLOATING-BAR-UAT|GeneratedSemanticExpression=PASS|KnownGoodRun=31931247792"
+Write-Host "FLOATING-BAR-UAT|GeneratedSemanticExpression=PASS|MeasureTable=_Measure Table"
 Write-Host "FILTER-UAT|Relationship=PASS|CategorySlicer=$([IO.Path]::GetRelativePath($reportRoot,$categorySlicer.FullName))|TestCategory=$testCategory|TotalRows=$totalRuns|FilteredRows=$($filteredRows.Count)|OverallCompliance=$overallCompliance|FilteredCompliance=$filteredCompliance"
 Write-Host "FILTER-UAT|Behavior=PASS|CategoryFilterChangesFactPopulation=True|SLAComplianceEvaluatesAgainstFilteredPopulation=True"
 Write-Host "SEMANTIC-MODEL-UAT|PASS|PublishedArtifact=True"

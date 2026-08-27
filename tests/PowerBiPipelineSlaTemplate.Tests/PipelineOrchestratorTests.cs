@@ -25,7 +25,7 @@ public class PipelineOrchestratorTests
     }
 
     [Fact]
-    public void Run_ShouldPatchFactColumnsFromBuiltModel_WithoutReplacingTemplateMeasures()
+    public void Run_ShouldPatchFactColumns_AndKeepMeasuresInCanonicalMeasureTable()
     {
         using var fixture = new PipelineTestFixture("Normal");
         var orchestrator = new PipelineOrchestrator();
@@ -33,17 +33,36 @@ public class PipelineOrchestratorTests
         var result = orchestrator.Run(fixture.Options);
 
         var factTable = result.Model.Tables.Should().ContainSingle(table => table.Name == "Fact_Pipeline_SampleData").Subject;
-        var factPath = Path.Combine(fixture.SemanticModelRootPath, "definition", "tables", "Fact_Pipeline_SampleData.tmdl");
+        var tablesPath = Path.Combine(fixture.SemanticModelRootPath, "definition", "tables");
+        var factPath = Path.Combine(tablesPath, "Fact_Pipeline_SampleData.tmdl");
+        var measureTablePath = Path.Combine(tablesPath, "_Measure Table.tmdl");
+        var legacyMeasurePath = Path.Combine(tablesPath, "_Measures.tmdl");
         var factText = File.ReadAllText(factPath);
+        var measureTableText = File.ReadAllText(measureTablePath);
 
         foreach (var column in factTable.Columns)
         {
             factText.Should().Contain($"\tcolumn {column.Name}");
         }
 
-        factText.Should().Contain("measure 'Active Pipelines'");
-        factText.Should().Contain("measure 'SLA Breach %'");
+        File.Exists(measureTablePath).Should().BeTrue();
+        File.Exists(legacyMeasurePath).Should().BeFalse();
+        measureTableText.Should().Contain("table '_Measure Table'");
+        measureTableText.Should().Contain("measure 'Active Pipelines'");
+        measureTableText.Should().Contain("measure 'SLA Breach %'");
+        measureTableText.Should().Contain("measure 'Timeline Base'");
+        measureTableText.Should().Contain("measure 'Floating Bar Duration'");
+        measureTableText.Should().Contain("measure 'SLA Breach Color'");
+        factText.Should().NotContain("measure 'Active Pipelines'");
+        factText.Should().NotContain("measure 'SLA Breach %'");
+        factText.Should().NotContain("measure 'Timeline Base'");
+        factText.Should().NotContain("measure 'Floating Bar Duration'");
+        factText.Should().NotContain("measure 'SLA Breach Color'");
         factText.Should().Contain("partition Fact_Pipeline_SampleData = m");
+
+        var modelText = File.ReadAllText(Path.Combine(fixture.SemanticModelRootPath, "definition", "model.tmdl"));
+        modelText.Should().Contain("ref table '_Measure Table'");
+        modelText.Should().NotContain("ref table _Measures");
     }
 
     [Fact]
