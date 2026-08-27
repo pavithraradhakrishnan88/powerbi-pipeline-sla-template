@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using PowerBiPipelineSlaTemplate.Core.Pbip;
 using PowerBiPipelineSlaTemplate.Tests.Shared.Utilities;
 
@@ -46,6 +47,8 @@ public sealed class PipelineTestFixture : IDisposable
 
         SemanticModelTemplateRootPath = Path.Combine(pbipRoot, "Pipeline_SLA_Tracker.SemanticModel");
         CopyDirectory(sourceSemanticModelTemplatePath, SemanticModelTemplateRootPath);
+        EmitScheduledStartRelationshipDiagnostics(
+            Path.Combine(SemanticModelTemplateRootPath, "definition", "relationships.tmdl"));
 
         SemanticModelRootPath = Path.Combine(pbipRoot, "Pipeline SLA.SemanticModel");
         ReportRootPath = Path.Combine(pbipRoot, "Pipeline SLA.Report");
@@ -75,6 +78,48 @@ public sealed class PipelineTestFixture : IDisposable
     public void Dispose()
     {
         _workspace.Dispose();
+    }
+
+    private static void EmitScheduledStartRelationshipDiagnostics(string relationshipsPath)
+    {
+        const string relationshipId = "db2083da-0a18-4172-ab57-a096ce539554";
+        const string localDateTable = "LocalDateTable_9043e032-67a4-45e7-bf88-28fec57966b9";
+        const string columnName = "ScheduledStart";
+        const string factTable = "Fact_Pipeline_SampleData";
+
+        Console.WriteLine($"TMDL-RELATIONSHIP-DIAGNOSTIC|Path={relationshipsPath}");
+        if (!File.Exists(relationshipsPath))
+        {
+            Console.WriteLine("TMDL-RELATIONSHIP-DIAGNOSTIC|Exists=False|SizeBytes=0");
+            return;
+        }
+
+        var relationships = File.ReadAllText(relationshipsPath);
+        var newlineType = relationships.Contains("\r\n", StringComparison.Ordinal)
+            ? "CRLF"
+            : relationships.Contains("\n", StringComparison.Ordinal) ? "LF" : "NONE";
+        Console.WriteLine($"TMDL-RELATIONSHIP-DIAGNOSTIC|Exists=True|SizeBytes={new FileInfo(relationshipsPath).Length}|Newline={newlineType}");
+
+        var relationshipStart = relationships.IndexOf($"relationship {relationshipId}", StringComparison.Ordinal);
+        var relationshipEnd = relationshipStart >= 0
+            ? relationships.IndexOf("relationship ", relationshipStart + 1, StringComparison.Ordinal)
+            : -1;
+        if (relationshipStart >= 0)
+        {
+            if (relationshipEnd < 0) relationshipEnd = relationships.Length;
+            var block = relationships[relationshipStart..relationshipEnd].TrimEnd('\r', '\n');
+            Console.WriteLine("TMDL-RELATIONSHIP-DIAGNOSTIC|ScheduledStartBlock-BEGIN");
+            Console.WriteLine(block);
+            Console.WriteLine("TMDL-RELATIONSHIP-DIAGNOSTIC|ScheduledStartBlock-END");
+        }
+        else
+        {
+            Console.WriteLine("TMDL-RELATIONSHIP-DIAGNOSTIC|ScheduledStartBlock=NOT_FOUND");
+        }
+
+        var relationshipPattern = $"relationship[ \\t]+{Regex.Escape(relationshipId)}[ \\t]+\\r?\\n[ \\t]*joinOnDateBehavior:[ \\t]*datePartOnly[ \\t]*\\r?\\n[ \\t]*fromColumn:[ \\t]*{Regex.Escape(factTable)}\\.{Regex.Escape(columnName)}[ \\t]*\\r?\\n[ \\t]*toColumn:[ \\t]*{Regex.Escape(localDateTable)}\\.Date";
+        Console.WriteLine($"TMDL-RELATIONSHIP-DIAGNOSTIC|RegexPattern={relationshipPattern}");
+        Console.WriteLine($"TMDL-RELATIONSHIP-DIAGNOSTIC|RegexIsMatch={Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant)}");
     }
 
     private static void CopyDirectory(string sourcePath, string destinationPath)
