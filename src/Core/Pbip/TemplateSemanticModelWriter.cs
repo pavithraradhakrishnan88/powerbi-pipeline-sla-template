@@ -23,6 +23,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, recursive: true);
             CopyDirectoryRecursively(templateRoot, outputRoot);
             LogDiagnostics(outputRoot, "after-template-copy", logger);
+            LogScheduledStartRelationshipDiagnostics(outputRoot, logger);
 
             var repositoryRootPath = FindRepositoryRoot(templateRoot);
             TemplateSemanticModelMetadataPatcher.Patch(model, outputRoot, repositoryRootPath, logger);
@@ -34,26 +35,35 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             LogDiagnostics(outputRoot, "after-template-metadata-patch", logger);
         }
 
+        private static void LogScheduledStartRelationshipDiagnostics(string root, Action<string>? logger)
+        {
+            var path = Path.Combine(root, "definition", "relationships.tmdl");
+            var exists = File.Exists(path);
+            var size = exists ? new FileInfo(path).Length : 0L;
+            var text = exists ? File.ReadAllText(path, Encoding.UTF8) : string.Empty;
+            var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "CRLF" : text.Contains("\n", StringComparison.Ordinal) ? "LF" : "NONE";
+            var relationshipId = "db2083da-0a18-4172-ab57-a096ce539554";
+            var localDateTable = "LocalDateTable_9043e032-67a4-45e7-bf88-28fec57966b9";
+            var pattern = $"relationship\\s+{Regex.Escape(relationshipId)}\\s+\\r?\\n\\s*joinOnDateBehavior:\\s*datePartOnly\\s+\\r?\\n\\s*fromColumn:\\s*Fact_Pipeline_SampleData\\.ScheduledStart\\s+\\r?\\n\\s*toColumn:\\s*{Regex.Escape(localDateTable)}\\.Date";
+            var match = exists && Regex.IsMatch(text, pattern, RegexOptions.CultureInvariant);
+            var start = text.IndexOf($"relationship {relationshipId}", StringComparison.Ordinal);
+            var end = start >= 0 ? text.IndexOf("relationship ", start + 1, StringComparison.Ordinal) : -1;
+            var block = start >= 0 ? text[start..(end >= 0 ? end : text.Length)].TrimEnd('\r', '\n') : "<NOT FOUND>";
+            logger?.Invoke($"TMDL-RELATIONSHIP-DIAGNOSTIC|Path={path}|Exists={exists}|Size={size}|Newline={newline}");
+            logger?.Invoke($"TMDL-RELATIONSHIP-DIAGNOSTIC|ScheduledStartBlock={block.Replace("\r", "\\r", StringComparison.Ordinal).Replace("\n", "\\n", StringComparison.Ordinal)}");
+            logger?.Invoke($"TMDL-RELATIONSHIP-DIAGNOSTIC|Pattern={pattern}");
+            logger?.Invoke($"TMDL-RELATIONSHIP-DIAGNOSTIC|IsMatch={match}");
+        }
+
         private static void NormalizeGeneratedTmdl(string semanticModelRootPath, Action<string>? logger)
         {
             var definition = Path.Combine(semanticModelRootPath, "definition");
             if (!Directory.Exists(definition)) return;
-
             foreach (var file in Directory.GetFiles(definition, "*.tmdl", SearchOption.AllDirectories))
             {
                 var text = File.ReadAllText(file, Encoding.UTF8);
                 var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
-
-                // Power BI Desktop 2.156.951.0 reports InvalidLineType/Empty for
-                // empty structural lines immediately before partition declarations.
-                // Normalize only that invalid boundary; do not strip arbitrary TMDL
-                // whitespace elsewhere in the generated model.
-                var normalized = Regex.Replace(
-                    text,
-                    "(?:\\r?\\n[ \\t]*)+(?=[ \\t]*partition\\s+\\S+\\s*=)",
-                    newline,
-                    RegexOptions.CultureInvariant);
-
+                var normalized = Regex.Replace(text, "(?:\\r?\\n[ \\t]*)+(?=[ \\t]*partition\\s+\\S+\\s*=)", newline, RegexOptions.CultureInvariant);
                 if (!string.Equals(text, normalized, StringComparison.Ordinal))
                 {
                     File.WriteAllText(file, normalized, new UTF8Encoding(false));
