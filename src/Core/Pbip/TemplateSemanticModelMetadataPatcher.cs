@@ -42,7 +42,6 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             ArgumentNullException.ThrowIfNull(model);
             ArgumentException.ThrowIfNullOrWhiteSpace(semanticModelRootPath);
             ArgumentException.ThrowIfNullOrWhiteSpace(repositoryRootPath);
-
             var definition = Path.Combine(semanticModelRootPath, "definition");
             var tables = Path.Combine(definition, "tables");
             var factPath = Path.Combine(tables, $"{FactTable}.tmdl");
@@ -50,11 +49,9 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var relationshipsPath = Path.Combine(definition, "relationships.tmdl");
             var expressionsPath = Path.Combine(definition, "expressions.tmdl");
             var measureDefinitionsPath = Path.Combine(repositoryRootPath, "scripts", "metadata", "MeasureDefinitions.json");
-
             if (!File.Exists(factPath)) throw new FileNotFoundException("Fact table template is missing.", factPath);
             if (!File.Exists(relationshipsPath)) throw new FileNotFoundException("Template is missing relationships.tmdl.", relationshipsPath);
             if (!File.Exists(measureDefinitionsPath)) throw new FileNotFoundException("MeasureDefinitions.json is missing.", measureDefinitionsPath);
-
             PatchColumns(model, factPath, logger);
             PatchDateVariations(factPath, relationshipsPath, logger);
             PatchMeasures(factPath, measureDefinitionsPath, logger);
@@ -100,9 +97,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             foreach (var column in factTable.Columns)
             {
                 if (existingColumns.Contains(column.Name)) continue;
-                columnBlocks.Add(BuildColumnBlock(column));
-                existingColumns.Add(column.Name);
-                addedCount++;
+                columnBlocks.Add(BuildColumnBlock(column)); existingColumns.Add(column.Name); addedCount++;
                 logger?.Invoke($"SEMANTIC-MODEL-PATCH|Added column|{FactTable}.{column.Name}");
             }
             if (addedCount == 0) { logger?.Invoke($"SEMANTIC-MODEL-PATCH|Columns|Fact={FactTable}|Added=0|Existing={existingColumns.Count}"); return; }
@@ -143,8 +138,9 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 var columnName = pair.Key;
                 var localDateTable = pair.Value;
                 if (!DateVariationRelationships.TryGetValue(columnName, out var relationshipId)) continue;
-                var relationshipPattern = $"relationship[ \\t]+{Regex.Escape(relationshipId)}[ \\t]+\\r?\\n[ \\t]*joinOnDateBehavior:[ \\t]*datePartOnly[ \\t]*\\r?\\n[ \\t]*fromColumn:[ \\t]*{Regex.Escape(FactTable)}\\.{Regex.Escape(columnName)}[ \\t]*\\r?\\n[ \\t]*toColumn:[ \\t]*{Regex.Escape(localDateTable)}\\.Date";
-                if (!Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant)) throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
+                var relationshipPattern = $"relationship\\s+{Regex.Escape(relationshipId)}\\s+\\r?\\n\\s*joinOnDateBehavior:\\s*datePartOnly\\s+\\r?\\n\\s*fromColumn:\\s*{Regex.Escape(FactTable)}\\.{Regex.Escape(columnName)}\\s+\\r?\\n\\s*toColumn:\\s*{Regex.Escape(localDateTable)}\\.Date";
+                if (!Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant))
+                    throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
                 var marker = $"\tcolumn {SanitizeObjectName(columnName)}";
                 var start = text.IndexOf(marker, StringComparison.Ordinal);
                 if (start < 0) throw new InvalidDataException($"Date column '{columnName}' was not generated.");
@@ -187,8 +183,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var measureCount = existing.Count;
             foreach (var measure in measures.EnumerateArray())
             {
-                var table = GetString(measure, "Table");
-                var name = GetString(measure, "Name");
+                var table = GetString(measure, "Table"); var name = GetString(measure, "Name");
                 if (!string.Equals(table, FactTable, StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(name)) continue;
                 var expression = GetString(measure, "Expression");
                 if (string.IsNullOrWhiteSpace(expression)) throw new InvalidDataException($"Measure '{name}' has no expression.");
@@ -209,10 +204,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 additions.AppendLine(); measureCount++; logger?.Invoke($"SEMANTIC-MODEL-PATCH|Added measure|{name}");
             }
             foreach (var replacement in replacements.OrderByDescending(r => r.Start)) text = text[..replacement.Start] + replacement.Expression + text[replacement.End..];
-            if (additions.Length > 0)
-            {
-                var insertionIndex = text.IndexOf("\tpartition ", StringComparison.Ordinal); if (insertionIndex < 0) insertionIndex = text.Length; text = text.Insert(insertionIndex, additions.ToString());
-            }
+            if (additions.Length > 0) { var insertionIndex = text.IndexOf("\tpartition ", StringComparison.Ordinal); if (insertionIndex < 0) insertionIndex = text.Length; text = text.Insert(insertionIndex, additions.ToString()); }
             File.WriteAllText(factPath, text, new UTF8Encoding(false)); logger?.Invoke($"SEMANTIC-MODEL-PATCH|Measures|InlineFactCount={measureCount}");
         }
 
@@ -226,73 +218,33 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var existingIndex = text.IndexOf(partitionMarker, StringComparison.Ordinal);
             if (existingIndex >= 0)
             {
-                var lineStart = text.LastIndexOf('\n', existingIndex);
-                lineStart = lineStart < 0 ? 0 : lineStart + 1;
+                var lineStart = text.LastIndexOf('\n', existingIndex); lineStart = lineStart < 0 ? 0 : lineStart + 1;
                 var currentIndent = text[lineStart..existingIndex];
-                if (!string.Equals(currentIndent, TableIndent, StringComparison.Ordinal))
-                {
-                    text = text.Remove(lineStart, existingIndex - lineStart).Insert(lineStart, TableIndent);
-                    existingIndex += TableIndent.Length - currentIndent.Length;
-                    logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|ReindentedPartition|Indent=1");
-                }
+                if (!string.Equals(currentIndent, TableIndent, StringComparison.Ordinal)) { text = text.Remove(lineStart, existingIndex - lineStart).Insert(lineStart, TableIndent); existingIndex += TableIndent.Length - currentIndent.Length; logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|ReindentedPartition|Indent=1"); }
                 text = NormalizeExistingFactPartitionChildren(text, existingIndex, logger);
                 if (!text.Contains("File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\")", StringComparison.Ordinal)) throw new InvalidDataException("Fact partition exists but does not resolve through DataFolder.");
-                logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|DataFolder=AlreadyPresent");
-                File.WriteAllText(factPath, text, new UTF8Encoding(false));
-                return;
+                logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|DataFolder=AlreadyPresent"); File.WriteAllText(factPath, text, new UTF8Encoding(false)); return;
             }
-
             var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
-            var insertionIndex = text.Length;
-            var partitionBlock =
-                newline +
-                $"{TableIndent}partition {FactTable} = m" + newline +
-                $"{PartitionChildIndent}mode: import" + newline +
-                $"{PartitionChildIndent}source =" + newline +
-                $"{PartitionSourceIndent}let" + newline +
-                $"{PartitionSourceIndent}  Source = Csv.Document(File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\"), [Delimiter = \",\", Columns = 17, QuoteStyle = QuoteStyle.None])," + newline +
-                $"{PartitionSourceIndent}  #\"Promoted headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars = true])," + newline +
-                $"{PartitionSourceIndent}  #\"Changed column type\" = Table.TransformColumnTypes(#\"Promoted headers\", {{\"PipelineID\", Int64.Type}}, {{\"PipelineName\", type text}}, {{\"Category\", type text}}, {{\"Status\", type text}}, {{\"ScheduledStart\", type datetime}}, {{\"ActualStart\", type datetime}}, {{\"ScheduledEnd\", type datetime}}, {{\"ActualEnd\", type datetime}}, {{\"SLAHours\", type number}}, {{\"DurationHours\", type number}}, {{\"StartDelayMinutes\", Int64.Type}}, {{\"EndDelayMinutes\", Int64.Type}}, {{\"SLAStatus\", type text}}, {{\"Environment\", type text}}, {{\"Owner\", type text}}, {{\"Region\", type text}}, {{\"RetryCount\", Int64.Type}})" + newline +
-                $"{PartitionSourceIndent}in" + newline +
-                $"{PartitionSourceIndent}  #\"Changed column type\"" + newline;
-
-            text = text.Insert(insertionIndex, partitionBlock);
-            File.WriteAllText(factPath, text, new UTF8Encoding(false));
-            logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|Added|DataFolder");
+            var partitionBlock = newline + $"{TableIndent}partition {FactTable} = m" + newline + $"{PartitionChildIndent}mode: import" + newline + $"{PartitionChildIndent}source =" + newline + $"{PartitionSourceIndent}let" + newline + $"{PartitionSourceIndent}  Source = Csv.Document(File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\"), [Delimiter = \",\", Columns = 17, QuoteStyle = QuoteStyle.None])," + newline + $"{PartitionSourceIndent}  #\"Promoted headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars = true])," + newline + $"{PartitionSourceIndent}  #\"Changed column type\" = Table.TransformColumnTypes(#\"Promoted headers\", {{\"PipelineID\", Int64.Type}}, {{\"PipelineName\", type text}}, {{\"Category\", type text}}, {{\"Status\", type text}}, {{\"ScheduledStart\", type datetime}}, {{\"ActualStart\", type datetime}}, {{\"ScheduledEnd\", type datetime}}, {{\"ActualEnd\", type datetime}}, {{\"SLAHours\", type number}}, {{\"DurationHours\", type number}}, {{\"StartDelayMinutes\", Int64.Type}}, {{\"EndDelayMinutes\", Int64.Type}}, {{\"SLAStatus\", type text}}, {{\"Environment\", type text}}, {{\"Owner\", type text}}, {{\"Region\", type text}}, {{\"RetryCount\", Int64.Type}})" + newline + $"{PartitionSourceIndent}in" + newline + $"{PartitionSourceIndent}  #\"Changed column type\"" + newline;
+            text = text.Insert(text.Length, partitionBlock); File.WriteAllText(factPath, text, new UTF8Encoding(false)); logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|Added|DataFolder");
         }
 
         private static string NormalizeExistingFactPartitionChildren(string text, int partitionIndex, Action<string>? logger)
         {
             var lineEnd = text.IndexOf('\n', partitionIndex); if (lineEnd < 0) return text;
-            var nextTableChild = text.IndexOf("\n\tannotation ", lineEnd, StringComparison.Ordinal);
-            if (nextTableChild < 0) nextTableChild = text.Length;
-            var block = text[partitionIndex..nextTableChild];
-            var lines = block.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
-            var changed = false;
-            for (var i = 1; i < lines.Length; i++)
-            {
-                var trimmed = lines[i].TrimStart(' ', '\t');
-                if (trimmed.Length == 0) continue;
-                if (trimmed.StartsWith("mode:", StringComparison.Ordinal) || trimmed.StartsWith("source =", StringComparison.Ordinal))
-                {
-                    var desired = PartitionChildIndent + trimmed;
-                    if (!string.Equals(lines[i], desired, StringComparison.Ordinal)) { lines[i] = desired; changed = true; }
-                }
-            }
+            var nextTableChild = text.IndexOf("\n\tannotation ", lineEnd, StringComparison.Ordinal); if (nextTableChild < 0) nextTableChild = text.Length;
+            var block = text[partitionIndex..nextTableChild]; var lines = block.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'); var changed = false;
+            for (var i = 1; i < lines.Length; i++) { var trimmed = lines[i].TrimStart(' ', '\t'); if (trimmed.Length == 0) continue; if (trimmed.StartsWith("mode:", StringComparison.Ordinal) || trimmed.StartsWith("source =", StringComparison.Ordinal)) { var desired = PartitionChildIndent + trimmed; if (!string.Equals(lines[i], desired, StringComparison.Ordinal)) { lines[i] = desired; changed = true; } } }
             if (!changed) return text;
-            var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
-            var normalizedBlock = string.Join(newline, lines);
-            logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|ReindentedChildren|ModeSourceIndent=2");
-            return text[..partitionIndex] + normalizedBlock + text[nextTableChild..];
+            var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n"; var normalizedBlock = string.Join(newline, lines); logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|ReindentedChildren|ModeSourceIndent=2"); return text[..partitionIndex] + normalizedBlock + text[nextTableChild..];
         }
 
         private static void PatchCategoryRelationship(string path, Action<string>? logger)
         {
-            var text = File.ReadAllText(path, Encoding.UTF8);
-            var expected = $"fromColumn: {FactTable}.{FactColumn}" + Environment.NewLine + $"\ttoColumn: {DimensionTable}.{DimensionColumn}";
+            var text = File.ReadAllText(path, Encoding.UTF8); var expected = $"fromColumn: {FactTable}.{FactColumn}" + Environment.NewLine + $"\ttoColumn: {DimensionTable}.{DimensionColumn}";
             if (text.Contains(expected, StringComparison.Ordinal)) { logger?.Invoke("SEMANTIC-MODEL-PATCH|Relationship|Dim_Category->Fact_Pipeline_SampleData|AlreadyPresent"); return; }
-            var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
-            var block = string.Join(newline, new[] { "relationship Category_Fact_Dimension", $"\tfromColumn: {FactTable}.{FactColumn}", $"\ttoColumn: {DimensionTable}.{DimensionColumn}", string.Empty, string.Empty });
+            var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n"; var block = string.Join(newline, new[] { "relationship Category_Fact_Dimension", $"\tfromColumn: {FactTable}.{FactColumn}", $"\ttoColumn: {DimensionTable}.{DimensionColumn}", string.Empty, string.Empty });
             File.WriteAllText(path, text.TrimEnd('\r', '\n') + newline + block, new UTF8Encoding(false)); logger?.Invoke("SEMANTIC-MODEL-PATCH|Relationship|Dim_Category->Fact_Pipeline_SampleData|Added");
         }
 
@@ -301,28 +253,15 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var measuresPath = Path.Combine(tablesPath, "_Measures.tmdl");
             if (File.Exists(measuresPath)) { File.Delete(measuresPath); logger?.Invoke("SEMANTIC-MODEL-PATCH|Removed legacy _Measures.tmdl"); }
             if (!File.Exists(modelPath)) return;
-            var text = File.ReadAllText(modelPath, Encoding.UTF8);
-            var filtered = string.Join(Environment.NewLine, text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).Where(line => !line.Trim().Equals("ref table _Measures", StringComparison.OrdinalIgnoreCase)));
+            var text = File.ReadAllText(modelPath, Encoding.UTF8); var filtered = string.Join(Environment.NewLine, text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).Where(line => !line.Trim().Equals("ref table _Measures", StringComparison.OrdinalIgnoreCase)));
             if (!string.Equals(text, filtered, StringComparison.Ordinal)) { File.WriteAllText(modelPath, filtered, new UTF8Encoding(false)); logger?.Invoke("SEMANTIC-MODEL-PATCH|Removed _Measures model reference"); }
         }
 
         private static void RemoveDanglingMeasureTableAnnotation(string modelPath, string expressionsPath, Action<string>? logger)
         {
-            if (File.Exists(modelPath))
-            {
-                var model = File.ReadAllText(modelPath, Encoding.UTF8);
-                var filtered = string.Join(Environment.NewLine, model.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).Where(line => !line.Trim().Equals("annotation PBI_QueryOrder = [\"Dim_Category\",\"_Measure Table\",\"Fact_Pipeline_SampleData\"]", StringComparison.OrdinalIgnoreCase)));
-                if (!string.Equals(model, filtered, StringComparison.Ordinal)) { File.WriteAllText(modelPath, filtered, new UTF8Encoding(false)); logger?.Invoke("SEMANTIC-MODEL-PATCH|Removed dangling _Measure Table query-order annotation"); }
-            }
+            if (File.Exists(modelPath)) { var model = File.ReadAllText(modelPath, Encoding.UTF8); var filtered = string.Join(Environment.NewLine, model.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).Where(line => !line.Trim().Equals("annotation PBI_QueryOrder = [\"Dim_Category\",\"_Measure Table\",\"Fact_Pipeline_SampleData\"]", StringComparison.OrdinalIgnoreCase))); if (!string.Equals(model, filtered, StringComparison.Ordinal)) { File.WriteAllText(modelPath, filtered, new UTF8Encoding(false)); logger?.Invoke("SEMANTIC-MODEL-PATCH|Removed dangling _Measure Table query-order annotation"); } }
             if (!File.Exists(expressionsPath)) return;
-            var expressions = File.ReadAllText(expressionsPath, Encoding.UTF8);
-            const string start = "expression '_Measure Table' =";
-            var startIndex = expressions.IndexOf(start, StringComparison.Ordinal);
-            if (startIndex < 0) return;
-            var nextExpression = expressions.IndexOf("expression ", startIndex + start.Length, StringComparison.Ordinal);
-            var endIndex = nextExpression >= 0 ? nextExpression : expressions.Length;
-            var cleaned = expressions.Remove(startIndex, endIndex - startIndex).TrimStart('\r', '\n');
-            File.WriteAllText(expressionsPath, cleaned, new UTF8Encoding(false)); logger?.Invoke("SEMANTIC-MODEL-PATCH|Removed dangling _Measure Table expression");
+            var expressions = File.ReadAllText(expressionsPath, Encoding.UTF8); const string start = "expression '_Measure Table' ="; var startIndex = expressions.IndexOf(start, StringComparison.Ordinal); if (startIndex < 0) return; var nextExpression = expressions.IndexOf("expression ", startIndex + start.Length, StringComparison.Ordinal); var endIndex = nextExpression >= 0 ? nextExpression : expressions.Length; var cleaned = expressions.Remove(startIndex, endIndex - startIndex).TrimStart('\r', '\n'); File.WriteAllText(expressionsPath, cleaned, new UTF8Encoding(false)); logger?.Invoke("SEMANTIC-MODEL-PATCH|Removed dangling _Measure Table expression");
         }
 
         private static string GetString(JsonElement element, string property) => element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? string.Empty : string.Empty;
