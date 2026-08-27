@@ -52,46 +52,19 @@ function Test-AllowedMeasureTransformation {
     return $false
 }
 
-function Copy-JsonNode {
-    param($Node)
-    if ($null -eq $Node) { return $null }
-    if ($Node -is [System.Collections.IDictionary]) {
-        $copy = [ordered]@{}
-        foreach ($key in $Node.Keys) { $copy[[string]$key] = Copy-JsonNode $Node[$key] }
-        return $copy
-    }
-    if ($Node -is [System.Array]) {
-        $copy = New-Object System.Collections.Generic.List[object]
-        foreach ($item in $Node) { [void]$copy.Add((Copy-JsonNode $item)) }
-        return ,$copy.ToArray()
-    }
-    $Node
-}
-
-function Get-KnownMeasureProperty {
+function Get-MeasurePropertyContext {
     param($Node, [System.Collections.Generic.HashSet[string]]$MeasureNames)
-    if ($null -eq $Node -or $Node -isnot [System.Collections.IDictionary] -or !$Node.Contains('Expression')) { return $null }
+    if ($null -eq $Node -or $Node -isnot [System.Collections.IDictionary]) { return $null }
+    if (!$Node.Contains('Expression')) { return $null }
     $expression = $Node['Expression']
     if ($expression -isnot [System.Collections.IDictionary] -or !$expression.Contains('SourceRef')) { return $null }
     $sourceRef = $expression['SourceRef']
     if ($sourceRef -isnot [System.Collections.IDictionary] -or !$sourceRef.Contains('Entity') -or !$sourceRef.Contains('Property')) { return $null }
     $property = [string]$sourceRef['Property']
-    if (!$MeasureNames.Contains($property)) { return $null }
+    if ([string]::IsNullOrEmpty($property) -or !$MeasureNames.Contains($property)) { return $null }
     $entity = [string]$sourceRef['Entity']
     if ($entity -notin @('_Measures','Fact_Pipeline_SampleData','_Measure Table')) { return $null }
     return $property
-}
-
-function Normalize-KnownMeasureObject {
-    param(
-        $Node,
-        [Parameter(Mandatory=$true)][System.Collections.Generic.HashSet[string]]$MeasureNames
-    )
-    $property = Get-KnownMeasureProperty $Node $MeasureNames
-    if ($null -eq $property) { return $Node }
-    $normalized = Copy-JsonNode $Node
-    $normalized['Expression']['SourceRef']['Entity'] = '_Measure Table'
-    return $normalized
 }
 
 function Convert-JsonNode {
@@ -121,7 +94,7 @@ function Compare-JsonNode {
         $GeneratedNode,
         [string]$Path,
         [System.Collections.Generic.HashSet[string]]$MeasureNames,
-        [switch]$IsMeasureContext
+        [string]$MeasureProperty = $null
     )
     $differences = New-Object System.Collections.Generic.List[string]
     if ($null -eq $TemplateNode -or $null -eq $GeneratedNode) {
@@ -129,21 +102,25 @@ function Compare-JsonNode {
         return $differences
     }
 
-    # Enter measure context only at an actual PBIR Measure node. The exact
-    # Property is carried through recursive traversal so SourceRef.Entity is
-    # normalized only for a known generated measure.
-    $measureProperty = $null
-    if ($Path -match '\.Measure$' -and $TemplateNode -is [System.Collections.IDictionary] -and $GeneratedNode -is [System.Collections.IDictionary]) {
-        $templateProperty = Get-KnownMeasureProperty $TemplateNode $MeasureNames
-        $generatedProperty = Get-KnownMeasureProperty $GeneratedNode $MeasureNames
-        if ($null -ne $templateProperty -and $templateProperty -eq $generatedProperty) {
-            $IsMeasureContext = $true
-            $measureProperty = $templateProperty
+    # Establish semantic measure context from the actual Measure object and
+    # carry its exact Property through nested dictionaries and arrays.
+    $currentMeasureProperty = $MeasureProperty
+    if ($TemplateNode -is [System.Collections.IDictionary] -and $GeneratedNode -is [System.Collections.IDictionary]) {
+        $templateMeasureProperty = Get-MeasurePropertyContext $TemplateNode $MeasureNames
+        $generatedMeasureProperty = Get-MeasurePropertyContext $GeneratedNode $MeasureNames
+        if ($null -ne $templateMeasureProperty -and $templateMeasureProperty -eq $generatedMeasureProperty) {
+            $currentMeasureProperty = $templateMeasureProperty
         }
     }
 
-    if ($IsMeasureContext -and $Path -match '\.SourceRef\.Entity$' -and $TemplateNode -is [string] -and $GeneratedNode -is [string]) {
-        if ($TemplateNode -in @('_Measures','Fact_Pipeline_SampleData','_Measure Table') -and $GeneratedNode -eq '_Measure Table') { return $differences }
+    # Normalize SourceRef.Entity only when it is reached from an exact known
+    # measure object. Generic SourceRef.Entity values remain strict.
+    if ($null -ne $currentMeasureProperty -and
+        $Path -match '\.Expression\.SourceRef\.Entity$' -and
+        $TemplateNode -is [string] -and $GeneratedNode -is [string]) {
+        if ($TemplateNode -in @('_Measures','Fact_Pipeline_SampleData','_Measure Table') -and $GeneratedNode -eq '_Measure Table') {
+            return $differences
+        }
     }
 
     if ($TemplateNode -is [string] -and $GeneratedNode -is [string]) {
@@ -160,7 +137,7 @@ function Compare-JsonNode {
         foreach ($key in @($gk | Where-Object {$_ -notin $tk})) { $differences.Add(("{0}.{1}: extra in generated visual" -f $Path,$key)) }
         foreach ($key in $tk) {
             if ($key -in $gk) {
-                foreach ($d in (Compare-JsonNode $TemplateNode[$key] $GeneratedNode[$key] ("{0}.{1}" -f $Path,$key) $MeasureNames -IsMeasureContext:$IsMeasureContext)) { $differences.Add($d) }
+                foreach ($d in (Compare-JsonNode $TemplateNode[$key] $GeneratedNode[$key] ("{0}.{1}" -f $Path,$key) $MeasureNames $currentMeasureProperty)) { $differences.Add($d) }
             }
         }
         return $differences
@@ -171,7 +148,7 @@ function Compare-JsonNode {
         if (!($ta -and $ga)) { $differences.Add("${Path}: node type differs"); return $differences }
         if ($TemplateNode.Count -ne $GeneratedNode.Count) { $differences.Add(("{0}: array length differs (template={1}; generated={2})" -f $Path,$TemplateNode.Count,$GeneratedNode.Count)); return $differences }
         for ($i=0; $i -lt $TemplateNode.Count; $i++) {
-            foreach ($d in (Compare-JsonNode $TemplateNode[$i] $GeneratedNode[$i] ("{0}[{1}]" -f $Path,$i) $MeasureNames -IsMeasureContext:$IsMeasureContext)) { $differences.Add($d) }
+            foreach ($d in (Compare-JsonNode $TemplateNode[$i] $GeneratedNode[$i] ("{0}[{1}]" -f $Path,$i) $MeasureNames $currentMeasureProperty)) { $differences.Add($d) }
         }
         return $differences
     }
