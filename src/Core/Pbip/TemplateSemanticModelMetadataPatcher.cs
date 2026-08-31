@@ -138,48 +138,13 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 var columnName = pair.Key;
                 var localDateTable = pair.Value;
                 if (!DateVariationRelationships.TryGetValue(columnName, out var relationshipId)) continue;
-                var relationshipPattern = $@"relationship[ \t]+{Regex.Escape(relationshipId)}[ \t]*\r?\n" + $@"[ \t]*joinOnDateBehavior:[ \t]*datePartOnly[ \t]*\r?\n" + $@"[ \t]*fromColumn:[ \t]*{Regex.Escape(FactTable)}\.{Regex.Escape(columnName)}[ \t]*\r?\n" + $@"[ \t]*toColumn:[ \t]*{Regex.Escape(localDateTable)}\.Date";
-                var relationshipBytes = File.ReadAllBytes(relationshipsPath);
-                var crlfCount = 0;
-                var lfCount = 0;
-                var crCount = 0;
-                for (var i = 0; i < relationshipBytes.Length; i++)
-                {
-                    if (relationshipBytes[i] == 0x0D) crCount++;
-                    if (relationshipBytes[i] == 0x0A) { lfCount++; if (i > 0 && relationshipBytes[i - 1] == 0x0D) crlfCount++; }
-                }
-                var utf8Bom = relationshipBytes.Length >= 3 && relationshipBytes[0] == 0xEF && relationshipBytes[1] == 0xBB && relationshipBytes[2] == 0xBF;
-
-var scheduledStartMarker = "relationship db2083da-0a18-4172-ab57-a096ce539554";
-var scheduledStartIndex = relationships.IndexOf(scheduledStartMarker, StringComparison.Ordinal);
-var escapedScheduledStartBlock = scheduledStartIndex >= 0
-    ? relationships.Substring(scheduledStartIndex, Math.Min(300, relationships.Length - scheduledStartIndex))
-        .Replace("\r", "\\r", StringComparison.Ordinal)
-        .Replace("\n", "\\n", StringComparison.Ordinal)
-    : "<NOT FOUND>";
-
-Console.Error.WriteLine(
-    $"SEMANTIC-MODEL-PATCH|DateRelationshipRegexDiagnostic|" +
-    $"Bytes={relationshipBytes.Length}|" +
-    $"CRLF={crlfCount}|" +
-    $"LF={lfCount}|" +
-    $"CR={crCount}|" +
-    $"UTF8BOM={utf8Bom}");
-
-Console.Error.WriteLine(
-    $"SEMANTIC-MODEL-PATCH|DateRelationshipRegexScheduledStart|" +
-    $"Block={escapedScheduledStartBlock}");
-
-var regexMatch = Regex.IsMatch(
-    relationships,
-    relationshipPattern,
-    RegexOptions.CultureInvariant);
-
-Console.Error.WriteLine(
-    $"SEMANTIC-MODEL-PATCH|DateRelationshipRegexResult|IsMatch={regexMatch}");
-
-if (!regexMatch)
-    throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
+                var relationshipPattern =
+                    $@"(?ms)^\s*relationship\s+{Regex.Escape(relationshipId)}\s*$.*?" +
+                    $@"^\s*joinOnDateBehavior:\s*datePartOnly\s*$.*?" +
+                    $@"^\s*fromColumn:\s*{Regex.Escape(FactTable)}\.{Regex.Escape(columnName)}\s*$.*?" +
+                    $@"^\s*toColumn:\s*{Regex.Escape(localDateTable)}\.Date\s*$";
+                if (!Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant))
+                    throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
                 var marker = $"\tcolumn {SanitizeObjectName(columnName)}";
                 var start = text.IndexOf(marker, StringComparison.Ordinal);
                 if (start < 0) throw new InvalidDataException($"Date column '{columnName}' was not generated.");
