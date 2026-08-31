@@ -139,6 +139,17 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 var localDateTable = pair.Value;
                 if (!DateVariationRelationships.TryGetValue(columnName, out var relationshipId)) continue;
                 var relationshipPattern = $@"relationship[ \t]+{Regex.Escape(relationshipId)}[ \t]*\r?\n" + $@"[ \t]*joinOnDateBehavior:[ \t]*datePartOnly[ \t]*\r?\n" + $@"[ \t]*fromColumn:[ \t]*{Regex.Escape(FactTable)}\.{Regex.Escape(columnName)}[ \t]*\r?\n" + $@"[ \t]*toColumn:[ \t]*{Regex.Escape(localDateTable)}\.Date";
+                var relationshipBytes = File.ReadAllBytes(relationshipsPath);
+                var crlfCount = 0;
+                var lfCount = 0;
+                var crCount = 0;
+                for (var i = 0; i < relationshipBytes.Length; i++)
+                {
+                    if (relationshipBytes[i] == 0x0D) crCount++;
+                    if (relationshipBytes[i] == 0x0A) { lfCount++; if (i > 0 && relationshipBytes[i - 1] == 0x0D) crlfCount++; }
+                }
+                var utf8Bom = relationshipBytes.Length >= 3 && relationshipBytes[0] == 0xEF && relationshipBytes[1] == 0xBB && relationshipBytes[2] == 0xBF;
+                logger?.Invoke($"SEMANTIC-MODEL-PATCH|DateRelationshipRegexDiagnostic|File={relationshipsPath}|Bytes={relationshipBytes.Length}|CRLF={crlfCount}|LF={lfCount}|CR={crCount}|UTF8BOM={utf8Bom}|Column={columnName}|Relationship={relationshipId}");
                 if (!Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant))
                     throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
                 var marker = $"\tcolumn {SanitizeObjectName(columnName)}";
