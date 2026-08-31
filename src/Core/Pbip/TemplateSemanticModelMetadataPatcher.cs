@@ -148,14 +148,14 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                     throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
 
                 var searchOffset = relationshipStart.Index + relationshipStart.Length;
+                var remainingRelationships = relationships[searchOffset..];
                 var nextRelationship = Regex.Match(
-                    relationships,
+                    remainingRelationships,
                     @"(?m)^[ \t]*relationship[ \t]+",
-                    searchOffset,
                     RegexOptions.CultureInvariant);
 
                 var nextRelationshipIndex = nextRelationship.Success
-                    ? nextRelationship.Index
+                    ? searchOffset + nextRelationship.Index
                     : relationships.Length;
 
                 var relationshipBlock = relationships.Substring(
