@@ -55,10 +55,12 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         {
             var definition = Path.Combine(semanticModelRootPath, "definition");
             if (!Directory.Exists(definition)) return;
+
             foreach (var file in Directory.GetFiles(definition, "*.tmdl", SearchOption.AllDirectories))
             {
                 var text = File.ReadAllText(file, Encoding.UTF8);
                 var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+
                 // Remove blank lines immediately before partitions without consuming
                 // the partition declaration's leading whitespace. That whitespace is
                 // the table-child indentation and must remain intact.
@@ -67,12 +69,99 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                     @"(?m)(?:^[ \t]*\r?\n)+(?=[ \t]*partition\s+\S+\s*=)",
                     string.Empty,
                     RegexOptions.CultureInvariant);
+
+                // TMDL treats an M partition source as a multi-line expression.
+                // The expression must be one indentation level deeper than the
+                // `source =` property and every line of that expression must remain
+                // inside that indentation boundary. The previous writer emitted
+                // `let` at level 4 but the M body at level 4 + spaces, which Desktop
+                // 2.156 parsed as a new/invalid TMDL line type.
+                normalized = NormalizePartitionExpressions(normalized, newline, file, logger);
+
                 if (!string.Equals(text, normalized, StringComparison.Ordinal))
                 {
                     File.WriteAllText(file, normalized, new UTF8Encoding(false));
-                    logger?.Invoke($"TMDL-NORMALIZE|RemovedInvalidEmptyLineBeforePartition|File={file}");
+                    logger?.Invoke($"TMDL-NORMALIZE|RewrotePartitionExpressions|File={file}");
                 }
             }
+        }
+
+        private static string NormalizePartitionExpressions(string text, string newline, string file, Action<string>? logger)
+        {
+            var lines = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace("\r", "\n", StringComparison.Ordinal).Split('\n');
+            var changed = false;
+
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (!Regex.IsMatch(lines[i], @"^\t\tpartition\s+\S+\s*=\s*m\s*$", RegexOptions.CultureInvariant))
+                    continue;
+
+                var sourceIndex = -1;
+                for (var j = i + 1; j < lines.Length; j++)
+                {
+                    if (Regex.IsMatch(lines[j], @"^\t\t\s*source\s*=\s*$", RegexOptions.CultureInvariant))
+                    {
+                        sourceIndex = j;
+                        break;
+                    }
+
+                    if (Regex.IsMatch(lines[j], @"^\t\t(?:partition|column|measure|hierarchy|calculationGroup)\b", RegexOptions.CultureInvariant))
+                        break;
+                }
+
+                if (sourceIndex < 0 || sourceIndex + 1 >= lines.Length)
+                    continue;
+
+                var expressionStart = sourceIndex + 1;
+                var expressionEnd = expressionStart;
+                while (expressionEnd < lines.Length)
+                {
+                    var line = lines[expressionEnd];
+                    if (Regex.IsMatch(line, @"^\t\t(?:partition|column|measure|hierarchy|calculationGroup)\b", RegexOptions.CultureInvariant))
+                        break;
+                    expressionEnd++;
+                }
+
+                // Only normalize an actual multi-line M expression. A source property
+                // followed by another table child is left untouched so we don't alter
+                // unrelated TMDL structures.
+                if (expressionEnd <= expressionStart)
+                    continue;
+
+                var expressionLines = lines[expressionStart..expressionEnd];
+                var firstNonBlank = Array.FindIndex(expressionLines, l => l.Trim().Length > 0);
+                if (firstNonBlank < 0)
+                    continue;
+
+                var baseIndent = "\t\t\t";
+                var normalizedExpression = new string[expressionLines.Length];
+                for (var k = 0; k < expressionLines.Length; k++)
+                {
+                    var original = expressionLines[k];
+                    if (original.Trim().Length == 0)
+                    {
+                        normalizedExpression[k] = string.Empty;
+                        continue;
+                    }
+
+                    var content = original.TrimStart(' ', '\t');
+                    normalizedExpression[k] = baseIndent + content;
+                }
+
+                for (var k = 0; k < expressionLines.Length; k++)
+                {
+                    if (!string.Equals(expressionLines[k], normalizedExpression[k], StringComparison.Ordinal))
+                    {
+                        lines[expressionStart + k] = normalizedExpression[k];
+                        changed = true;
+                    }
+                }
+
+                logger?.Invoke($"TMDL-NORMALIZE|PartitionExpressionIndentation|File={file}|PartitionLine={i + 1}");
+                i = expressionEnd - 1;
+            }
+
+            return changed ? string.Join(newline, lines) : text;
         }
 
         private static string FindRepositoryRoot(string startingPath)
