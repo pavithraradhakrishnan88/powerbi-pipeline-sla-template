@@ -157,7 +157,7 @@ function Normalize-GeneratedTmdl {
             }
 
             if ($null -ne $partitionIndent) {
-                if ($trimmed -match '^(mode|source)\b') {
+                if ($trimmed -cmatch '^(mode|source)\b') {
                     $targetChildIndent = $partitionIndent + 4
                     $childDelta = $targetChildIndent - $indentWidth
                     $newLine = (' ' * $targetChildIndent) + $trimmed
@@ -165,7 +165,7 @@ function Normalize-GeneratedTmdl {
                         $changed = $true
                         Write-Host "TMDL-FINAL-NORMALIZE|PartitionChildIndent|File=$($file.FullName)|Line=$($i + 1)|Parent=partition $partitionName|Child=$($matches[1])|From=$indentWidth|To=$targetChildIndent"
                     }
-                    if ($trimmed -match '^source\b') {
+                    if ($trimmed -cmatch '^source\b') {
                         $partitionSourceIndent = $indentWidth
                         $partitionSourceShift = $targetChildIndent - $indentWidth
                     }
