@@ -149,9 +149,37 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                     if (relationshipBytes[i] == 0x0A) { lfCount++; if (i > 0 && relationshipBytes[i - 1] == 0x0D) crlfCount++; }
                 }
                 var utf8Bom = relationshipBytes.Length >= 3 && relationshipBytes[0] == 0xEF && relationshipBytes[1] == 0xBB && relationshipBytes[2] == 0xBF;
-                logger?.Invoke($"SEMANTIC-MODEL-PATCH|DateRelationshipRegexDiagnostic|File={relationshipsPath}|Bytes={relationshipBytes.Length}|CRLF={crlfCount}|LF={lfCount}|CR={crCount}|UTF8BOM={utf8Bom}|Column={columnName}|Relationship={relationshipId}");
-                if (!Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant))
-                    throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
+
+var scheduledStartMarker = "relationship db2083da-0a18-4172-ab57-a096ce539554";
+var scheduledStartIndex = relationships.IndexOf(scheduledStartMarker, StringComparison.Ordinal);
+var escapedScheduledStartBlock = scheduledStartIndex >= 0
+    ? relationships.Substring(scheduledStartIndex, Math.Min(300, relationships.Length - scheduledStartIndex))
+        .Replace("\r", "\\r", StringComparison.Ordinal)
+        .Replace("\n", "\\n", StringComparison.Ordinal)
+    : "<NOT FOUND>";
+
+Console.Error.WriteLine(
+    $"SEMANTIC-MODEL-PATCH|DateRelationshipRegexDiagnostic|" +
+    $"Bytes={relationshipBytes.Length}|" +
+    $"CRLF={crlfCount}|" +
+    $"LF={lfCount}|" +
+    $"CR={crCount}|" +
+    $"UTF8BOM={utf8Bom}");
+
+Console.Error.WriteLine(
+    $"SEMANTIC-MODEL-PATCH|DateRelationshipRegexScheduledStart|" +
+    $"Block={escapedScheduledStartBlock}");
+
+var regexMatch = Regex.IsMatch(
+    relationships,
+    relationshipPattern,
+    RegexOptions.CultureInvariant);
+
+Console.Error.WriteLine(
+    $"SEMANTIC-MODEL-PATCH|DateRelationshipRegexResult|IsMatch={regexMatch}");
+
+if (!regexMatch)
+    throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
                 var marker = $"\tcolumn {SanitizeObjectName(columnName)}";
                 var start = text.IndexOf(marker, StringComparison.Ordinal);
                 if (start < 0) throw new InvalidDataException($"Date column '{columnName}' was not generated.");
