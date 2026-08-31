@@ -190,11 +190,11 @@ Directory.CreateDirectory(culturesPath);
                 builder.AppendLine($"\tpartition {tableName} = m");
                 builder.AppendLine("\t\tmode: import");
                 builder.AppendLine("\t\tsource =");
-                builder.AppendLine("\t\t\tlet");
-                builder.AppendLine($"\t\t\t\tSource = Csv.Document(File.Contents(DataFolder & \"\\{EscapeMString(table.Name)}.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),");
-                builder.AppendLine("\t\t\t\t#\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])");
-                builder.AppendLine("\t\t\tin");
-                builder.AppendLine("\t\t\t\t#\"Promoted Headers\"");
+                builder.AppendLine("\t\t\t\tlet");
+                builder.AppendLine($"\t\t\t\t    Source = Csv.Document(File.Contents(DataFolder & \"\\{EscapeMString(table.Name)}.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),");
+                builder.AppendLine("\t\t\t\t    #\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])");
+                builder.AppendLine("\t\t\t\tin");
+                builder.AppendLine("\t\t\t\t    #\"Promoted Headers\"");
 
                 return builder.ToString();
             }
@@ -237,3 +237,340 @@ Directory.CreateDirectory(culturesPath);
                             groups["SLA"].Add(candidate);
                             continue;
                         }
+
+                        if (normalizedName.Contains("duration") || normalizedName.Contains("time") || normalizedName.Contains("hour") || normalizedName.Contains("minute") || normalizedName.Contains("second"))
+                        {
+                            groups["Duration"].Add(candidate);
+                            continue;
+                        }
+
+                        groups["KPIs"].Add(candidate);
+                    }
+                }
+
+                return groups;
+            }
+
+            private static string BuildMeasuresTableTmdl(
+                string measureDefinitionsPath,
+                IReadOnlyList<BuiltTable> tables)
+            {
+                _ = tables;
+                if (!File.Exists(measureDefinitionsPath))
+                {
+                    throw new FileNotFoundException(
+                        $"Measure definitions file not found: {measureDefinitionsPath}");
+                }
+
+                using var document = JsonDocument.Parse(File.ReadAllText(measureDefinitionsPath));
+
+                if (!document.RootElement.TryGetProperty("measures", out var measuresElement) ||
+                    measuresElement.ValueKind != JsonValueKind.Array)
+                {
+                    throw new InvalidDataException(
+                        "MeasureDefinitions.json must contain a 'measures' array.");
+                }
+
+                var measureDefinitions = measuresElement
+    .EnumerateArray()
+    .ToList();
+
+var measures = measureDefinitions
+    .Select(measure =>
+    {
+        var id = GetJsonString(measure, "MeasureID");
+        var name = GetJsonString(measure, "Name");
+        var expression = GetJsonString(measure, "Expression");
+
+        if (string.IsNullOrWhiteSpace(id))
+            throw new InvalidDataException(
+                "Measure definition has an empty MeasureID.");
+
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidDataException(
+                $"Measure '{id}' has an empty Name.");
+
+        if (string.IsNullOrWhiteSpace(expression))
+            throw new InvalidDataException(
+                $"Measure '{id}' ({name}) has an empty Expression.");
+
+        return new
+        {
+            Id = id,
+            Name = name,
+            Folder = GetJsonString(measure, "Folder"),
+            DisplayOrder =
+                measure.TryGetProperty("DisplayOrder", out var order) &&
+                order.ValueKind == JsonValueKind.Number
+                    ? order.GetInt32()
+                    : int.MaxValue,
+            Expression = expression,
+            Format = GetJsonString(measure, "Format"),
+            Description = GetJsonString(measure, "Description"),
+            Hidden =
+                measure.TryGetProperty("Hidden", out var hidden) &&
+                hidden.ValueKind == JsonValueKind.True &&
+                hidden.GetBoolean()
+        };
+    })
+    .ToList();
+
+var duplicateIds = measures
+    .GroupBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
+    .Where(g => g.Count() > 1)
+    .Select(g => g.Key)
+    .ToList();
+
+if (duplicateIds.Count > 0)
+    throw new InvalidDataException(
+        $"Duplicate MeasureID values: {string.Join(", ", duplicateIds)}.");
+
+var duplicateNames = measures
+    .GroupBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
+    .Where(g => g.Count() > 1)
+    .Select(g => g.Key)
+    .ToList();
+
+if (duplicateNames.Count > 0)
+    throw new InvalidDataException(
+        $"Duplicate measure names: {string.Join(", ", duplicateNames)}.");
+
+if (measures.Count != measureDefinitions.Count)
+    throw new InvalidDataException(
+        $"Expected {measureDefinitions.Count} measures from " +
+        $"MeasureDefinitions.json, but wrote {measures.Count}. " +
+        "Check for skipped/filtered entries.");
+
+                var expectedMeasureIds = measureDefinitions
+    .Select(m => GetJsonString(m, "MeasureID"))
+    .Where(id => !string.IsNullOrWhiteSpace(id))
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var actualMeasureIds = measures
+                    .Select(m => m.Id)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var missingMeasureIds = expectedMeasureIds
+                    .Except(actualMeasureIds, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(id => id)
+                    .ToList();
+
+                if (missingMeasureIds.Count > 0)
+                {
+                    throw new InvalidDataException(
+                        $"Missing metadata-defined measures: {string.Join(", ", missingMeasureIds)}");
+                }
+
+                if (measures.Count == 0)
+                {
+                    throw new InvalidDataException(
+                        "MeasureDefinitions.json contains no valid measures.");
+                }
+
+                var builder = new StringBuilder();
+                builder.AppendLine("table '_Measure Table'");
+                builder.AppendLine();
+
+                foreach (var measure in measures)
+                {
+                    var expression = Regex.Replace(
+    measure.Expression.Trim(),
+    @"\s*\r?\n\s*",
+    " ");
+
+builder.AppendLine(
+    $"\tmeasure '{EscapeSingleQuotes(measure.Name)}' = {expression}");
+
+                    if (!string.IsNullOrWhiteSpace(measure.Folder))
+                    {
+                        builder.AppendLine(
+                            $"\t\tdisplayFolder: '{EscapeSingleQuotes(measure.Folder)}'");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(measure.Format))
+                    {
+                        builder.AppendLine(
+                            $"\t\tformatString: '{EscapeSingleQuotes(measure.Format)}'");
+                    }
+
+
+                    if (measure.Hidden)
+                    {
+                        builder.AppendLine("\t\tisHidden: true");
+                    }
+
+                    builder.AppendLine();
+                }
+
+                builder.AppendLine("\tpartition '_Measure Table' = m");
+                builder.AppendLine("\t\tmode: import");
+                builder.AppendLine("\t\tsource =");
+                builder.AppendLine("\t\t\t\tlet");
+                builder.AppendLine("\t\t\t\t    Source = #table({}, {})");
+                builder.AppendLine("\t\t\t\tin");
+                builder.AppendLine("\t\t\t\t    Source");
+
+                return builder.ToString();
+            }
+
+            private static string GetJsonString(
+                JsonElement element,
+                string propertyName)
+            {
+                if (!element.TryGetProperty(propertyName, out var property))
+                {
+                    return string.Empty;
+                }
+
+                return property.ValueKind == JsonValueKind.String
+                    ? property.GetString() ?? string.Empty
+                    : string.Empty;
+            }
+
+            private static string BuildDatabaseTmdl(ModelBuildResult model)
+            {
+                _ = model;
+
+                return "database" + Environment.NewLine
+                    + "\tcompatibilityLevel: 1601" + Environment.NewLine;
+            }
+
+            private static string BuildExpressionsTmdl(string dataDirectoryPath)
+            {
+                var builder = new StringBuilder();
+                builder.AppendLine(
+                    $"expression DataFolder = \"{EscapeMString(dataDirectoryPath)}\" meta [IsParameterQuery=true, Type=\"Text\", IsParameterQueryRequired=true]");
+                return builder.ToString();
+            }
+
+            private static string BuildCultureTmdl()
+            {
+                return "cultureInfo en-US" + Environment.NewLine;
+            }
+
+            private static bool IsNumericColumn(BuiltColumn column)
+            {
+                return string.Equals(column.DataType, "Int64", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(column.DataType, "Decimal", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(column.DataType, "Double", StringComparison.OrdinalIgnoreCase);
+            }
+
+            private static bool ShouldSkipGenericMeasure(BuiltColumn column)
+            {
+                if (column is null)
+                {
+                    return false;
+                }
+
+                var name = column.Name ?? string.Empty;
+                var normalizedName = name.ToLowerInvariant();
+
+                if (column.IsPrimaryKey || column.IsForeignKey)
+                {
+                    return true;
+                }
+
+                if (normalizedName.Contains("id") || normalizedName.Contains("key") || normalizedName.Contains("pk") || normalizedName.Contains("fk"))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
+            private static string EscapeSingleQuotes(string value)
+            {
+                return value.Replace("'", "''", StringComparison.Ordinal);
+            }
+
+            private static string EscapeJsonString(string value)
+            {
+                return value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
+            }
+
+            private static string EscapeMString(string value)
+            {
+                return value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\"\"", StringComparison.Ordinal);
+            }
+
+            private static string SanitizeFileName(string value)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return "ModelObject";
+                }
+
+                var invalidChars = Path.GetInvalidFileNameChars();
+                var cleaned = new string(value.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
+                return string.IsNullOrWhiteSpace(cleaned) ? "ModelObject" : cleaned;
+            }
+
+            private static string HumanizeName(string? value)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return "column";
+                }
+
+                return string.Join(" ", value.Split(new[] { '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(part => char.ToUpperInvariant(part[0]) + part[1..].ToLowerInvariant()));
+            }
+
+            private static string MapTmdlDataType(string? type)
+            {
+                if (string.IsNullOrWhiteSpace(type))
+                {
+                    return "string";
+                }
+
+                return type.Trim().ToLowerInvariant() switch
+                {
+                    "int64" => "int64",
+                    "double" => "double",
+                    "decimal" => "decimal",
+                    "datetime" => "dateTime",
+                    "date" => "dateTime",
+                    "boolean" => "boolean",
+                    "bool" => "boolean",
+                    _ => "string"
+                };
+            }
+
+            private static string SanitizeObjectName(string? value)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return "Object";
+                }
+
+                var sanitized = new string(value.Where(character => char.IsLetterOrDigit(character) || character == '_').ToArray());
+                return string.IsNullOrWhiteSpace(sanitized) ? "Object" : sanitized;
+            }
+
+            private sealed class MeasureCandidate
+            {
+                public MeasureCandidate(string tableName, string columnName)
+                {
+                    TableName = tableName;
+                    ColumnName = columnName;
+                }
+
+                public string TableName { get; }
+                public string ColumnName { get; }
+            }
+
+            private static void DeleteIfExists(string path)
+            {
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, recursive: true);
+                    return;
+                }
+
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+        }
+    }
