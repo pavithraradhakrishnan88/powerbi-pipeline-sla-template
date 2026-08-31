@@ -51,7 +51,8 @@ public sealed class PipelineTestFixture : IDisposable
             ReportTemplateRootPath = ReportTemplateRootPath,
             SemanticModelRelativePath = "../Pipeline SLA.SemanticModel",
             MetadataOutputPath = MetadataOutputPath,
-            ThrowOnValidationError = true
+            ThrowOnValidationError = true,
+            Logger = Console.Error.WriteLine
         };
     }
 
