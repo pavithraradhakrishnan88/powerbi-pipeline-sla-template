@@ -138,7 +138,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 var columnName = pair.Key;
                 var localDateTable = pair.Value;
                 if (!DateVariationRelationships.TryGetValue(columnName, out var relationshipId)) continue;
-                var relationshipPattern = $"relationship\\s+{Regex.Escape(relationshipId)}\\s+\\r?\\n\\s*joinOnDateBehavior:\\s*datePartOnly\\s+\\r?\\n\\s*fromColumn:\\s*{Regex.Escape(FactTable)}\\.{Regex.Escape(columnName)}\\s+\\r?\\n\\s*toColumn:\\s*{Regex.Escape(localDateTable)}\\.Date";
+                var relationshipPattern = $"relationship[ \\t]+{Regex.Escape(relationshipId)}[ \\t]+\\r?\\n[ \\t]*joinOnDateBehavior:[ \\t]*datePartOnly[ \\t]+\\r?\\n[ \\t]*fromColumn:[ \\t]*{Regex.Escape(FactTable)}\\.{Regex.Escape(columnName)}[ \\t]+\\r?\\n[ \\t]*toColumn:[ \\t]*{Regex.Escape(localDateTable)}\\.Date";
                 if (!Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant))
                     throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
                 var marker = $"\tcolumn {SanitizeObjectName(columnName)}";
