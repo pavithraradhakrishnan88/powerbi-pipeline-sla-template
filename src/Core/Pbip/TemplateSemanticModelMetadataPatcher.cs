@@ -31,7 +31,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         private static readonly IReadOnlyDictionary<string, string> DateVariationRelationships =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                ["ScheduledStart"] = "db2083da-0a18-4172-ab57-a096ce539554",
+                ["ScheduledStart"] = "db2083da-0a18-4176-ab57-a096ce539554",
                 ["ActualStart"] = "c7324c3f-573c-4a3b-9563-7a1dcc4b99a3",
                 ["ScheduledEnd"] = "5fcd5823-e6b0-472e-bf09-57997645718c",
                 ["ActualEnd"] = "6bbc152f-49b4-4e1a-ad36-e50fd87530d8"
@@ -124,7 +124,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             builder.AppendLine($"\t\tsourceColumn: {columnName}");
             if (!string.IsNullOrWhiteSpace(column.DisplayFolder)) builder.AppendLine($"\t\tdisplayFolder: '{EscapeSingleQuotes(column.DisplayFolder)}'");
             if (!string.IsNullOrWhiteSpace(column.FormatString)) builder.AppendLine($"\t\tformatString: '{EscapeSingleQuotes(column.FormatString)}'");
-            if (!string.IsNullOrWhiteSpace(column.Description)) builder.Append($"\t\tannotation Description = '{EscapeSingleQuotes(column.Description)}'");
+            if (!string.IsNullOrWhiteSpace(column.Description)) builder.Append($"\t\tdescription: '{EscapeSingleQuotes(column.Description)}'");
             return builder.ToString().TrimEnd('\r', '\n');
         }
 
@@ -143,6 +143,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                     $@"^\s*joinOnDateBehavior:\s*datePartOnly\s*$.*?" +
                     $@"^\s*fromColumn:\s*{Regex.Escape(FactTable)}\.{Regex.Escape(columnName)}\s*$.*?" +
                     $@"^\s*toColumn:\s*{Regex.Escape(localDateTable)}\.Date\s*$";
+                logger?.Invoke($"SEMANTIC-MODEL-PATCH|DateRelationshipRuntime|Column={columnName}|Length={relationships.Length}|Escaped={Regex.Escape(relationships)}");
                 if (!Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant))
                     throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
                 var marker = $"\tcolumn {SanitizeObjectName(columnName)}";
