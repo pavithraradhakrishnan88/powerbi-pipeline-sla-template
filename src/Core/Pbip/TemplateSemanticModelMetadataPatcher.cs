@@ -31,7 +31,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         private static readonly IReadOnlyDictionary<string, string> DateVariationRelationships =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                ["ScheduledStart"] = "db2083da-0a18-4172-ab57-a096ce539554",
+                ["ScheduledStart"] = "db2083da-0a18-4176-ab57-a096ce539554",
                 ["ActualStart"] = "c7324c3f-573c-4a3b-9563-7a1dcc4b99a3",
                 ["ScheduledEnd"] = "5fcd5823-e6b0-472e-bf09-57997645718c",
                 ["ActualEnd"] = "6bbc152f-49b4-4e1a-ad36-e50fd87530d8"
@@ -138,13 +138,62 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 var columnName = pair.Key;
                 var localDateTable = pair.Value;
                 if (!DateVariationRelationships.TryGetValue(columnName, out var relationshipId)) continue;
-                var relationshipPattern =
-                    $@"(?ms)relationship\s+{Regex.Escape(relationshipId)}.*?" +
-                    $@"joinOnDateBehavior:\s*datePartOnly.*?" +
-                    $@"fromColumn:\s*{Regex.Escape(FactTable)}\.{Regex.Escape(columnName)}.*?" +
-                    $@"toColumn:\s*{Regex.Escape(localDateTable)}\.Date";
-                if (!Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant))
+
+                var relationshipStart = Regex.Match(
+                    relationships,
+                    $@"(?m)^[ \t]*relationship[ \t]+{Regex.Escape(relationshipId)}[ \t]*\r?$",
+                    RegexOptions.CultureInvariant);
+
+                if (!relationshipStart.Success)
                     throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
+
+                var nextRelationship = Regex.Match(
+                    relationships,
+                    @"(?m)^[ \t]*relationship[ \t]+",
+                    RegexOptions.CultureInvariant,
+                    TimeSpan.FromSeconds(1));
+
+                var nextRelationshipIndex = nextRelationship.Success && nextRelationship.Index > relationshipStart.Index
+                    ? nextRelationship.Index
+                    : relationships.Length;
+
+                if (nextRelationship.Success && nextRelationship.Index <= relationshipStart.Index)
+                {
+                    var searchOffset = relationshipStart.Index + relationshipStart.Length;
+                    nextRelationship = Regex.Match(
+                        relationships,
+                        @"(?m)^[ \t]*relationship[ \t]+",
+                        searchOffset,
+                        TimeSpan.FromSeconds(1));
+                    nextRelationshipIndex = nextRelationship.Success
+                        ? nextRelationship.Index
+                        : relationships.Length;
+                }
+
+                var relationshipBlock = relationships.Substring(
+                    relationshipStart.Index,
+                    nextRelationshipIndex - relationshipStart.Index);
+
+                var normalizedBlock = string.Join(
+                    "\n",
+                    relationshipBlock
+                        .Replace("\r\n", "\n", StringComparison.Ordinal)
+                        .Replace("\r", "\n", StringComparison.Ordinal)
+                        .Split('\n')
+                        .Select(line => line.TrimStart(' ', '\t')));
+
+                var expectedFrom = $"fromColumn: {FactTable}.{columnName}";
+                var expectedTo = $"toColumn: {localDateTable}.Date";
+                var orderedPattern =
+                    $@"(?s)\bjoinOnDateBehavior:[ \t]*datePartOnly\b.*?" +
+                    $@"\b{Regex.Escape(expectedFrom)}\b.*?" +
+                    $@"\b{Regex.Escape(expectedTo)}\b";
+
+                if (!Regex.IsMatch(normalizedBlock, orderedPattern, RegexOptions.CultureInvariant))
+                    throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
+
+                logger?.Invoke($"SEMANTIC-MODEL-PATCH|DateRelationshipValidated|{FactTable}.{columnName}|{relationshipId}");
+
                 var marker = $"\tcolumn {SanitizeObjectName(columnName)}";
                 var start = text.IndexOf(marker, StringComparison.Ordinal);
                 if (start < 0) throw new InvalidDataException($"Date column '{columnName}' was not generated.");
