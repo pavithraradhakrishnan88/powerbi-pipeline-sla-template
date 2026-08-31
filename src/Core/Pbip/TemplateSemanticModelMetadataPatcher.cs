@@ -139,10 +139,10 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 var localDateTable = pair.Value;
                 if (!DateVariationRelationships.TryGetValue(columnName, out var relationshipId)) continue;
                 var relationshipPattern =
-                    $@"(?ms)^\s*relationship\s+{Regex.Escape(relationshipId)}\s*$.*?" +
-                    $@"^\s*joinOnDateBehavior:\s*datePartOnly\s*$.*?" +
-                    $@"^\s*fromColumn:\s*{Regex.Escape(FactTable)}\.{Regex.Escape(columnName)}\s*$.*?" +
-                    $@"^\s*toColumn:\s*{Regex.Escape(localDateTable)}\.Date\s*$";
+                    $@"(?ms)relationship\s+{Regex.Escape(relationshipId)}.*?" +
+                    $@"joinOnDateBehavior:\s*datePartOnly.*?" +
+                    $@"fromColumn:\s*{Regex.Escape(FactTable)}\.{Regex.Escape(columnName)}.*?" +
+                    $@"toColumn:\s*{Regex.Escape(localDateTable)}\.Date";
                 if (!Regex.IsMatch(relationships, relationshipPattern, RegexOptions.CultureInvariant))
                     throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
                 var marker = $"\tcolumn {SanitizeObjectName(columnName)}";
@@ -175,7 +175,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             using var document = JsonDocument.Parse(File.ReadAllText(definitionsPath));
             if (!document.RootElement.TryGetProperty("measures", out var measures) || measures.ValueKind != JsonValueKind.Array) throw new InvalidDataException("MeasureDefinitions.json must contain a 'measures' array.");
             var text = File.ReadAllText(factPath, Encoding.UTF8);
-            var measureRegex = new Regex("(?m)^[ \\t]*measure[ \\t]+(?:'(?<qname>[^']+)'|(?<name>[^=\r\n]+?))[ \\t]*=[ \\t]*(?<expr>.*)$", RegexOptions.CultureInvariant);
+            var measureRegex = new Regex("(?m)^[ \\t]*measure[ \\t]+(?:'(?<qname>[^']+)'|(?<name>[^=\\r\\n]+?))[ \\t]*=[ \\t]*(?<expr>.*)$", RegexOptions.CultureInvariant);
             var existing = new Dictionary<string, MeasureSpan>(StringComparer.OrdinalIgnoreCase);
             foreach (Match match in measureRegex.Matches(text))
             {
