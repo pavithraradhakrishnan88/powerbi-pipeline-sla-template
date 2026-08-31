@@ -129,7 +129,6 @@ function Normalize-GeneratedTmdl {
                 }
 
                 $targetPartitionIndent = $tableIndent + 4
-                $delta = $targetPartitionIndent - $indentWidth
                 $newLine = (' ' * $targetPartitionIndent) + $trimmed
                 if ($newLine -ne $line) {
                     $changed = $true
@@ -159,25 +158,33 @@ function Normalize-GeneratedTmdl {
             if ($null -ne $partitionIndent) {
                 if ($trimmed -cmatch '^(mode|source)\b') {
                     $targetChildIndent = $partitionIndent + 4
-                    $childDelta = $targetChildIndent - $indentWidth
                     $newLine = (' ' * $targetChildIndent) + $trimmed
                     if ($newLine -ne $line) {
                         $changed = $true
                         Write-Host "TMDL-FINAL-NORMALIZE|PartitionChildIndent|File=$($file.FullName)|Line=$($i + 1)|Parent=partition $partitionName|Child=$($matches[1])|From=$indentWidth|To=$targetChildIndent"
                     }
                     if ($trimmed -cmatch '^source\b') {
-                        $partitionSourceIndent = $indentWidth
-                        $partitionSourceShift = $targetChildIndent - $indentWidth
+                        # `source` is the partition child. Its M expression begins
+                        # on the following line and must be nested one additional
+                        # level beneath the source declaration.
+                        $partitionSourceIndent = $targetChildIndent
+                        $partitionSourceShift = ($targetChildIndent + 4) - $indentWidth
                     }
                     $output.Add($newLine)
                     continue
                 }
 
                 if ($null -ne $partitionSourceIndent -and $partitionSourceShift -ne 0) {
+                    # Keep the source expression one indentation level beneath
+                    # `source`, including continuation lines.
                     $newIndent = $indentWidth + $partitionSourceShift
+                    if ($newIndent -lt ($partitionSourceIndent + 4)) {
+                        $newIndent = $partitionSourceIndent + 4
+                    }
                     $newLine = (' ' * $newIndent) + $line.Substring($indentText.Length)
                     if ($newLine -ne $line) {
                         $changed = $true
+                        Write-Host "TMDL-FINAL-NORMALIZE|PartitionSourceExpressionIndent|File=$($file.FullName)|Line=$($i + 1)|Parent=source|From=$indentWidth|To=$newIndent"
                     }
                     $output.Add($newLine)
                     continue
