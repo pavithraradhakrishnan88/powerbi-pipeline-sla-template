@@ -17,6 +17,13 @@ if ($files.Count -eq 0) {
 }
 
 foreach ($file in $files) {
+    # The canonical measure table contains DAX expressions, so a standalone
+    # search for four-tab `let` lines can touch valid measure content even
+    # though the file contains no partition M source that needs normalization.
+    if ($file.Name -eq '_Measure Table.tmdl') {
+        continue
+    }
+
     $text = Get-Content -Raw $file.FullName
     $original = $text
 
@@ -39,6 +46,7 @@ foreach ($file in $files) {
 # Fail closed if the Desktop-incompatible four-tab `let` form remains.
 $remaining = @(
     Get-ChildItem $tablesRoot -Filter '*.tmdl' -File |
+        Where-Object { $_.Name -ne '_Measure Table.tmdl' } |
         Select-String -Pattern '^\t{4}let\r?$' -CaseSensitive
 )
 if ($remaining.Count -gt 0) {
