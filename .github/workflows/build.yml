@@ -70,6 +70,13 @@ jobs:
           $ErrorActionPreference = "Stop"
           ./build/build.ps1
 
+      - name: Normalize generated TMDL partition indentation for Desktop 2.156.951.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          ./build/Normalize-TmdlPartitionMIndentation.ps1 `
+            -SemanticModelRoot "${{ github.workspace }}\BuildResult\PBIP\Pipeline_SLA_Tracker.SemanticModel"
+
       - name: Prepare Desktop-consumable artifact
         shell: pwsh
         run: |
