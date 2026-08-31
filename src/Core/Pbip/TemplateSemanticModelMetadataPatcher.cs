@@ -147,28 +147,17 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 if (!relationshipStart.Success)
                     throw new InvalidDataException($"Expected date relationship '{relationshipId}' for {FactTable}.{columnName} was not found.");
 
+                var searchOffset = relationshipStart.Index + relationshipStart.Length;
                 var nextRelationship = Regex.Match(
                     relationships,
                     @"(?m)^[ \t]*relationship[ \t]+",
+                    searchOffset,
                     RegexOptions.CultureInvariant,
                     TimeSpan.FromSeconds(1));
 
-                var nextRelationshipIndex = nextRelationship.Success && nextRelationship.Index > relationshipStart.Index
+                var nextRelationshipIndex = nextRelationship.Success
                     ? nextRelationship.Index
                     : relationships.Length;
-
-                if (nextRelationship.Success && nextRelationship.Index <= relationshipStart.Index)
-                {
-                    var searchOffset = relationshipStart.Index + relationshipStart.Length;
-                    nextRelationship = Regex.Match(
-                        relationships,
-                        @"(?m)^[ \t]*relationship[ \t]+",
-                        searchOffset,
-                        TimeSpan.FromSeconds(1));
-                    nextRelationshipIndex = nextRelationship.Success
-                        ? nextRelationship.Index
-                        : relationships.Length;
-                }
 
                 var relationshipBlock = relationships.Substring(
                     relationshipStart.Index,
