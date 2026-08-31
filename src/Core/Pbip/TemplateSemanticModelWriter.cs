@@ -24,7 +24,6 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             CopyDirectoryRecursively(templateRoot, outputRoot);
             LogDiagnostics(outputRoot, "after-template-copy", logger);
             LogScheduledStartRelationshipDiagnostics(outputRoot, logger);
-
             var repositoryRootPath = FindRepositoryRoot(templateRoot);
             LogScheduledStartRelationshipDiagnostics(outputRoot, logger);
             TemplateSemanticModelMetadataPatcher.Patch(model, outputRoot, repositoryRootPath, logger);
@@ -39,7 +38,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var size = exists ? new FileInfo(path).Length : 0L;
             var text = exists ? File.ReadAllText(path, Encoding.UTF8) : string.Empty;
             var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "CRLF" : text.Contains("\n", StringComparison.Ordinal) ? "LF" : "NONE";
-            var relationshipId = "db2083da-0a18-4172-ab57-a096ce539554";
+            var relationshipId = "db2083da-0a18-4174-ab57-a096ce539554";
             var localDateTable = "LocalDateTable_9043e032-67a4-45e7-bf88-28fec57966b9";
             var pattern = $"relationship\\s+{Regex.Escape(relationshipId)}\\s+\\r?\\n\\s*joinOnDateBehavior:\\s*datePartOnly\\s+\\r?\\n\\s*fromColumn:\\s*Fact_Pipeline_SampleData\\.ScheduledStart\\s+\\r?\\n\\s*toColumn:\\s*{Regex.Escape(localDateTable)}\\.Date";
             var match = exists && Regex.IsMatch(text, pattern, RegexOptions.CultureInvariant);
@@ -60,7 +59,14 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             {
                 var text = File.ReadAllText(file, Encoding.UTF8);
                 var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
-                var normalized = Regex.Replace(text, "(?:\\r?\\n[ \\t]*)+(?=[ \\t]*partition\\s+\\S+\\s*=)", newline, RegexOptions.CultureInvariant);
+                // Remove only blank lines immediately before a partition declaration.
+                // Do not consume the partition line's leading whitespace: that indentation
+                // establishes the partition's table-child object context in TMDL.
+                var normalized = Regex.Replace(
+                    text,
+                    @"(?m)(?:^[ \t]*\r?\n)+(?=[ \t]*partition\s+\S+\s*=)",
+                    newline,
+                    RegexOptions.CultureInvariant);
                 if (!string.Equals(text, normalized, StringComparison.Ordinal))
                 {
                     File.WriteAllText(file, normalized, new UTF8Encoding(false));
