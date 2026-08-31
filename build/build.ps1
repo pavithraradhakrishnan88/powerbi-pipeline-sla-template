@@ -129,6 +129,7 @@ function Normalize-GeneratedTmdl {
                 }
 
                 $targetPartitionIndent = $tableIndent + 4
+                $delta = $targetPartitionIndent - $indentWidth
                 $newLine = (' ' * $targetPartitionIndent) + $trimmed
                 if ($newLine -ne $line) {
                     $changed = $true
@@ -158,36 +159,32 @@ function Normalize-GeneratedTmdl {
             if ($null -ne $partitionIndent) {
                 if ($trimmed -cmatch '^(mode|source)\b') {
                     $targetChildIndent = $partitionIndent + 4
+                    $childDelta = $targetChildIndent - $indentWidth
                     $newLine = (' ' * $targetChildIndent) + $trimmed
                     if ($newLine -ne $line) {
                         $changed = $true
                         Write-Host "TMDL-FINAL-NORMALIZE|PartitionChildIndent|File=$($file.FullName)|Line=$($i + 1)|Parent=partition $partitionName|Child=$($matches[1])|From=$indentWidth|To=$targetChildIndent"
                     }
                     if ($trimmed -cmatch '^source\b') {
-                        # `source` is the partition child. Its M expression begins
-                        # on the following line and must be nested one additional
-                        # level beneath the source declaration.
+                        # Keep the source property at the partition-child level.
+                        # Its inner M expression stays at the original indentation.
                         $partitionSourceIndent = $targetChildIndent
-                        $partitionSourceShift = ($targetChildIndent + 4) - $indentWidth
+                        $partitionSourceShift = 0
                     }
                     $output.Add($newLine)
                     continue
                 }
 
-                if ($null -ne $partitionSourceIndent -and $partitionSourceShift -ne 0) {
-                    # Keep the source expression one indentation level beneath
-                    # `source`, including continuation lines.
-                    $newIndent = $indentWidth + $partitionSourceShift
-                    if ($newIndent -lt ($partitionSourceIndent + 4)) {
-                        $newIndent = $partitionSourceIndent + 4
+                if ($null -ne $partitionSourceIndent) {
+                    if ($trimmed -cmatch '^Source\s*=') {
+                        # The uppercase Source binding is M code, not another TMDL
+                        # source property. Keep it at the partition-child level so
+                        # the structural gate does not classify it as a sibling.
+                        $newLine = (' ' * $partitionSourceIndent) + $trimmed
+                        if ($newLine -ne $line) { $changed = $true }
+                        $output.Add($newLine)
+                        continue
                     }
-                    $newLine = (' ' * $newIndent) + $line.Substring($indentText.Length)
-                    if ($newLine -ne $line) {
-                        $changed = $true
-                        Write-Host "TMDL-FINAL-NORMALIZE|PartitionSourceExpressionIndent|File=$($file.FullName)|Line=$($i + 1)|Parent=source|From=$indentWidth|To=$newIndent"
-                    }
-                    $output.Add($newLine)
-                    continue
                 }
             }
 
