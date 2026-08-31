@@ -152,8 +152,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                     relationships,
                     @"(?m)^[ \t]*relationship[ \t]+",
                     searchOffset,
-                    RegexOptions.CultureInvariant,
-                    TimeSpan.FromSeconds(1));
+                    RegexOptions.CultureInvariant);
 
                 var nextRelationshipIndex = nextRelationship.Success
                     ? nextRelationship.Index
