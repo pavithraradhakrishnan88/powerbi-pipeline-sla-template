@@ -86,6 +86,11 @@ function Normalize-GeneratedTmdl {
         $lines = [IO.File]::ReadAllLines($file.FullName)
         $output = [Collections.Generic.List[string]]::new()
         $changed = $false
+        $tableIndent = $null
+        $partitionIndent = $null
+        $partitionName = $null
+        $partitionSourceIndent = $null
+        $partitionSourceShift = 0
 
         for ($i = 0; $i -lt $lines.Count; $i++) {
             $line = $lines[$i]
@@ -98,6 +103,85 @@ function Normalize-GeneratedTmdl {
                 $changed = $true
                 Write-Host "TMDL-FINAL-NORMALIZE|RemovedInvalidEmptyLineBeforePartition|File=$($file.FullName)|Line=$($i + 1)"
                 continue
+            }
+
+            $indentText = [regex]::Match($line, '^[ \t]*').Value
+            $indentWidth = 0
+            foreach ($ch in $indentText.ToCharArray()) {
+                if ($ch -eq [char]9) { $indentWidth += 4 } else { $indentWidth++ }
+            }
+            $trimmed = $line.Trim()
+
+            if ($trimmed -match '^table\s+(?:''[^'']+''|\S+)\s*$') {
+                $tableIndent = $indentWidth
+                $partitionIndent = $null
+                $partitionName = $null
+                $partitionSourceIndent = $null
+                $partitionSourceShift = 0
+                $output.Add($line)
+                continue
+            }
+
+            if ($trimmed -match '^partition\s+(\S+)\s*=\s*(.+)$') {
+                if ($null -eq $tableIndent) {
+                    $output.Add($line)
+                    continue
+                }
+
+                $targetPartitionIndent = $tableIndent + 4
+                $delta = $targetPartitionIndent - $indentWidth
+                $newLine = (' ' * $targetPartitionIndent) + $trimmed
+                if ($newLine -ne $line) {
+                    $changed = $true
+                    Write-Host "TMDL-FINAL-NORMALIZE|PartitionIndent|File=$($file.FullName)|Line=$($i + 1)|Partition=$($matches[1])|From=$indentWidth|To=$targetPartitionIndent"
+                }
+
+                $partitionIndent = $targetPartitionIndent
+                $partitionName = $matches[1]
+                $partitionSourceIndent = $null
+                $partitionSourceShift = 0
+                $output.Add($newLine)
+                continue
+            }
+
+            if ($null -ne $partitionIndent) {
+                # Table-level declarations terminate the current partition block.
+                # Keep their original indentation/content untouched.
+                $isTableLevel = $trimmed -match '^(?:column|hierarchy|annotation|measure|calculationItem|expression|partition)\b'
+                if ($isTableLevel -and $indentWidth -le $partitionIndent) {
+                    $partitionIndent = $null
+                    $partitionName = $null
+                    $partitionSourceIndent = $null
+                    $partitionSourceShift = 0
+                }
+            }
+
+            if ($null -ne $partitionIndent) {
+                if ($trimmed -match '^(mode|source)\b') {
+                    $targetChildIndent = $partitionIndent + 4
+                    $childDelta = $targetChildIndent - $indentWidth
+                    $newLine = (' ' * $targetChildIndent) + $trimmed
+                    if ($newLine -ne $line) {
+                        $changed = $true
+                        Write-Host "TMDL-FINAL-NORMALIZE|PartitionChildIndent|File=$($file.FullName)|Line=$($i + 1)|Parent=partition $partitionName|Child=$($matches[1])|From=$indentWidth|To=$targetChildIndent"
+                    }
+                    if ($trimmed -match '^source\b') {
+                        $partitionSourceIndent = $indentWidth
+                        $partitionSourceShift = $targetChildIndent - $indentWidth
+                    }
+                    $output.Add($newLine)
+                    continue
+                }
+
+                if ($null -ne $partitionSourceIndent -and $partitionSourceShift -ne 0) {
+                    $newIndent = $indentWidth + $partitionSourceShift
+                    $newLine = (' ' * $newIndent) + $line.Substring($indentText.Length)
+                    if ($newLine -ne $line) {
+                        $changed = $true
+                    }
+                    $output.Add($newLine)
+                    continue
+                }
             }
 
             $output.Add($line)
