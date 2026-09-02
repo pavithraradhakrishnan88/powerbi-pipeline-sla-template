@@ -30,25 +30,82 @@ foreach ($root in $semanticModelRoots) {
 
     $currentFiles = @(Get-ChildItem $currentTablesRoot -Filter '*.tmdl' -File)
     foreach ($file in $currentFiles) {
-        # The canonical measure table contains DAX expressions, so a standalone
-        # search for four-tab `let` lines can touch valid measure content even
-        # though the file contains no partition M source that needs normalization.
-        if ($file.Name -eq '_Measure Table.tmdl') {
-            continue
-        }
-
         $text = Get-Content -Raw $file.FullName
         $original = $text
+        $newline = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+        $lines = $text.Replace("`r`n", "`n").Replace("`r", "`n").Split("`n")
 
-        # Power BI Desktop 2.156.951.0 expects the M source block to be nested
-        # directly below `source =`. Normalize only the generated partition
-        # indentation; do not change the M expression itself.
-        $text = [regex]::Replace($text, '(?m)^\t{4}let\r?$', "`t`t`tlet")
-        $text = [regex]::Replace($text, '(?m)^\t{4}    (Source = .*)$', "`t`t`t`t`$1")
-        $text = [regex]::Replace($text, '(?m)^\t{4}    (#\"Promoted Headers\" = .*)$', "`t`t`t`t`$1")
-        $text = [regex]::Replace($text, '(?m)^\t{3}in\r?$', "`t`t`t in".Replace(' ', ''))
-        $text = [regex]::Replace($text, '(?m)^\t{4}    (#\"Promoted Headers\"$)', "`t`t`t`t`$1")
-        $text = [regex]::Replace($text, '(?m)^\t{4}    (Source$)', "`t`t`t`t`$1")
+        for ($i = 0; $i -lt $lines.Length; $i++) {
+            if ($lines[$i] -notmatch '^[ \t]*partition\s+\S+\s*=\s*m\s*$') {
+                continue
+            }
+
+            $partitionIndent = [regex]::Match($lines[$i], '^[ \t]*').Value
+            $partitionChildIndent = $partitionIndent + "`t"
+            $sourceIndex = -1
+
+            for ($j = $i + 1; $j -lt $lines.Length; $j++) {
+                $candidate = $lines[$j].Trim()
+                $candidateIndent = [regex]::Match($lines[$j], '^[ \t]*').Value
+                if ($candidate -match '^source\s*=') {
+                    $sourceIndex = $j
+                    break
+                }
+
+                if ($candidate.Length -gt 0 -and $candidateIndent.Length -le $partitionIndent.Length -and $candidate -match '^(?:partition|column|measure|hierarchy|calculationGroup|annotation)\b') {
+                    break
+                }
+            }
+
+            if ($sourceIndex -lt 0) {
+                continue
+            }
+
+            $normalizedSource = $partitionChildIndent + $lines[$sourceIndex].Trim()
+            if ($lines[$sourceIndex] -ne $normalizedSource) {
+                $lines[$sourceIndex] = $normalizedSource
+            }
+
+            if ($lines[$sourceIndex].Trim() -ne 'source =') {
+                continue
+            }
+
+            $expressionEnd = $sourceIndex + 1
+            while ($expressionEnd -lt $lines.Length) {
+                $candidate = $lines[$expressionEnd].Trim()
+                $candidateIndent = [regex]::Match($lines[$expressionEnd], '^[ \t]*').Value
+                if ($candidate.Length -gt 0 -and $candidateIndent.Length -le $partitionIndent.Length -and $candidate -match '^(?:partition|column|measure|hierarchy|calculationGroup|annotation)\b') {
+                    break
+                }
+
+                $expressionEnd++
+            }
+
+            $expressionIndent = $partitionChildIndent + "`t"
+            $nestedIndent = $expressionIndent + "`t"
+
+            for ($j = $sourceIndex + 1; $j -lt $expressionEnd; $j++) {
+                $trimmed = $lines[$j].Trim()
+                if ($trimmed.Length -eq 0) {
+                    continue
+                }
+
+                $normalizedLine = if ($trimmed -ceq 'let' -or $trimmed -ceq 'in') {
+                    $expressionIndent + $trimmed
+                }
+                else {
+                    $nestedIndent + $trimmed
+                }
+
+                if ($lines[$j] -ne $normalizedLine) {
+                    $lines[$j] = $normalizedLine
+                }
+            }
+
+            $i = $expressionEnd - 1
+        }
+
+        $text = [string]::Join($newline, $lines)
 
         if ($text -ne $original) {
             [IO.File]::WriteAllText($file.FullName, $text, [Text.UTF8Encoding]::new($false))
@@ -57,15 +114,15 @@ foreach ($root in $semanticModelRoots) {
     }
 }
 
-# Fail closed if the Desktop-incompatible four-tab `let` form remains.
+# Fail closed if an M partition still contains source-expression lines that are
+# not nested inside the source block.
 $remaining = @()
 foreach ($root in $semanticModelRoots) {
     $currentTablesRoot = Join-Path $root 'definition\tables'
     if (!(Test-Path $currentTablesRoot -PathType Container)) { continue }
     $remaining += @(
         Get-ChildItem $currentTablesRoot -Filter '*.tmdl' -File |
-            Where-Object { $_.Name -ne '_Measure Table.tmdl' } |
-            Select-String -Pattern '^\t{4}let\r?$' -CaseSensitive
+            Select-String -Pattern '^[ \t]{0,2}(?:let|in|Source\s*=|#"Promoted Headers")\b' -CaseSensitive
     )
 }
 if ($remaining.Count -gt 0) {

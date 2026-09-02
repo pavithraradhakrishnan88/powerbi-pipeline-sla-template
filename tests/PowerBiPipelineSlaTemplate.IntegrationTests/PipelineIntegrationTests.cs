@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Text.Json;
 using FluentAssertions;
 using PowerBiPipelineSlaTemplate.Core.Pbip;
@@ -93,6 +94,24 @@ public class PipelineIntegrationTests
             Path.Combine("Report", "definition.pbir"));
     }
 
+    [Fact]
+    public void Run_ShouldGenerateImportPartitionsWithValidSourceNesting()
+    {
+        using var fixture = new PipelineTestFixture("Normal");
+        var orchestrator = new PipelineOrchestrator();
+        _ = orchestrator.Run(fixture.Options);
+
+        var tableFiles = Directory.GetFiles(
+            Path.Combine(fixture.SemanticModelRootPath, "definition", "tables"),
+            "*.tmdl",
+            SearchOption.TopDirectoryOnly);
+
+        foreach (var file in tableFiles)
+        {
+            AssertImportPartitionSourceNesting(file);
+        }
+    }
+
     private static void ValidateJsonFiles(string rootPath)
     {
         var jsonFiles = Directory.GetFiles(rootPath, "*.json", SearchOption.AllDirectories)
@@ -133,5 +152,79 @@ public class PipelineIntegrationTests
 
             File.Copy(sourceFile, destination, overwrite: true);
         }
+    }
+
+    private static void AssertImportPartitionSourceNesting(string filePath)
+    {
+        var lines = File.ReadAllLines(filePath);
+        for (var i = 0; i < lines.Length; i++)
+        {
+            if (!Regex.IsMatch(lines[i], @"^[\t ]*partition\s+\S+\s*=\s*m\s*$"))
+            {
+                continue;
+            }
+
+            var sourceIndex = Array.FindIndex(lines, i + 1, line => Regex.IsMatch(line, @"^[\t ]*source\s*=\s*$"));
+            sourceIndex.Should().BeGreaterThan(i, $"M partition in {filePath} must contain a multiline source block.");
+
+            var partitionIndent = CountIndent(lines[i]);
+            var sourceIndent = CountIndent(lines[sourceIndex]);
+            sourceIndent.Should().Be(partitionIndent + 1, $"source must be nested one level under the partition in {filePath}");
+
+            var letIndex = sourceIndex + 1;
+            while (letIndex < lines.Length && string.IsNullOrWhiteSpace(lines[letIndex]))
+            {
+                letIndex++;
+            }
+
+            lines[letIndex].Trim().Should().Be("let", $"the source block in {filePath} must begin with let");
+            CountIndent(lines[letIndex]).Should().Be(sourceIndent + 1, $"let must be nested under source in {filePath}");
+
+            var inIndex = Array.FindIndex(lines, letIndex + 1, line => line.Trim() == "in");
+            inIndex.Should().BeGreaterThan(letIndex, $"the let block in {filePath} must contain in");
+            CountIndent(lines[inIndex]).Should().Be(sourceIndent + 1, $"in must be nested under source in {filePath}");
+
+            for (var lineIndex = letIndex + 1; lineIndex < inIndex; lineIndex++)
+            {
+                if (string.IsNullOrWhiteSpace(lines[lineIndex]))
+                {
+                    continue;
+                }
+
+                CountIndent(lines[lineIndex]).Should().BeGreaterThan(sourceIndent + 1, $"M binding lines must be nested under let in {filePath}");
+            }
+
+            var resultIndex = inIndex + 1;
+            while (resultIndex < lines.Length && string.IsNullOrWhiteSpace(lines[resultIndex]))
+            {
+                resultIndex++;
+            }
+
+            resultIndex.Should().BeLessThan(lines.Length, $"partition in {filePath} must include a result expression after in");
+            CountIndent(lines[resultIndex]).Should().BeGreaterThan(sourceIndent + 1, $"the final M expression must be nested under in in {filePath}");
+        }
+    }
+
+    private static int CountIndent(string line)
+    {
+        var count = 0;
+        foreach (var ch in line)
+        {
+            if (ch == '\t')
+            {
+                count++;
+                continue;
+            }
+
+            if (ch == ' ')
+            {
+                count++;
+                continue;
+            }
+
+            break;
+        }
+
+        return count;
     }
 }

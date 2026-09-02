@@ -54,6 +54,34 @@ public class PbipSemanticModelWriterTests
     }
 
     [Fact]
+    public void WriteSemanticModel_ShouldNestImportPartitionMExpressionsUnderSource()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var pbipRoot = workspace.CreateDirectory("pbip");
+        var semanticModelPath = Path.Combine(pbipRoot, "Pipeline SLA.SemanticModel");
+
+        var writer = new PbipSemanticModelWriter();
+        writer.WriteSemanticModel(SampleModel.Normal(), semanticModelPath);
+
+        var categoryTmdl = File.ReadAllLines(Path.Combine(semanticModelPath, "definition", "tables", "Dim_Category.tmdl"));
+        categoryTmdl.Should().Contain("\tpartition Dim_Category = m");
+        categoryTmdl.Should().Contain("\t\tsource =");
+        categoryTmdl.Should().Contain("\t\t\tlet");
+        categoryTmdl.Should().Contain("\t\t\t\tSource = Csv.Document(File.Contents(DataFolder & \"\\Dim_Category.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),");
+        categoryTmdl.Should().Contain("\t\t\t\t#\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])");
+        categoryTmdl.Should().Contain("\t\t\tin");
+        categoryTmdl.Should().Contain("\t\t\t\t#\"Promoted Headers\"");
+
+        var measureTmdl = File.ReadAllLines(Path.Combine(semanticModelPath, "definition", "tables", "_Measure Table.tmdl"));
+        measureTmdl.Should().Contain("\tpartition '_Measure Table' = m");
+        measureTmdl.Should().Contain("\t\tsource =");
+        measureTmdl.Should().Contain("\t\t\tlet");
+        measureTmdl.Should().Contain("\t\t\t\tSource = #table({}, {})");
+        measureTmdl.Should().Contain("\t\t\tin");
+        measureTmdl.Should().Contain("\t\t\t\tSource");
+    }
+
+    [Fact]
     public void Write_ShouldGenerateReport_WhenTemplateExists()
     {
         using var workspace = new TemporaryWorkspace();
