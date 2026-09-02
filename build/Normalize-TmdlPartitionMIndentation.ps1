@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$SemanticModelRoot = [IO.Path]::GetFullPath($SemanticModelRoot)
 
 $tablesRoot = Join-Path $SemanticModelRoot 'definition\tables'
 if (!(Test-Path $tablesRoot -PathType Container)) {
