@@ -268,7 +268,14 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|DataFolder=AlreadyPresent"); File.WriteAllText(factPath, text, new UTF8Encoding(false)); return;
             }
             var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
-            var partitionBlock = newline + $"{TableIndent}partition {FactTable} = m" + newline + $"{PartitionChildIndent}mode: import" + newline + $"{PartitionChildIndent}source =" + newline + $"{PartitionExpressionIndent}let" + newline + $"{PartitionNestedExpressionIndent}inference = let Source = File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\") in Source" + newline + $"{PartitionNestedExpressionIndent}inference" + newline + $"{PartitionExpressionIndent}in" + newline + $"{PartitionNestedExpressionIndent}inference";
+            var partitionBlock = newline + $"{TableIndent}partition {FactTable} = m" + newline +
+                $"{PartitionChildIndent}mode: import" + newline +
+                $"{PartitionChildIndent}source =" + newline +
+                $"{PartitionExpressionIndent}let" + newline +
+                $"{PartitionNestedExpressionIndent}Source = Csv.Document(File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv])," + newline +
+                $"{PartitionNestedExpressionIndent}#\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])" + newline +
+                $"{PartitionExpressionIndent}in" + newline +
+                $"{PartitionNestedExpressionIndent}#\"Promoted Headers\"";
             text = text.Insert(text.Length, partitionBlock); File.WriteAllText(factPath, text, new UTF8Encoding(false)); logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|Added|DataFolder");
         }
 
