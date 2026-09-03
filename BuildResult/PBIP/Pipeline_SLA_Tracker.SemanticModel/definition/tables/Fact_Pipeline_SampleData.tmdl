@@ -39,7 +39,7 @@ table Fact_Pipeline_SampleData
 		variation Variation
 			isDefault
 			relationship: db2083da-0a18-4176-ab57-a096ce539554
-			defaultHierarchy: LocalDateTable_9043e032-67a4-45e7-bf88-28fec57966b9.Date
+			defaultHierarchy: LocalDateTable_9043e032-67a4-45e7-bf88-28fec57966b9.'Date Hierarchy'
 	column ActualStart
 		dataType: dateTime
 		summarizeBy: none
@@ -50,7 +50,7 @@ table Fact_Pipeline_SampleData
 		variation Variation
 			isDefault
 			relationship: c7324c3f-573c-4a3b-9563-7a1dcc4b99a3
-			defaultHierarchy: LocalDateTable_ac53fd01-924f-4452-a3f3-a0f9a1df973c.Date
+			defaultHierarchy: LocalDateTable_ac53fd01-924f-4452-a3f3-a0f9a1df973c.'Date Hierarchy'
 	column ScheduledEnd
 		dataType: dateTime
 		summarizeBy: none
@@ -61,7 +61,7 @@ table Fact_Pipeline_SampleData
 		variation Variation
 			isDefault
 			relationship: 5fcd5823-e6b0-472e-bf09-57997645718c
-			defaultHierarchy: LocalDateTable_d4583ee4-86f0-47d3-96ae-303f0614bf0d.Date
+			defaultHierarchy: LocalDateTable_d4583ee4-86f0-47d3-96ae-303f0614bf0d.'Date Hierarchy'
 	column ActualEnd
 		dataType: dateTime
 		summarizeBy: none
@@ -72,7 +72,7 @@ table Fact_Pipeline_SampleData
 		variation Variation
 			isDefault
 			relationship: 6bbc152f-49b4-4e1a-ad36-e50fd87530d8
-			defaultHierarchy: LocalDateTable_1c11b445-5c42-44a6-9f02-0bc10f99ee27.Date
+			defaultHierarchy: LocalDateTable_1c11b445-5c42-44a6-9f02-0bc10f99ee27.'Date Hierarchy'
 	column SLAHours
 		dataType: decimal
 		summarizeBy: sum

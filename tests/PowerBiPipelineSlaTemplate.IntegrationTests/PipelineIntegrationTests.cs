@@ -54,6 +54,7 @@ public class PipelineIntegrationTests
         var options = new PipelineOptions
         {
             DataDirectoryPath = dataDir,
+            SemanticModelTemplateRootPath = Path.Combine(repoRoot, "pbip", "Pipeline_SLA_Tracker.SemanticModel"),
             SemanticModelRootPath = Path.Combine(pbipRoot, "Pipeline SLA.SemanticModel"),
             ReportRootPath = Path.Combine(pbipRoot, "Pipeline SLA.Report"),
             ReportTemplateRootPath = templateTarget,

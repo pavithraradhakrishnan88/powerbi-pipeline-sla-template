@@ -128,7 +128,9 @@ public class PbipSemanticModelWriterTests
             root["visualContainerObjects"].Should().BeNull();
         }
 
-        var kpiVisual = Array.Find(visualFiles, file => file.EndsWith("d3f7987300602011509c\\visual.json", StringComparison.OrdinalIgnoreCase));
+        var kpiVisual = Array.Find(
+            visualFiles,
+            file => file.EndsWith(Path.Combine("d3f7987300602011509c", "visual.json"), StringComparison.OrdinalIgnoreCase));
         kpiVisual.Should().NotBeNull();
 
         var kpiRoot = JsonNode.Parse(File.ReadAllText(kpiVisual!));

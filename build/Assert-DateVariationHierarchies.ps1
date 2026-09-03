@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 function Get-TmdlIndentWidth {
-    param([Parameter(Mandatory = $true)][string]$Line)
+    param([AllowEmptyString()][string]$Line = "")
 
     $width = 0
     foreach ($character in $Line.ToCharArray()) {
