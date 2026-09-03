@@ -1,11 +1,56 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "634ff820585db94ac952",
-  "position": { "x": 543.7344398340249, "y": 558.6721991701245, "z": 1007, "height": 118.00829875518673, "width": 191.20331950207469, "tabOrder": 7 },
+  "position": {
+    "x": 543.7344398340249,
+    "y": 558.6721991701245,
+    "z": 1007,
+    "height": 118.00829875518673,
+    "width": 191.20331950207469,
+    "tabOrder": 7
+  },
   "visual": {
     "visualType": "cardVisual",
-    "query": { "queryState": { "Data": { "projections": [{ "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "_Measures" } }, "Property": "Breached Count" } }, "queryRef": "_Measures.Breached Count", "nativeQueryRef": "Breached Count" }] } } },
-    "objects": { "label": [{ "properties": { "position": { "expr": { "Literal": { "Value": "'aboveValue'" } } } }, "selector": { "id": "default" } }] },
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measure Table"
+                    }
+                  },
+                  "Property": "Breached Count"
+                }
+              },
+              "queryRef": "_Measure Table.Breached Count",
+              "nativeQueryRef": "Breached Count"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "label": [
+        {
+          "properties": {
+            "position": {
+              "expr": {
+                "Literal": {
+                  "Value": "\u0027aboveValue\u0027"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ]
+    },
     "visualContainerObjects": {
       "title": [
         {
@@ -13,7 +58,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Pipeline SLA Tracker'"
+                  "Value": "\u0027Pipeline SLA Tracker\u0027"
                 }
               }
             }

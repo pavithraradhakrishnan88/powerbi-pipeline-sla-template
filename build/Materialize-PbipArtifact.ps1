@@ -256,6 +256,8 @@ if (Test-Path $expressionsPath -PathType Leaf) {
     }
 }
 
+& (Join-Path $PSScriptRoot 'Assert-DateVariationHierarchies.ps1') -PbipRoot $ArtifactRoot
+
 # Byte-level UTF-8 BOM gate.
 $bomFiles = @()
 foreach ($file in $tmdlFiles) {

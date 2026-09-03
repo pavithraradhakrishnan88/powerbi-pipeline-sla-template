@@ -305,6 +305,7 @@ Normalize-GeneratedTmdl -SemanticModelRoot $generatedSemanticModelRoot
 & "$PSScriptRoot\Assert-TmdlNoInvalidEmptyLines.ps1" -PbipRoot $pbipOutputRoot
 if ($LASTEXITCODE -ne 0) { throw "TMDL empty-line validation failed with exit code $LASTEXITCODE." }
 Write-Host "TMDL-FINAL-GATE|PASS|Generated BuildResult/PBIP contains no InvalidLineType / Empty partition-boundary conditions."
+& "$PSScriptRoot\Assert-DateVariationHierarchies.ps1" -PbipRoot $pbipOutputRoot -PbipName $pbipName
 
 $artifactPath = Join-Path $repoRoot "artifacts"
 if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
@@ -317,6 +318,7 @@ foreach ($entry in @('docs','data','scripts','theme','LICENSE','CHANGELOG.md','R
 }
 
 Materialize-ArtifactDataPath -ArtifactRoot $artifactPath -BuildDataPath $dataFolderPath
+& "$PSScriptRoot\Assert-DateVariationHierarchies.ps1" -PbipRoot $artifactPath -PbipName $pbipName
 Copy-Item (Join-Path $PSScriptRoot 'Materialize-PbipArtifact.ps1') (Join-Path $artifactPath 'Materialize-PbipArtifact.ps1') -Force
 
 & "$PSScriptRoot\Assert-ArtifactIntegrity.ps1" -GeneratedRoot $pbipOutputRoot -ArtifactRoot $artifactPath -BuildDataPath $dataFolderPath

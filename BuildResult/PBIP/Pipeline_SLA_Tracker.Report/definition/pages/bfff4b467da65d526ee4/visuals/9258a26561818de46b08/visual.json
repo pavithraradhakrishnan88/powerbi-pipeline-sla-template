@@ -1,11 +1,56 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "9258a26561818de46b08",
-  "position": { "x": 41.82572614107884, "y": 558.6721991701245, "z": 1006, "height": 118.00829875518673, "width": 171.78423236514524, "tabOrder": 6 },
+  "position": {
+    "x": 41.82572614107884,
+    "y": 558.6721991701245,
+    "z": 1006,
+    "height": 118.00829875518673,
+    "width": 171.78423236514524,
+    "tabOrder": 6
+  },
   "visual": {
     "visualType": "cardVisual",
-    "query": { "queryState": { "Data": { "projections": [{ "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "_Measures" } }, "Property": "SLA Compliance %" } }, "queryRef": "_Measures.SLA Compliance %", "nativeQueryRef": "SLA Compliance %" }] } } },
-    "objects": { "label": [{ "properties": { "position": { "expr": { "Literal": { "Value": "'aboveValue'" } } } }, "selector": { "id": "default" } }] },
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measure Table"
+                    }
+                  },
+                  "Property": "SLA Compliance %"
+                }
+              },
+              "queryRef": "_Measure Table.SLA Compliance %",
+              "nativeQueryRef": "SLA Compliance %"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "label": [
+        {
+          "properties": {
+            "position": {
+              "expr": {
+                "Literal": {
+                  "Value": "\u0027aboveValue\u0027"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ]
+    },
     "visualContainerObjects": {
       "title": [
         {
@@ -13,7 +58,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Pipeline SLA Tracker'"
+                  "Value": "\u0027Pipeline SLA Tracker\u0027"
                 }
               }
             }

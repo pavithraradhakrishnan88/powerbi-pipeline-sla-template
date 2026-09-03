@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "899ae701b56c496c0b00",
   "position": {
@@ -20,13 +20,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "_Measures"
+                      "Entity": "_Measure Table"
                     }
                   },
                   "Property": "Success Rate %"
                 }
               },
-              "queryRef": "_Measures.Success Rate %",
+              "queryRef": "_Measure Table.Success Rate %",
               "nativeQueryRef": "Success Rate %"
             }
           ]
@@ -39,7 +39,7 @@
               "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "_Measures"
+                    "Entity": "_Measure Table"
                   }
                 },
                 "Property": "Success Rate %"
@@ -58,7 +58,7 @@
             "position": {
               "expr": {
                 "Literal": {
-                  "Value": "'aboveValue'"
+                  "Value": "\u0027aboveValue\u0027"
                 }
               }
             }
@@ -85,7 +85,7 @@
             }
           },
           "selector": {
-            "metadata": "Fact_Pipeline_SampleData.Success Rate %"
+            "metadata": "_Measure Table.Success Rate %"
           }
         }
       ],
@@ -109,7 +109,7 @@
             "alignment": {
               "expr": {
                 "Literal": {
-                  "Value": "'middle'"
+                  "Value": "\u0027middle\u0027"
                 }
               }
             },
@@ -149,14 +149,14 @@
               "horizontalAlignment": {
                 "expr": {
                   "Literal": {
-                    "Value": "'left'"
+                    "Value": "\u0027left\u0027"
                   }
                 }
               }
             }
           },
           "selector": {
-            "metadata": "Fact_Pipeline_SampleData.Success Rate %"
+            "metadata": "_Measure Table.Success Rate %"
           }
         },
         {

@@ -1,11 +1,56 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "86b6dfa4aca20bada380",
-  "position": { "x": 800.6639004149379, "y": 558.6721991701245, "z": 1008, "height": 118.00829875518673, "width": 189.70954356846474, "tabOrder": 8 },
+  "position": {
+    "x": 800.6639004149379,
+    "y": 558.6721991701245,
+    "z": 1008,
+    "height": 118.00829875518673,
+    "width": 189.70954356846474,
+    "tabOrder": 8
+  },
   "visual": {
     "visualType": "cardVisual",
-    "query": { "queryState": { "Data": { "projections": [{ "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "_Measures" } }, "Property": "Failed Runs" } }, "queryRef": "_Measures.Failed Runs", "nativeQueryRef": "Failed Runs" }] } } },
-    "objects": { "label": [{ "properties": { "position": { "expr": { "Literal": { "Value": "'aboveValue'" } } } }, "selector": { "id": "default" } }] },
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measure Table"
+                    }
+                  },
+                  "Property": "Failed Runs"
+                }
+              },
+              "queryRef": "_Measure Table.Failed Runs",
+              "nativeQueryRef": "Failed Runs"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "label": [
+        {
+          "properties": {
+            "position": {
+              "expr": {
+                "Literal": {
+                  "Value": "\u0027aboveValue\u0027"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ]
+    },
     "visualContainerObjects": {
       "title": [
         {
@@ -13,7 +58,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Pipeline SLA Tracker'"
+                  "Value": "\u0027Pipeline SLA Tracker\u0027"
                 }
               }
             }

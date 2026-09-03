@@ -194,7 +194,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 var block = text[start..end];
                 if (block.Contains("\t\tvariation Variation", StringComparison.Ordinal)) continue;
                 var trimmed = block.TrimEnd('\r', '\n');
-                var variation = string.Join(newline, new[] { string.Empty, "\t\tvariation Variation", "\t\t\tisDefault", $"\t\t\trelationship: {relationshipId}", $"\t\t\tdefaultHierarchy: {localDateTable}.Date" });
+                var variation = string.Join(newline, new[] { string.Empty, "\t\tvariation Variation", "\t\t\tisDefault", $"\t\t\trelationship: {relationshipId}", $"\t\t\tdefaultHierarchy: {localDateTable}.'Date Hierarchy'" });
                 text = text[..start] + trimmed + variation + text[end..];
                 logger?.Invoke($"SEMANTIC-MODEL-PATCH|DateVariation|{FactTable}.{columnName}|{localDateTable}|{relationshipId}");
             }

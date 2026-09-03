@@ -1,4 +1,6 @@
 table Fact_Pipeline_SampleData
+	lineageTag: f8ed2dcd-c402-4584-98ff-818bd06ae87c
+
 	column PipelineID
 		dataType: int64
 		summarizeBy: sum
@@ -34,7 +36,10 @@ table Fact_Pipeline_SampleData
 		displayFolder: 'Measures'
 		formatString: 'yyyy-MM-dd'
 		annotation Description = 'Scheduledstart in Fact Pipeline Sampledata.'
-
+		variation Variation
+			isDefault
+			relationship: db2083da-0a18-4176-ab57-a096ce539554
+			defaultHierarchy: LocalDateTable_9043e032-67a4-45e7-bf88-28fec57966b9.Date
 	column ActualStart
 		dataType: dateTime
 		summarizeBy: none
@@ -42,7 +47,10 @@ table Fact_Pipeline_SampleData
 		displayFolder: 'Measures'
 		formatString: 'yyyy-MM-dd'
 		annotation Description = 'Actualstart in Fact Pipeline Sampledata.'
-
+		variation Variation
+			isDefault
+			relationship: c7324c3f-573c-4a3b-9563-7a1dcc4b99a3
+			defaultHierarchy: LocalDateTable_ac53fd01-924f-4452-a3f3-a0f9a1df973c.Date
 	column ScheduledEnd
 		dataType: dateTime
 		summarizeBy: none
@@ -50,7 +58,10 @@ table Fact_Pipeline_SampleData
 		displayFolder: 'Measures'
 		formatString: 'yyyy-MM-dd'
 		annotation Description = 'Scheduledend in Fact Pipeline Sampledata.'
-
+		variation Variation
+			isDefault
+			relationship: 5fcd5823-e6b0-472e-bf09-57997645718c
+			defaultHierarchy: LocalDateTable_d4583ee4-86f0-47d3-96ae-303f0614bf0d.Date
 	column ActualEnd
 		dataType: dateTime
 		summarizeBy: none
@@ -58,7 +69,10 @@ table Fact_Pipeline_SampleData
 		displayFolder: 'Measures'
 		formatString: 'yyyy-MM-dd'
 		annotation Description = 'Actualend in Fact Pipeline Sampledata.'
-
+		variation Variation
+			isDefault
+			relationship: 6bbc152f-49b4-4e1a-ad36-e50fd87530d8
+			defaultHierarchy: LocalDateTable_1c11b445-5c42-44a6-9f02-0bc10f99ee27.Date
 	column SLAHours
 		dataType: decimal
 		summarizeBy: sum
@@ -124,11 +138,12 @@ table Fact_Pipeline_SampleData
 		formatString: '#,##0'
 		annotation Description = 'Measure attribute for Fact Pipeline Sampledata.'
 
+	/// Total pipeline executions.
 	partition Fact_Pipeline_SampleData = m
 		mode: import
 		source =
-				let
-				    Source = Csv.Document(File.Contents(DataFolder & "\Fact_Pipeline_SampleData.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
-				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])
-				in
-				    #"Promoted Headers"
+			let
+				inference = let Source = File.Contents(DataFolder & "\Fact_Pipeline_SampleData.csv") in Source
+				inference
+			in
+				inference

@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "72a1336d0b5ed00253e5",
   "position": {
@@ -42,14 +42,14 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Pipeline SLA Tracker - Executive Summary'"
+                  "Value": "\u0027Pipeline SLA Tracker - Executive Summary\u0027"
                 }
               }
             },
             "alignment": {
               "expr": {
                 "Literal": {
-                  "Value": "'center'"
+                  "Value": "\u0027center\u0027"
                 }
               }
             },
@@ -78,7 +78,7 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "_Measures"
+                      "Entity": "_Measure Table"
                     }
                   },
                   "Property": "Last Refresh"
@@ -88,7 +88,7 @@
             "alignment": {
               "expr": {
                 "Literal": {
-                  "Value": "'right'"
+                  "Value": "\u0027right\u0027"
                 }
               }
             }

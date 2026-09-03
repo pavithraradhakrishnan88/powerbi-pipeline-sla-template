@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -112,6 +113,36 @@ public class PipelineIntegrationTests
         }
     }
 
+    [Fact]
+    public void Run_ShouldResolveDateVariationDefaultHierarchies()
+    {
+        using var fixture = new PipelineTestFixture("Normal");
+        var orchestrator = new PipelineOrchestrator();
+        _ = orchestrator.Run(fixture.Options);
+
+        var tablesRoot = Path.Combine(fixture.SemanticModelRootPath, "definition", "tables");
+        var factPath = Path.Combine(tablesRoot, "Fact_Pipeline_SampleData.tmdl");
+        var factText = File.ReadAllText(factPath);
+        var hierarchyTargets = GetHierarchyTargets(tablesRoot);
+
+        var expectedColumns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["ScheduledStart"] = "LocalDateTable_9043e032-67a4-45e7-bf88-28fec57966b9",
+            ["ActualStart"] = "LocalDateTable_ac53fd01-924f-4452-a3f3-a0f9a1df973c",
+            ["ScheduledEnd"] = "LocalDateTable_d4583ee4-86f0-47d3-96ae-303f0614bf0d",
+            ["ActualEnd"] = "LocalDateTable_1c11b445-5c42-44a6-9f02-0bc10f99ee27"
+        };
+
+        foreach (var expected in expectedColumns)
+        {
+            var reference = GetDefaultHierarchyReference(factText, expected.Key);
+            reference.Should().Be($"{expected.Value}.'Date Hierarchy'");
+
+            var target = SplitObjectReference(reference);
+            hierarchyTargets.Should().Contain(target, $"column {expected.Key} should resolve to an emitted hierarchy object");
+        }
+    }
+
     private static void ValidateJsonFiles(string rootPath)
     {
         var jsonFiles = Directory.GetFiles(rootPath, "*.json", SearchOption.AllDirectories)
@@ -152,6 +183,76 @@ public class PipelineIntegrationTests
 
             File.Copy(sourceFile, destination, overwrite: true);
         }
+    }
+
+    private static HashSet<(string Table, string Hierarchy)> GetHierarchyTargets(string tablesRoot)
+    {
+        var targets = new HashSet<(string Table, string Hierarchy)>();
+
+        foreach (var file in Directory.GetFiles(tablesRoot, "*.tmdl", SearchOption.TopDirectoryOnly))
+        {
+            var lines = File.ReadAllLines(file);
+            var tableLine = Array.Find(lines, line => Regex.IsMatch(line.Trim(), @"^table\s+"));
+            tableLine.Should().NotBeNull($"table declaration should exist in {file}");
+
+            var tableName = UnquoteIdentifier(Regex.Match(tableLine!, @"^table\s+(.+)$").Groups[1].Value);
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim();
+                if (!Regex.IsMatch(trimmed, @"^hierarchy\s+"))
+                {
+                    continue;
+                }
+
+                var hierarchyName = UnquoteIdentifier(Regex.Match(trimmed, @"^hierarchy\s+(.+)$").Groups[1].Value);
+                targets.Add((tableName, hierarchyName));
+            }
+        }
+
+        return targets;
+    }
+
+    private static string GetDefaultHierarchyReference(string factText, string columnName)
+    {
+        var pattern = $@"(?ms)^\tcolumn\s+{Regex.Escape(columnName)}\s*$.*?^\t\tvariation\s+Variation\s*$.*?^\t\t\tdefaultHierarchy:\s*(?<reference>.+?)\s*$";
+        var match = Regex.Match(factText, pattern);
+        match.Success.Should().BeTrue($"column {columnName} should contain a variation defaultHierarchy");
+        return match.Groups["reference"].Value;
+    }
+
+    private static (string Table, string Hierarchy) SplitObjectReference(string reference)
+    {
+        var inQuotes = false;
+        for (var i = 0; i < reference.Length; i++)
+        {
+            var ch = reference[i];
+            if (ch == '\'')
+            {
+                if (inQuotes && i + 1 < reference.Length && reference[i + 1] == '\'')
+                {
+                    i++;
+                    continue;
+                }
+
+                inQuotes = !inQuotes;
+                continue;
+            }
+
+            if (ch == '.' && !inQuotes)
+            {
+                return (UnquoteIdentifier(reference[..i]), UnquoteIdentifier(reference[(i + 1)..]));
+            }
+        }
+
+        throw new InvalidOperationException($"Invalid TMDL object reference: {reference}");
+    }
+
+    private static string UnquoteIdentifier(string value)
+    {
+        var trimmed = value.Trim();
+        return trimmed.Length >= 2 && trimmed[0] == '\'' && trimmed[^1] == '\''
+            ? trimmed[1..^1].Replace("''", "'")
+            : trimmed;
     }
 
     private static void AssertImportPartitionSourceNesting(string filePath)
