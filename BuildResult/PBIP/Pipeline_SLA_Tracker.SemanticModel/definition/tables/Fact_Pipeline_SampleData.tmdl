@@ -143,7 +143,7 @@ table Fact_Pipeline_SampleData
 		mode: import
 		source =
 			let
-				inference = let Source = File.Contents(DataFolder & "\Fact_Pipeline_SampleData.csv") in Source
-				inference
+				Source = Csv.Document(File.Contents(DataFolder & "\Fact_Pipeline_SampleData.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				#"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])
 			in
-				inference
+				#"Promoted Headers"

@@ -77,6 +77,10 @@ public class PipelineOrchestratorTests
         factText.Should().NotContain("\n\tmode: import", "partition mode must not be at table scope");
         factText.Should().NotContain("\n\tsource =", "partition source must not be at table scope");
         factText.Should().Contain("File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\")");
+        factText.Should().Contain("Source = Csv.Document(File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),");
+        factText.Should().Contain("#\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])");
+        factText.Should().Contain("in\n\t\t\t\t#\"Promoted Headers\"".Replace("\n", Environment.NewLine, StringComparison.Ordinal));
+        factText.Should().NotContain("inference = let Source = File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\") in Source");
 
         var modelText = File.ReadAllText(Path.Combine(fixture.SemanticModelRootPath, "definition", "model.tmdl"));
         modelText.Should().Contain("ref table '_Measure Table'");

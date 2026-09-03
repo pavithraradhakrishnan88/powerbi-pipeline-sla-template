@@ -1,0 +1,4 @@
+expression DataFolder = "" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+    lineageTag: dataFolderExpression
+
+    annotation PBI_ResultType = Text

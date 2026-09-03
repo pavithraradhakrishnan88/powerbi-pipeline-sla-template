@@ -136,6 +136,11 @@ Open:
 pbip/Pipeline_SLA_Tracker.pbip
 ```
 
+First-clone note for opening the checked-in PBIP directly in Desktop (outside CI/materialize flow):
+
+- `pbip/Pipeline_SLA_Tracker.SemanticModel/definition/expressions.tmdl` must exist.
+- Set `DataFolder` in that file to the absolute local path of your repository `data/` folder before opening `Pipeline_SLA_Tracker.pbip`.
+
 After a successful build, verify in Desktop that:
 
 1. KPI fields and hierarchy render correctly.

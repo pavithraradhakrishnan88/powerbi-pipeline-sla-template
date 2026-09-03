@@ -50,10 +50,14 @@ if (!(Test-Path $expectedFact -PathType Leaf)) {
 if (!(Test-Path $factPath -PathType Leaf)) {
     throw "Materialized Fact_Pipeline_SampleData.tmdl was not found: $factPath"
 }
+if (!(Test-Path $expressionsPath -PathType Leaf)) {
+    throw "Materialization prerequisite missing: expressions.tmdl was not found at '$expressionsPath'."
+}
 
 # STEP 1: Read TMDL.
 $tmdlFiles = @(Get-ChildItem $SemanticModelRoot -Recurse -Filter "*.tmdl" -File)
 $replacementRoot = [IO.Path]::GetFullPath($DataRoot).TrimEnd('\','/')
+$replacementRootComparable = $replacementRoot.Replace('/', '\').TrimEnd('\')
 $replacementCount = 0
 $factReplacementCount = 0
 $dataFolderReferenceCount = 0
@@ -62,16 +66,14 @@ $placeholderReplacementCount = 0
 
 # STEP 2: Resolve the shared DataFolder expression first.
 $dataFolderValue = $null
-if (Test-Path $expressionsPath -PathType Leaf) {
-    $expressionsText = [IO.File]::ReadAllText($expressionsPath)
-    $dataFolderMatch = [regex]::Match(
-        $expressionsText,
-        '(?im)^\s*expression\s+DataFolder\s*=\s*"((?:""|[^"\r\n])*)"'
-    )
+$expressionsText = [IO.File]::ReadAllText($expressionsPath)
+$dataFolderMatch = [regex]::Match(
+    $expressionsText,
+    '(?im)^\s*expression\s+DataFolder\s*=\s*"((?:""|[^"\r\n])*)"'
+)
 
-    if ($dataFolderMatch.Success) {
-        $dataFolderValue = $dataFolderMatch.Groups[1].Value.Replace('""', '"')
-    }
+if ($dataFolderMatch.Success) {
+    $dataFolderValue = $dataFolderMatch.Groups[1].Value.Replace('""', '"')
 }
 
 if ([string]::IsNullOrWhiteSpace($dataFolderValue)) {
@@ -80,17 +82,18 @@ if ([string]::IsNullOrWhiteSpace($dataFolderValue)) {
 
 $dataFolderValue = $dataFolderValue.Replace('/', '\').TrimEnd('\')
 
-if (Test-Path $expressionsPath -PathType Leaf) {
-    $expressionsText = [IO.File]::ReadAllText($expressionsPath)
-    $materializedExpressions = [regex]::Replace(
-        $expressionsText,
-        '(?im)^(\s*expression\s+DataFolder\s*=\s*")[^"]*(".*)$',
-        '${1}' + $replacementRoot + '${2}'
-    )
-    if ($materializedExpressions -ne $expressionsText) {
-        [IO.File]::WriteAllText($expressionsPath, $materializedExpressions, $utf8NoBom)
-        $replacementCount++
-    }
+if (!$dataFolderMatch.Success) {
+    throw "Materialization prerequisite missing: DataFolder expression declaration was not found in '$expressionsPath'."
+}
+
+$materializedExpressions = [regex]::Replace(
+    $expressionsText,
+    '(?im)^(\s*expression\s+DataFolder\s*=\s*")[^"]*(".*)$',
+    '${1}' + $replacementRoot + '${2}'
+)
+if ($materializedExpressions -ne $expressionsText) {
+    [IO.File]::WriteAllText($expressionsPath, $materializedExpressions, $utf8NoBom)
+    $replacementCount++
 }
 
 # STEP 3/4: Directly normalize a legitimate Windows GitHub runner data file.
@@ -102,6 +105,51 @@ $runnerWindowsDataFilePattern = '(?i)File\.Contents\(\s*"(?<runnerPath>[A-Z]:\\+
 # STEP 5: Map the known placeholder and DataFolder expressions.
 $fileContentsDataFolderPattern = '(?i)File\.Contents\(\s*DataFolder\s*&\s*"([^"]+)"\s*\)'
 $factPattern = '(?i)File\.Contents\("(?:[^"\r\n]*[\\/])?Fact_Pipeline_SampleData\.csv"\)'
+
+function Test-PartitionSourceExpression {
+    param(
+        [string]$SourceText,
+        [string]$FilePath,
+        [string]$PartitionName
+    )
+
+    $normalized = $SourceText.Replace("`r`n", "`n")
+    $letCount = ([regex]::Matches($normalized, '\blet\b')).Count
+    $inCount = ([regex]::Matches($normalized, '\bin\b')).Count
+    if ($letCount -ne $inCount) {
+        throw "M syntax validation failed in '$FilePath' partition '$PartitionName': unbalanced let/in tokens (let=$letCount, in=$inCount)."
+    }
+
+    $lines = $normalized.Split("`n")
+    $letIndex = [Array]::FindIndex($lines, [Predicate[string]]{ param($line) $line.Trim() -eq 'let' })
+    if ($letIndex -lt 0) {
+        throw "M syntax validation failed in '$FilePath' partition '$PartitionName': missing outer 'let' line."
+    }
+
+    $inIndex = [Array]::FindIndex($lines, $letIndex + 1, [Predicate[string]]{ param($line) $line.Trim() -eq 'in' })
+    if ($inIndex -lt 0) {
+        throw "M syntax validation failed in '$FilePath' partition '$PartitionName': missing outer 'in' line."
+    }
+    if ($inIndex -le ($letIndex + 1)) {
+        throw "M syntax validation failed in '$FilePath' partition '$PartitionName': no let bindings found."
+    }
+
+    $bindings = @($lines[($letIndex + 1)..($inIndex - 1)] | Where-Object { ![string]::IsNullOrWhiteSpace($_) })
+    if ($bindings.Count -eq 0) {
+        throw "M syntax validation failed in '$FilePath' partition '$PartitionName': no let bindings found."
+    }
+
+    for ($i = 0; $i -lt $bindings.Count; $i++) {
+        $binding = $bindings[$i].Trim()
+        if ($binding -notmatch '=') {
+            throw "M syntax validation failed in '$FilePath' partition '$PartitionName': invalid let binding '$binding' (expected name = expression)."
+        }
+
+        if ($i -lt ($bindings.Count - 1) -and $binding -notmatch ',\s*$') {
+            throw "M syntax validation failed in '$FilePath' partition '$PartitionName': let binding '$binding' must end with a comma."
+        }
+    }
+}
 
 foreach ($file in $tmdlFiles) {
     # Read TMDL before any transformation.
@@ -231,6 +279,21 @@ foreach ($file in $tmdlFiles) {
         $runnerGateText = $runnerGateText.Replace($artifactLocalFileContentsExpression, '')
     }
 
+    # The materialized DataFolder expression may legitimately be an artifact-local
+    # absolute path (including Windows runner roots like D:\a\...). It is validated
+    # separately against the expected artifact data root, so exclude it from the
+    # broad runner-path text scan to avoid false positives.
+    $runnerGateText = [regex]::Replace(
+        $runnerGateText,
+        '(?im)^\s*expression\s+DataFolder\s*=\s*"((?:""|[^"\r\n])*)".*$',
+        [System.Text.RegularExpressions.MatchEvaluator]{
+            param($match)
+            $candidate = $match.Groups[1].Value.Replace('""', '"').Replace('/', '\').TrimEnd('\')
+            if ($candidate -eq $replacementRootComparable) { return '' }
+            return $match.Value
+        }
+    )
+
     foreach ($runnerPattern in $RunnerPathPatterns) {
         if ($runnerGateText -match $runnerPattern) {
             throw "Artifact materialization failed: runner-specific path remains in '$($file.FullName)'. Pattern: $runnerPattern"
@@ -242,18 +305,18 @@ foreach ($file in $tmdlFiles) {
     }
 }
 
-if (Test-Path $expressionsPath -PathType Leaf) {
-    $materializedExpressionsText = [IO.File]::ReadAllText($expressionsPath)
-    $materializedDataFolderMatch = [regex]::Match(
-        $materializedExpressionsText,
-        '(?im)^\s*expression\s+DataFolder\s*=\s*"((?:""|[^"\r\n])*)"'
-    )
-    if ($materializedDataFolderMatch.Success) {
-        $materializedDataFolderValue = $materializedDataFolderMatch.Groups[1].Value.Replace('""', '"').Replace('/', '\').TrimEnd('\')
-        if ($materializedDataFolderValue -ne $replacementRoot) {
-            throw "Artifact materialization failed: DataFolder declaration does not resolve to artifact data root '$replacementRoot'. Actual: '$materializedDataFolderValue'"
-        }
+$materializedExpressionsText = [IO.File]::ReadAllText($expressionsPath)
+$materializedDataFolderMatch = [regex]::Match(
+    $materializedExpressionsText,
+    '(?im)^\s*expression\s+DataFolder\s*=\s*"((?:""|[^"\r\n])*)"'
+)
+if ($materializedDataFolderMatch.Success) {
+    $materializedDataFolderValue = $materializedDataFolderMatch.Groups[1].Value.Replace('""', '"').Replace('/', '\').TrimEnd('\')
+    if ($materializedDataFolderValue -ne $replacementRootComparable) {
+        throw "Artifact materialization failed: DataFolder declaration does not resolve to artifact data root '$replacementRoot'. Actual: '$materializedDataFolderValue'"
     }
+} else {
+    throw "Artifact materialization failed: DataFolder declaration missing after materialization in '$expressionsPath'."
 }
 
 & (Join-Path $PSScriptRoot 'Assert-DateVariationHierarchies.ps1') -PbipRoot $ArtifactRoot
@@ -275,6 +338,20 @@ if ($bomFiles.Count -gt 0) {
 $factText = [IO.File]::ReadAllText($factPath)
 if ($factText -notmatch [regex]::Escape($expectedFactPath)) {
     throw "Materialized Fact partition does not contain the artifact-local data path '$expectedFactPath'."
+}
+
+foreach ($file in $tmdlFiles) {
+    $text = [IO.File]::ReadAllText($file.FullName)
+    $partitionMatches = [regex]::Matches(
+        $text,
+        '(?ms)^\s*partition\s+(?<partition>''[^'']+''|\S+)\s*=\s*m\b.*?^\s*source\s*=\s*\r?\n(?<source>(?:\s+.+\r?\n?)+?)(?=^\s*(?:partition|column|measure|hierarchy|calculationGroup|annotation)\b|\z)'
+    )
+
+    foreach ($partitionMatch in $partitionMatches) {
+        $partitionName = $partitionMatch.Groups['partition'].Value
+        $sourceExpression = $partitionMatch.Groups['source'].Value.TrimEnd()
+        Test-PartitionSourceExpression -SourceText $sourceExpression -FilePath $file.FullName -PartitionName $partitionName
+    }
 }
 
 $platformFiles = @(
