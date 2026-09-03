@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "82d35456eec910986948",
   "position": {
@@ -20,13 +20,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "_Measures"
+                      "Entity": "_Measure Table"
                     }
                   },
                   "Property": "Failure Rate %"
                 }
               },
-              "queryRef": "_Measures.Failure Rate %",
+              "queryRef": "_Measure Table.Failure Rate %",
               "nativeQueryRef": "Failure Rate %"
             }
           ]
@@ -39,7 +39,7 @@
               "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "_Measures"
+                    "Entity": "_Measure Table"
                   }
                 },
                 "Property": "Failure Rate %"
@@ -58,7 +58,7 @@
             "position": {
               "expr": {
                 "Literal": {
-                  "Value": "'aboveValue'"
+                  "Value": "\u0027aboveValue\u0027"
                 }
               }
             }
@@ -88,7 +88,7 @@
             "alignment": {
               "expr": {
                 "Literal": {
-                  "Value": "'middle'"
+                  "Value": "\u0027middle\u0027"
                 }
               }
             },

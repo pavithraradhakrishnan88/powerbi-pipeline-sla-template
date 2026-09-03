@@ -52,8 +52,8 @@
                             "Version": 2,
                             "From": [
                               {
-                                "Name": "m",
-                                "Entity": "_Measures",
+                                "Name": "f",
+                                "Entity": "Fact_Pipeline_SampleData",
                                 "Type": 0
                               }
                             ],
@@ -62,18 +62,18 @@
                                 "Measure": {
                                   "Expression": {
                                     "SourceRef": {
-                                      "Source": "m"
+                                      "Source": "f"
                                     }
                                   },
                                   "Property": "Last Refresh"
                                 },
-                                "Name": "_Measures.Last Refresh"
+                                "Name": "Fact_Pipeline_SampleData.Last Refresh"
                               }
                             ]
                           }
                         }
                       },
-                      "Property": "_Measures.Last Refresh"
+                      "Property": "Fact_Pipeline_SampleData.Last Refresh"
                     }
                   },
                   "IncludeAllTypes": 1

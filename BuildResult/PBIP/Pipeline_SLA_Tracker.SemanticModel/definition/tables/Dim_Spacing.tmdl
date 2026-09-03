@@ -8,7 +8,6 @@ table Dim_Spacing
 		sourceColumn: [Value]
 
 		annotation SummarizationSetBy = Automatic
-
 	partition Dim_Spacing = calculated
 		mode: import
 		source = GENERATESERIES(0, 200, 1)

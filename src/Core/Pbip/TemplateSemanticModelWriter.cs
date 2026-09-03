@@ -93,31 +93,52 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
 
             for (var i = 0; i < lines.Length; i++)
             {
-                if (!Regex.IsMatch(lines[i], @"^\t\tpartition\s+\S+\s*=\s*m\s*$", RegexOptions.CultureInvariant))
+                if (!Regex.IsMatch(lines[i], @"^[ \t]*partition\s+\S+\s*=\s*m\s*$", RegexOptions.CultureInvariant))
                     continue;
 
+                var partitionIndent = Regex.Match(lines[i], @"^[ \t]*", RegexOptions.CultureInvariant).Value;
+                var partitionChildIndent = partitionIndent + "\t";
                 var sourceIndex = -1;
                 for (var j = i + 1; j < lines.Length; j++)
                 {
-                    if (Regex.IsMatch(lines[j], @"^\t\t\s*source\s*=\s*$", RegexOptions.CultureInvariant))
+                    var candidate = lines[j].Trim();
+                    var candidateIndent = Regex.Match(lines[j], @"^[ \t]*", RegexOptions.CultureInvariant).Value;
+                    if (Regex.IsMatch(candidate, @"^source\s*=", RegexOptions.CultureInvariant))
                     {
                         sourceIndex = j;
                         break;
                     }
 
-                    if (Regex.IsMatch(lines[j], @"^\t\t(?:partition|column|measure|hierarchy|calculationGroup)\b", RegexOptions.CultureInvariant))
+                    if (candidateIndent.Length <= partitionIndent.Length &&
+                        Regex.IsMatch(candidate, @"^(?:partition|column|measure|hierarchy|calculationGroup|annotation)\b", RegexOptions.CultureInvariant))
                         break;
                 }
 
                 if (sourceIndex < 0 || sourceIndex + 1 >= lines.Length)
                     continue;
 
+                var normalizedSource = partitionChildIndent + lines[sourceIndex].Trim();
+                if (!string.Equals(lines[sourceIndex], normalizedSource, StringComparison.Ordinal))
+                {
+                    lines[sourceIndex] = normalizedSource;
+                    changed = true;
+                }
+
+                if (!string.Equals(lines[sourceIndex].Trim(), "source =", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
                 var expressionStart = sourceIndex + 1;
                 var expressionEnd = expressionStart;
                 while (expressionEnd < lines.Length)
                 {
                     var line = lines[expressionEnd];
-                    if (Regex.IsMatch(line, @"^\t\t(?:partition|column|measure|hierarchy|calculationGroup)\b", RegexOptions.CultureInvariant))
+                    var trimmed = line.Trim();
+                    var indent = Regex.Match(line, @"^[ \t]*", RegexOptions.CultureInvariant).Value;
+                    if (trimmed.Length > 0 &&
+                        indent.Length <= partitionIndent.Length &&
+                        Regex.IsMatch(trimmed, @"^(?:partition|column|measure|hierarchy|calculationGroup|annotation)\b", RegexOptions.CultureInvariant))
                         break;
                     expressionEnd++;
                 }
@@ -133,7 +154,8 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 if (firstNonBlank < 0)
                     continue;
 
-                var baseIndent = "\t\t\t";
+                var baseIndent = partitionChildIndent + "\t";
+                var nestedIndent = baseIndent + "\t";
                 var normalizedExpression = new string[expressionLines.Length];
                 for (var k = 0; k < expressionLines.Length; k++)
                 {
@@ -145,7 +167,10 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                     }
 
                     var content = original.TrimStart(' ', '\t');
-                    normalizedExpression[k] = baseIndent + content;
+                    normalizedExpression[k] = string.Equals(content, "let", StringComparison.Ordinal) ||
+                                              string.Equals(content, "in", StringComparison.Ordinal)
+                        ? baseIndent + content
+                        : nestedIndent + content;
                 }
 
                 for (var k = 0; k < expressionLines.Length; k++)

@@ -49,17 +49,32 @@ public static class SampleCsvGenerator
             "3,Delivery"
         });
 
-        var lines = new List<string> { "PipelineID,CategoryId,Status,DurationHours,SLA_Target_Hrs,StartDate,EndDate" };
+        var categories = new[] { "Ingestion", "Transformation", "Delivery" };
+        var environments = new[] { "Dev", "Test", "Prod" };
+        var owners = new[] { "Analytics", "Platform", "Operations" };
+        var regions = new[] { "East US", "West Europe", "Southeast Asia" };
+        var lines = new List<string> { "PipelineID,PipelineName,Category,Status,ScheduledStart,ActualStart,ScheduledEnd,ActualEnd,SLAHours,DurationHours,StartDelayMinutes,EndDelayMinutes,SLAStatus,Environment,Owner,Region,RetryCount" };
         for (var i = 1; i <= rowCount; i++)
         {
-            var categoryId = (i % 3) + 1;
+            var category = categories[(i - 1) % categories.Length];
             var status = i % 5 == 0 ? "Failed" : "Success";
-            var duration = 1.5m + (i % 24);
-            var sla = 10;
-            var start = new DateTime(2026, 1, 1).AddHours(i);
-            var end = start.AddHours((double)duration);
+            var slaHours = 2.0m + (i % 6);
+            var durationHours = 1.5m + (i % 24);
+            var scheduledStart = new DateTime(2026, 1, 1, 6, 0, 0).AddHours(i);
+            var startDelayMinutes = i % 30;
+            var actualStart = scheduledStart.AddMinutes(startDelayMinutes);
+            var scheduledEnd = scheduledStart.AddHours((double)slaHours);
+            var endDelayMinutes = (i * 2) % 25;
+            var actualEnd = actualStart.AddHours((double)durationHours).AddMinutes(endDelayMinutes);
+            var slaStatus = actualEnd > scheduledEnd ? "Missed" : "Met";
+            var environment = environments[(i - 1) % environments.Length];
+            var owner = owners[(i - 1) % owners.Length];
+            var region = regions[(i - 1) % regions.Length];
+            var retryCount = i % 4;
 
-            lines.Add(string.Create(CultureInfo.InvariantCulture, $"P{i:0000},{categoryId},{status},{duration:0.##},{sla},{start:O},{end:O}"));
+            lines.Add(string.Create(
+                CultureInfo.InvariantCulture,
+                $"{1000 + i},Pipeline_{i:0000},{category},{status},{scheduledStart:yyyy-MM-dd HH:mm:ss},{actualStart:yyyy-MM-dd HH:mm:ss},{scheduledEnd:yyyy-MM-dd HH:mm:ss},{actualEnd:yyyy-MM-dd HH:mm:ss},{slaHours:0.##},{durationHours:0.##},{startDelayMinutes},{endDelayMinutes},{slaStatus},{environment},{owner},{region},{retryCount}"));
         }
 
         File.WriteAllLines(factPath, lines, Encoding.UTF8);

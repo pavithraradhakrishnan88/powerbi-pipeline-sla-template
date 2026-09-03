@@ -1,13 +1,70 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "d3f7987300602011509c",
-  "position": { "x": 276.34854771784234, "y": 558.6721991701245, "z": 1005, "height": 118.00829875518673, "width": 210.62240663900417, "tabOrder": 5 },
+  "position": {
+    "x": 276.34854771784234,
+    "y": 558.6721991701245,
+    "z": 1005,
+    "height": 118.00829875518673,
+    "width": 210.62240663900417,
+    "tabOrder": 5
+  },
   "visual": {
     "visualType": "cardVisual",
-    "query": { "queryState": { "Data": { "projections": [{ "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "_Measures" } }, "Property": "Total Runs" } }, "queryRef": "_Measures.Total Runs", "nativeQueryRef": "Total Runs" }] } } },
-    "objects": { "label": [{ "properties": { "position": { "expr": { "Literal": { "Value": "'aboveValue'" } } } }, "selector": { "id": "default" } }] },
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measure Table"
+                    }
+                  },
+                  "Property": "Total Runs"
+                }
+              },
+              "queryRef": "_Measure Table.Total Runs",
+              "nativeQueryRef": "Total Runs"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "label": [
+        {
+          "properties": {
+            "position": {
+              "expr": {
+                "Literal": {
+                  "Value": "\u0027aboveValue\u0027"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ]
+    },
     "visualContainerObjects": {
-      "title": [{ "properties": { "text": { "expr": { "Literal": { "Value": "'Pipeline SLA Tracker'" } } } } }]
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "\u0027Pipeline SLA Tracker\u0027"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "drillFilterOtherVisuals": true
   }

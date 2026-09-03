@@ -70,10 +70,10 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 builder.AppendLine($"\tpartition '{CanonicalTable}' = m");
                 builder.AppendLine("\t\tmode: import");
                 builder.AppendLine("\t\tsource =");
-                builder.AppendLine("\t\t\t\tlet");
-                builder.AppendLine("\t\t\t\t    Source = #table({}, {})");
-                builder.AppendLine("\t\t\t\tin");
-                builder.AppendLine("\t\t\t\t    Source");
+                builder.AppendLine("\t\t\tlet");
+                builder.AppendLine("\t\t\t\tSource = #table({}, {})");
+                builder.AppendLine("\t\t\tin");
+                builder.AppendLine("\t\t\t\tSource");
 
                 File.WriteAllText(canonicalPath, builder.ToString(), new UTF8Encoding(false));
                 logger?.Invoke($"SEMANTIC-MODEL-PATCH|CanonicalMeasureTable|Path={canonicalPath}|Measures={count}");

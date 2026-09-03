@@ -17,7 +17,8 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
         private const string DimensionColumn = "CategoryName";
         private const string TableIndent = "\t";
         private const string PartitionChildIndent = "\t\t";
-        private const string PartitionSourceIndent = "\t\t\t\t";
+        private const string PartitionExpressionIndent = "\t\t\t";
+        private const string PartitionNestedExpressionIndent = "\t\t\t\t";
 
         private static readonly IReadOnlyDictionary<string, string> DateVariationColumns =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -193,7 +194,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 var block = text[start..end];
                 if (block.Contains("\t\tvariation Variation", StringComparison.Ordinal)) continue;
                 var trimmed = block.TrimEnd('\r', '\n');
-                var variation = string.Join(newline, new[] { string.Empty, "\t\tvariation Variation", "\t\t\tisDefault", $"\t\t\trelationship: {relationshipId}", $"\t\t\tdefaultHierarchy: {localDateTable}.Date" });
+                var variation = string.Join(newline, new[] { string.Empty, "\t\tvariation Variation", "\t\t\tisDefault", $"\t\t\trelationship: {relationshipId}", $"\t\t\tdefaultHierarchy: {localDateTable}.'Date Hierarchy'" });
                 text = text[..start] + trimmed + variation + text[end..];
                 logger?.Invoke($"SEMANTIC-MODEL-PATCH|DateVariation|{FactTable}.{columnName}|{localDateTable}|{relationshipId}");
             }
@@ -267,7 +268,7 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
                 logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|DataFolder=AlreadyPresent"); File.WriteAllText(factPath, text, new UTF8Encoding(false)); return;
             }
             var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
-            var partitionBlock = newline + $"{TableIndent}partition {FactTable} = m" + newline + $"{PartitionChildIndent}mode: import" + newline + $"{PartitionChildIndent}source =" + newline + $"{PartitionSourceIndent}let" + newline + $"{PartitionSourceIndent}\tinference = let Source = File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\") in Source" + newline + $"{PartitionSourceIndent}\tinference" + newline + $"{PartitionChildIndent}in" + newline + $"{PartitionChildIndent}\tinference";
+            var partitionBlock = newline + $"{TableIndent}partition {FactTable} = m" + newline + $"{PartitionChildIndent}mode: import" + newline + $"{PartitionChildIndent}source =" + newline + $"{PartitionExpressionIndent}let" + newline + $"{PartitionNestedExpressionIndent}inference = let Source = File.Contents(DataFolder & \"\\Fact_Pipeline_SampleData.csv\") in Source" + newline + $"{PartitionNestedExpressionIndent}inference" + newline + $"{PartitionExpressionIndent}in" + newline + $"{PartitionNestedExpressionIndent}inference";
             text = text.Insert(text.Length, partitionBlock); File.WriteAllText(factPath, text, new UTF8Encoding(false)); logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|Added|DataFolder");
         }
 
@@ -276,7 +277,46 @@ namespace PowerBiPipelineSlaTemplate.Core.Pbip
             var lineEnd = text.IndexOf('\n', partitionIndex); if (lineEnd < 0) return text;
             var nextTableChild = text.IndexOf("\n\tannotation ", lineEnd, StringComparison.Ordinal); if (nextTableChild < 0) nextTableChild = text.Length;
             var block = text[partitionIndex..nextTableChild]; var lines = block.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'); var changed = false;
-            for (var i = 1; i < lines.Length; i++) { var trimmed = lines[i].TrimStart(' ', '\t'); if (trimmed.Length == 0) continue; if (trimmed.StartsWith("mode:", StringComparison.Ordinal) || trimmed.StartsWith("source =", StringComparison.Ordinal)) { lines[i] = "\t" + trimmed; changed = true; } }
+            var sourceIndex = -1;
+            for (var i = 1; i < lines.Length; i++)
+            {
+                var trimmed = lines[i].TrimStart(' ', '\t');
+                if (trimmed.Length == 0) continue;
+                if (trimmed.StartsWith("mode:", StringComparison.Ordinal) || trimmed.StartsWith("source =", StringComparison.Ordinal))
+                {
+                    var normalized = "\t" + trimmed;
+                    if (!string.Equals(lines[i], normalized, StringComparison.Ordinal))
+                    {
+                        lines[i] = normalized;
+                        changed = true;
+                    }
+
+                    if (trimmed.Equals("source =", StringComparison.Ordinal))
+                    {
+                        sourceIndex = i;
+                    }
+                }
+            }
+
+            if (sourceIndex >= 0)
+            {
+                for (var i = sourceIndex + 1; i < lines.Length; i++)
+                {
+                    var trimmed = lines[i].TrimStart(' ', '\t');
+                    if (trimmed.Length == 0) continue;
+
+                    var normalized = trimmed.Equals("let", StringComparison.Ordinal) || trimmed.Equals("in", StringComparison.Ordinal)
+                        ? "\t\t" + trimmed
+                        : "\t\t\t" + trimmed;
+
+                    if (!string.Equals(lines[i], normalized, StringComparison.Ordinal))
+                    {
+                        lines[i] = normalized;
+                        changed = true;
+                    }
+                }
+            }
+
             if (!changed) return text;
             var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n"; var normalizedBlock = string.Join(newline, lines); logger?.Invoke("SEMANTIC-MODEL-PATCH|FactPartition|ReformattedExistingPartition"); return text[..partitionIndex] + normalizedBlock + text[nextTableChild..];
         }

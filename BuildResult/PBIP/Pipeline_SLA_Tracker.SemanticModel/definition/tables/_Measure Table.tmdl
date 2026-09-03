@@ -1,0 +1,99 @@
+table '_Measure Table'
+
+	measure 'Active Pipelines' = COUNTROWS(Fact_Pipeline_SampleData)
+		formatString: '#,##0'
+		displayFolder: '01 Landing Page'
+
+	measure 'Successful Runs' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[Status]="Success")
+		formatString: '#,##0'
+		displayFolder: '01 Landing Page'
+
+	measure 'Failed Runs' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[Status]="Failed")
+		formatString: '#,##0'
+		displayFolder: '01 Landing Page'
+
+	measure 'Running Pipelines' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[Status]="Running")
+		formatString: '#,##0'
+		displayFolder: '01 Landing Page'
+
+	measure 'Queued Pipelines' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData),Fact_Pipeline_SampleData[Status]="Queued")
+		formatString: '#,##0'
+		displayFolder: '01 Landing Page'
+
+	measure 'Success Rate %' = DIVIDE([Successful Runs],[Active Pipelines])
+		formatString: '0.00%'
+		displayFolder: '02 SLA'
+
+	measure 'Failure Rate %' = DIVIDE([Failed Runs],[Active Pipelines])
+		formatString: '0.00%'
+		displayFolder: '02 SLA'
+
+	measure 'SLA Breach %' = DIVIDE(CALCULATE(COUNTROWS(Fact_Pipeline_SampleData), Fact_Pipeline_SampleData[SLAStatus] = "Missed"), [Active Pipelines], 0)
+		formatString: '0.00%'
+		displayFolder: '02 SLA'
+
+	measure 'Average Runtime' = AVERAGE(Fact_Pipeline_SampleData[DurationHours])
+		formatString: '0.00'
+		displayFolder: '03 Runtime'
+
+	measure 'Total Runtime' = SUM(Fact_Pipeline_SampleData[DurationHours])
+		formatString: '#,##0.00'
+		displayFolder: '03 Runtime'
+
+	measure 'Maximum Runtime' = MAX(Fact_Pipeline_SampleData[DurationHours])
+		formatString: '#,##0.00'
+		displayFolder: '03 Runtime'
+
+	measure 'Minimum Runtime' = MIN(Fact_Pipeline_SampleData[DurationHours])
+		formatString: '#,##0.00'
+		displayFolder: '03 Runtime'
+
+	measure 'Total Runs' = [Active Pipelines]
+		formatString: '#,##0'
+		displayFolder: '02 SLA'
+
+	measure 'Breached Count' = CALCULATE(COUNTROWS(Fact_Pipeline_SampleData), Fact_Pipeline_SampleData[SLAStatus] = "Missed")
+		formatString: '#,##0'
+		displayFolder: '02 SLA'
+
+	measure 'SLA Compliance %' = DIVIDE([Total Runs] - [Breached Count], [Total Runs], 0)
+		formatString: '0.00%'
+		displayFolder: '02 SLA'
+
+	measure 'Timeline Base' = DATEDIFF(CALCULATE(MIN(Fact_Pipeline_SampleData[ScheduledStart]), ALL(Fact_Pipeline_SampleData)), MIN(Fact_Pipeline_SampleData[ScheduledStart]), HOUR)
+		formatString: '0'
+		displayFolder: '05 Floating Bar'
+
+	measure 'Floating Bar Duration' = [Average Runtime]
+		formatString: '#,##0.00'
+		displayFolder: '05 Floating Bar'
+
+	measure 'Floating Bar Status' = IF(MAX(Fact_Pipeline_SampleData[SLAStatus]) = "Missed", "Breach", "Within SLA")
+		displayFolder: '05 Floating Bar'
+
+	measure 'SLA Breach Color' = IF(MAX(Fact_Pipeline_SampleData[SLAStatus]) = "Missed", "#FF0000", "#00B050")
+		displayFolder: '05 Floating Bar'
+		isHidden: true
+
+	measure 'Average Start Delay' = AVERAGE(Fact_Pipeline_SampleData[StartDelayMinutes])
+		formatString: '#,##0.00'
+		displayFolder: '03 Runtime'
+
+	measure 'Average End Delay' = AVERAGE(Fact_Pipeline_SampleData[EndDelayMinutes])
+		formatString: '#,##0.00'
+		displayFolder: '03 Runtime'
+
+	measure 'Success Rate KPI' = [Success Rate %]
+		formatString: '0.00%'
+		displayFolder: '02 SLA'
+
+	measure 'Last Refresh' = FORMAT(NOW(),"dd MMM yyyy hh:mm AM/PM")
+		displayFolder: '00 System'
+
+	partition '_Measure Table' = m
+		mode: import
+		source =
+			let
+				Source = #table({}, {})
+			in
+				Source

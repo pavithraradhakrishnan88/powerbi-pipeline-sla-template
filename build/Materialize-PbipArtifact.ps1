@@ -53,7 +53,7 @@ if (!(Test-Path $factPath -PathType Leaf)) {
 
 # STEP 1: Read TMDL.
 $tmdlFiles = @(Get-ChildItem $SemanticModelRoot -Recurse -Filter "*.tmdl" -File)
-$replacementRoot = $DataRoot.TrimEnd('\')
+$replacementRoot = [IO.Path]::GetFullPath($DataRoot).TrimEnd('\','/')
 $replacementCount = 0
 $factReplacementCount = 0
 $dataFolderReferenceCount = 0
@@ -205,10 +205,16 @@ foreach ($file in $tmdlFiles) {
         $text,
         '(?i)File\.Contents\(\s*"([^"]+\.csv)"\s*\)'
     )
+    $artifactLocalFileContents = [Collections.Generic.List[string]]::new()
     foreach ($match in $fileContentMatches) {
-        $csvPath = [IO.Path]::GetFullPath($match.Groups[1].Value)
-        $isArtifactLocal = $csvPath.StartsWith($replacementRoot + '\', [StringComparison]::OrdinalIgnoreCase) -or
-                           $csvPath.Equals($replacementRoot, [StringComparison]::OrdinalIgnoreCase)
+        $csvPath = [IO.Path]::GetFullPath($match.Groups[1].Value).TrimEnd('\','/')
+        $isArtifactLocal = $csvPath.Equals($replacementRoot, [StringComparison]::OrdinalIgnoreCase) -or
+                           $csvPath.StartsWith($replacementRoot + '\', [StringComparison]::OrdinalIgnoreCase) -or
+                           $csvPath.StartsWith($replacementRoot + '/', [StringComparison]::OrdinalIgnoreCase)
+
+        if ($isArtifactLocal) {
+            $artifactLocalFileContents.Add($match.Value)
+        }
 
         if (!$isArtifactLocal -and $csvPath -match '(?i)^[A-Z]:\\+(?:a|_work|actions)\\+') {
             throw "Artifact materialization failed: runner-specific File.Contents path remains in '$($file.FullName)': $csvPath"
@@ -218,12 +224,12 @@ foreach ($file in $tmdlFiles) {
     # Remove the known-good artifact-local File.Contents paths before the broad
     # textual runner-path gate. This preserves the strict gate for every other
     # runner path without flagging the artifact's own local path merely because
-    # DesktopValidation happens to reside below D:\a\ on CI.
-    $runnerGateText = [regex]::Replace(
-        $text,
-        '(?i)File\.Contents\(\s*"' + [regex]::Escape($replacementRoot) + '\\[^"]+\.csv"\s*\)',
-        ''
-    )
+    # DesktopValidation happens to reside below D:\a\ on Windows CI or
+    # /home/runner on Linux validation hosts.
+    $runnerGateText = $text
+    foreach ($artifactLocalFileContentsExpression in $artifactLocalFileContents) {
+        $runnerGateText = $runnerGateText.Replace($artifactLocalFileContentsExpression, '')
+    }
 
     foreach ($runnerPattern in $RunnerPathPatterns) {
         if ($runnerGateText -match $runnerPattern) {
@@ -250,6 +256,8 @@ if (Test-Path $expressionsPath -PathType Leaf) {
     }
 }
 
+& (Join-Path $PSScriptRoot 'Assert-DateVariationHierarchies.ps1') -PbipRoot $ArtifactRoot
+
 # Byte-level UTF-8 BOM gate.
 $bomFiles = @()
 foreach ($file in $tmdlFiles) {
@@ -269,7 +277,10 @@ if ($factText -notmatch [regex]::Escape($expectedFactPath)) {
     throw "Materialized Fact partition does not contain the artifact-local data path '$expectedFactPath'."
 }
 
-$platformFiles = @(Get-ChildItem $ArtifactRoot -Recurse -Filter ".platform" -File)
+$platformFiles = @(
+    Get-ChildItem $ArtifactRoot -Recurse -Force -File |
+        Where-Object { $_.Name -eq '.platform' }
+)
 if ($platformFiles.Count -lt 2) {
     throw "Artifact materialization failed: expected both PBIP and semantic-model .platform files; found $($platformFiles.Count)."
 }

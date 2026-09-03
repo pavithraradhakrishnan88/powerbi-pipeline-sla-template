@@ -190,11 +190,11 @@ Directory.CreateDirectory(culturesPath);
                 builder.AppendLine($"\tpartition {tableName} = m");
                 builder.AppendLine("\t\tmode: import");
                 builder.AppendLine("\t\tsource =");
-                builder.AppendLine("\t\t\t\tlet");
-                builder.AppendLine($"\t\t\t\t    Source = Csv.Document(File.Contents(DataFolder & \"\\{EscapeMString(table.Name)}.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),");
-                builder.AppendLine("\t\t\t\t    #\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])");
-                builder.AppendLine("\t\t\t\tin");
-                builder.AppendLine("\t\t\t\t    #\"Promoted Headers\"");
+                builder.AppendLine("\t\t\tlet");
+                builder.AppendLine($"\t\t\t\tSource = Csv.Document(File.Contents(DataFolder & \"\\{EscapeMString(table.Name)}.csv\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),");
+                builder.AppendLine("\t\t\t\t#\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])");
+                builder.AppendLine("\t\t\tin");
+                builder.AppendLine("\t\t\t\t#\"Promoted Headers\"");
 
                 return builder.ToString();
             }
@@ -405,10 +405,10 @@ builder.AppendLine(
                 builder.AppendLine("\tpartition '_Measure Table' = m");
                 builder.AppendLine("\t\tmode: import");
                 builder.AppendLine("\t\tsource =");
-                builder.AppendLine("\t\t\t\tlet");
-                builder.AppendLine("\t\t\t\t    Source = #table({}, {})");
-                builder.AppendLine("\t\t\t\tin");
-                builder.AppendLine("\t\t\t\t    Source");
+                builder.AppendLine("\t\t\tlet");
+                builder.AppendLine("\t\t\t\tSource = #table({}, {})");
+                builder.AppendLine("\t\t\tin");
+                builder.AppendLine("\t\t\t\tSource");
 
                 return builder.ToString();
             }

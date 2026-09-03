@@ -2,9 +2,26 @@ model Model
 	culture: en-US
 	defaultPowerBIDataSourceVersion: powerBI_V3
 	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_ProTooling = ["DevMode"]
+
+
+annotation __TEdtr = 1
 
 ref table Dim_Category
+ref table Dim_Spacing
 ref table Fact_Pipeline_SampleData
-ref table _Measures
+ref table DateTableTemplate_cf167393-0340-4e38-a664-9c425a0a3643
+ref table LocalDateTable_9043e032-67a4-45e7-bf88-28fec57966b9
+ref table LocalDateTable_ac53fd01-924f-4452-a3f3-a0f9a1df973c
+ref table LocalDateTable_d4583ee4-86f0-47d3-96ae-303f0614bf0d
+ref table LocalDateTable_1c11b445-5c42-44a6-9f02-0bc10f99ee27
 
 ref cultureInfo en-US
+
+ref table '_Measure Table'

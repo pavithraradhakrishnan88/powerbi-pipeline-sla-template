@@ -27,7 +27,7 @@
           "verticalAlignment": {
             "expr": {
               "Literal": {
-                "Value": "'Top'"
+                "Value": "\u0027Top\u0027"
               }
             }
           }
@@ -75,6 +75,16 @@
           "name": "Pipeline_SLA_Tracker_Theme43408543691893786.json",
           "path": "Pipeline_SLA_Tracker_Theme43408543691893786.json",
           "type": "CustomTheme"
+        },
+        {
+          "name": "Banner7758505367451983.png",
+          "path": "Banner7758505367451983.png",
+          "type": "Image"
+        },
+        {
+          "name": "LOGO23969025434519886.png",
+          "path": "LOGO23969025434519886.png",
+          "type": "Image"
         }
       ]
     }

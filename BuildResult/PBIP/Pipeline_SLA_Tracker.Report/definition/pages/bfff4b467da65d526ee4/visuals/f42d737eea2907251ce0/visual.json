@@ -1,13 +1,70 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "f42d737eea2907251ce0",
-  "position": { "x": 1054.6058091286309, "y": 558.6721991701245, "z": 1009, "height": 118.00829875518673, "width": 225.56016597510376, "tabOrder": 9 },
+  "position": {
+    "x": 1054.6058091286309,
+    "y": 558.6721991701245,
+    "z": 1009,
+    "height": 118.00829875518673,
+    "width": 225.56016597510376,
+    "tabOrder": 9
+  },
   "visual": {
     "visualType": "cardVisual",
-    "query": { "queryState": { "Data": { "projections": [{ "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "_Measures" } }, "Property": "Average Runtime" } }, "queryRef": "_Measures.Average Runtime", "nativeQueryRef": "Average Runtime" }] } } },
-    "objects": { "label": [{ "properties": { "position": { "expr": { "Literal": { "Value": "'aboveValue'" } } } }, "selector": { "id": "default" } }] },
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measure Table"
+                    }
+                  },
+                  "Property": "Average Runtime"
+                }
+              },
+              "queryRef": "_Measure Table.Average Runtime",
+              "nativeQueryRef": "Average Runtime"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "label": [
+        {
+          "properties": {
+            "position": {
+              "expr": {
+                "Literal": {
+                  "Value": "\u0027aboveValue\u0027"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ]
+    },
     "visualContainerObjects": {
-      "title": [{ "properties": { "text": { "expr": { "Literal": { "Value": "'Pipeline SLA Tracker'" } } } } }]
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "\u0027Pipeline SLA Tracker\u0027"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "drillFilterOtherVisuals": true
   }

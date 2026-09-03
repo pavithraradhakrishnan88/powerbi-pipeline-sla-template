@@ -77,6 +77,12 @@ function Normalize-DefinitionSchema {
 function Normalize-GeneratedTmdl {
     param([Parameter(Mandatory=$true)][string]$SemanticModelRoot)
 
+    function Get-TmdlIndentText([int]$Width) {
+        if ($Width -le 0) { return '' }
+        if (($Width % 4) -eq 0) { return ("`t" * ($Width / 4)) }
+        return (' ' * $Width)
+    }
+
     $definition = Join-Path $SemanticModelRoot "definition"
     if (!(Test-Path $definition -PathType Container)) { return }
 
@@ -89,8 +95,6 @@ function Normalize-GeneratedTmdl {
         $tableIndent = $null
         $partitionIndent = $null
         $partitionName = $null
-        $partitionSourceIndent = $null
-        $partitionSourceShift = 0
 
         for ($i = 0; $i -lt $lines.Count; $i++) {
             $line = $lines[$i]
@@ -116,8 +120,6 @@ function Normalize-GeneratedTmdl {
                 $tableIndent = $indentWidth
                 $partitionIndent = $null
                 $partitionName = $null
-                $partitionSourceIndent = $null
-                $partitionSourceShift = 0
                 $output.Add($line)
                 continue
             }
@@ -129,8 +131,7 @@ function Normalize-GeneratedTmdl {
                 }
 
                 $targetPartitionIndent = $tableIndent + 4
-                $delta = $targetPartitionIndent - $indentWidth
-                $newLine = (' ' * $targetPartitionIndent) + $trimmed
+                $newLine = (Get-TmdlIndentText $targetPartitionIndent) + $trimmed
                 if ($newLine -ne $line) {
                     $changed = $true
                     Write-Host "TMDL-FINAL-NORMALIZE|PartitionIndent|File=$($file.FullName)|Line=$($i + 1)|Partition=$($matches[1])|From=$indentWidth|To=$targetPartitionIndent"
@@ -138,8 +139,6 @@ function Normalize-GeneratedTmdl {
 
                 $partitionIndent = $targetPartitionIndent
                 $partitionName = $matches[1]
-                $partitionSourceIndent = $null
-                $partitionSourceShift = 0
                 $output.Add($newLine)
                 continue
             }
@@ -151,40 +150,71 @@ function Normalize-GeneratedTmdl {
                 if ($isTableLevel -and $indentWidth -le $partitionIndent) {
                     $partitionIndent = $null
                     $partitionName = $null
-                    $partitionSourceIndent = $null
-                    $partitionSourceShift = 0
                 }
             }
 
             if ($null -ne $partitionIndent) {
                 if ($trimmed -cmatch '^(mode|source)\b') {
                     $targetChildIndent = $partitionIndent + 4
-                    $childDelta = $targetChildIndent - $indentWidth
-                    $newLine = (' ' * $targetChildIndent) + $trimmed
+                    $newLine = (Get-TmdlIndentText $targetChildIndent) + $trimmed
                     if ($newLine -ne $line) {
                         $changed = $true
                         Write-Host "TMDL-FINAL-NORMALIZE|PartitionChildIndent|File=$($file.FullName)|Line=$($i + 1)|Parent=partition $partitionName|Child=$($matches[1])|From=$indentWidth|To=$targetChildIndent"
                     }
-                    if ($trimmed -cmatch '^source\b') {
-                        # Keep the source property at the partition-child level.
-                        # Its inner M expression stays at the original indentation.
-                        $partitionSourceIndent = $targetChildIndent
-                        $partitionSourceShift = 0
-                    }
                     $output.Add($newLine)
-                    continue
-                }
+                    if ($trimmed -ceq 'source =') {
+                        $expressionLines = [Collections.Generic.List[object]]::new()
+                        $j = $i + 1
+                        while ($j -lt $lines.Count) {
+                            $candidate = $lines[$j]
+                            $candidateTrimmed = $candidate.Trim()
+                            $candidateIndentText = [regex]::Match($candidate, '^[ \t]*').Value
+                            $candidateIndentWidth = 0
+                            foreach ($ch in $candidateIndentText.ToCharArray()) {
+                                if ($ch -eq [char]9) { $candidateIndentWidth += 4 } else { $candidateIndentWidth++ }
+                            }
 
-                if ($null -ne $partitionSourceIndent) {
-                    if ($trimmed -cmatch '^Source\s*=') {
-                        # The uppercase Source binding is M code, not another TMDL
-                        # source property. Keep it at the partition-child level so
-                        # the structural gate does not classify it as a sibling.
-                        $newLine = (' ' * $partitionSourceIndent) + $trimmed
-                        if ($newLine -ne $line) { $changed = $true }
-                        $output.Add($newLine)
-                        continue
+                            $isBoundary = $candidateTrimmed -match '^(?:column|hierarchy|annotation|measure|calculationItem|expression|partition)\b' -and
+                                          $candidateIndentWidth -le $partitionIndent
+                            if ($isBoundary) {
+                                break
+                            }
+
+                            $expressionLines.Add([PSCustomObject]@{
+                                Index = $j
+                                Line = $candidate
+                                Trimmed = $candidateTrimmed
+                            })
+                            $j++
+                        }
+
+                        $expressionIndent = $targetChildIndent + 4
+                        $nestedExpressionIndent = $expressionIndent + 4
+                        foreach ($expressionLine in $expressionLines) {
+                            if ([string]::IsNullOrWhiteSpace($expressionLine.Trimmed)) {
+                                $output.Add($expressionLine.Line)
+                                continue
+                            }
+
+                            $normalizedExpressionLine = if ($expressionLine.Trimmed -ceq 'let' -or $expressionLine.Trimmed -ceq 'in') {
+                                (Get-TmdlIndentText $expressionIndent) + $expressionLine.Trimmed
+                            }
+                            else {
+                                (Get-TmdlIndentText $nestedExpressionIndent) + $expressionLine.Trimmed
+                            }
+
+                            if ($normalizedExpressionLine -ne $expressionLine.Line) {
+                                $changed = $true
+                                Write-Host "TMDL-FINAL-NORMALIZE|PartitionSourceExpression|File=$($file.FullName)|Line=$($expressionLine.Index + 1)|Parent=partition $partitionName"
+                            }
+
+                            $output.Add($normalizedExpressionLine)
+                        }
+
+                        $i = $j - 1
                     }
+
+                    continue
                 }
             }
 
@@ -275,6 +305,7 @@ Normalize-GeneratedTmdl -SemanticModelRoot $generatedSemanticModelRoot
 & "$PSScriptRoot\Assert-TmdlNoInvalidEmptyLines.ps1" -PbipRoot $pbipOutputRoot
 if ($LASTEXITCODE -ne 0) { throw "TMDL empty-line validation failed with exit code $LASTEXITCODE." }
 Write-Host "TMDL-FINAL-GATE|PASS|Generated BuildResult/PBIP contains no InvalidLineType / Empty partition-boundary conditions."
+& "$PSScriptRoot\Assert-DateVariationHierarchies.ps1" -PbipRoot $pbipOutputRoot -PbipName $pbipName
 
 $artifactPath = Join-Path $repoRoot "artifacts"
 if (Test-Path $artifactPath) { Remove-Item $artifactPath -Recurse -Force }
@@ -287,6 +318,7 @@ foreach ($entry in @('docs','data','scripts','theme','LICENSE','CHANGELOG.md','R
 }
 
 Materialize-ArtifactDataPath -ArtifactRoot $artifactPath -BuildDataPath $dataFolderPath
+& "$PSScriptRoot\Assert-DateVariationHierarchies.ps1" -PbipRoot $artifactPath -PbipName $pbipName
 Copy-Item (Join-Path $PSScriptRoot 'Materialize-PbipArtifact.ps1') (Join-Path $artifactPath 'Materialize-PbipArtifact.ps1') -Force
 
 & "$PSScriptRoot\Assert-ArtifactIntegrity.ps1" -GeneratedRoot $pbipOutputRoot -ArtifactRoot $artifactPath -BuildDataPath $dataFolderPath

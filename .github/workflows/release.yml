@@ -55,10 +55,20 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          Compress-Archive `
-            -Path artifacts/* `
-            -DestinationPath PBIP-Release.zip `
-            -Force
+          ./build/New-PbipArchive.ps1 `
+            -SourceRoot "${{ github.workspace }}\artifacts" `
+            -DestinationPath "${{ github.workspace }}\PBIP-Release.zip" `
+            -RequiredEntries @(
+              'Pipeline_SLA_Tracker.pbip',
+              'Pipeline_SLA_Tracker.Report/definition.pbir',
+              'Pipeline_SLA_Tracker.Report/definition/report.json',
+              'Pipeline_SLA_Tracker.Report/.platform',
+              'Pipeline_SLA_Tracker.SemanticModel/definition.pbism',
+              'Pipeline_SLA_Tracker.SemanticModel/definition/model.tmdl',
+              'Pipeline_SLA_Tracker.SemanticModel/.platform',
+              'data/Fact_Pipeline_SampleData.csv',
+              'data/Dim_Category.csv'
+            )
 
       - name: Upload Workflow Artifact
         if: success()
