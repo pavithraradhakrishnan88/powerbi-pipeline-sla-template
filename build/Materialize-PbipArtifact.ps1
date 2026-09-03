@@ -279,6 +279,21 @@ foreach ($file in $tmdlFiles) {
         $runnerGateText = $runnerGateText.Replace($artifactLocalFileContentsExpression, '')
     }
 
+    # The materialized DataFolder expression may legitimately be an artifact-local
+    # absolute path (including Windows runner roots like D:\a\...). It is validated
+    # separately against the expected artifact data root, so exclude it from the
+    # broad runner-path text scan to avoid false positives.
+    $runnerGateText = [regex]::Replace(
+        $runnerGateText,
+        '(?im)^\s*expression\s+DataFolder\s*=\s*"((?:""|[^"\r\n])*)".*$',
+        [System.Text.RegularExpressions.MatchEvaluator]{
+            param($match)
+            $candidate = $match.Groups[1].Value.Replace('""', '"').Replace('/', '\').TrimEnd('\')
+            if ($candidate -eq $replacementRootComparable) { return '' }
+            return $match.Value
+        }
+    )
+
     foreach ($runnerPattern in $RunnerPathPatterns) {
         if ($runnerGateText -match $runnerPattern) {
             throw "Artifact materialization failed: runner-specific path remains in '$($file.FullName)'. Pattern: $runnerPattern"
