@@ -190,3 +190,10 @@ This failure was traced to synthetic empty extension materialization and is clos
 ### `sortDefinition` / `columnHeaders` analyzer errors
 
 These are schema-compatibility errors, not evidence that the authoritative visual files are malformed. Do not edit the two visual files or downgrade `$schema`. Update only the July 2026/2.10.0 analyzer compatibility definition to allow these exact properties.
+
+
+## 12. Microsoft Fabric Skills alignment
+
+Use Microsoft's [skills-for-fabric](https://github.com/microsoft/skills-for-fabric) as external guidance for PBIR and semantic-model authoring. The eight relevant references are `powerbi-report-cli/SKILL.md`, `authoring.md`, `authoring-part-03.md`, `authoring-part-04.md`, `version-control.md`, `screenshot-review.md`, `semantic-model-authoring/SKILL.md`, and `tmdl-guidelines.md`.
+
+They guide valid visual roles, PBIR schema discipline, TMDL syntax, validation, version-control discipline, and rendered-output review. They do not replace the authoritative PBIP templates, measure contract, existing build gates, CI/CD flow, or Power BI Desktop validation.
