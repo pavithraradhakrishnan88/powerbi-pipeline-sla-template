@@ -85,3 +85,11 @@ The model exposes a `DataFolder` expression. The fact partition consumes `File.C
 
 The second layer remains a separate acceptance boundary because static CI validation cannot reproduce the complete Power BI Desktop rendering/runtime experience.
 \n## Microsoft Fabric Skills alignment\n\nMicrosoft's [skills-for-fabric](https://github.com/microsoft/skills-for-fabric) is an external authoring-guidance layer. Its `powerbi-report-cli` guidance aligns with the report/PBIR validation boundary, while `semantic-model-authoring` and `tmdl-guidelines.md` align with the semantic-model/TMDL boundary.\n\nThe Microsoft assets used as references are:\n\n- `powerbi-report-cli/SKILL.md`\n- `authoring.md`\n- `authoring-part-03.md`\n- `authoring-part-04.md`\n- `version-control.md`\n- `screenshot-review.md`\n- `semantic-model-authoring/SKILL.md`\n- `tmdl-guidelines.md`\n\nThese references do not introduce another runtime or generation architecture. The existing template-first flow and repository validation gates remain authoritative.\n
+
+## Microsoft Fabric Skills alignment
+
+Microsoft's [skills-for-fabric](https://github.com/microsoft/skills-for-fabric) is an external authoring-guidance layer. Its `powerbi-report-cli` guidance aligns with the report/PBIR boundary, while `semantic-model-authoring` and `tmdl-guidelines.md` align with the semantic-model/TMDL boundary.
+
+The eight references are `powerbi-report-cli/SKILL.md`, `authoring.md`, `authoring-part-03.md`, `authoring-part-04.md`, `version-control.md`, `screenshot-review.md`, `semantic-model-authoring/SKILL.md`, and `tmdl-guidelines.md`.
+
+These references do not introduce another runtime or generation architecture. The existing template-first flow and repository validation gates remain authoritative.
