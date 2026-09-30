@@ -155,3 +155,9 @@ Treat this as a Desktop UAT issue, not as proof that CI is wrong. Verify field b
 
 These properties are present in the authoritative July 2026 Desktop template and are valid for its `visualContainer/2.10.0` format. Do not delete them, downgrade `$schema`, or disable additional-property validation globally. Update only the 2.10.0 compatibility definition to recognize these two properties.
 \n## 8. Microsoft Fabric Skills alignment\n\nMicrosoft's [skills-for-fabric](https://github.com/microsoft/skills-for-fabric) provides external guidance for PBIR authoring, semantic-model/TMDL authoring, version control, and rendered-output review. The relevant assets are `powerbi-report-cli/SKILL.md`, `authoring.md`, `authoring-part-03.md`, `authoring-part-04.md`, `version-control.md`, `screenshot-review.md`, `semantic-model-authoring/SKILL.md`, and `tmdl-guidelines.md`.\n\nUse the Microsoft guidance when reviewing visual roles, PBIR properties, TMDL syntax, and authoring/validation workflow. It does not replace the repository's 28/28 visual gate, artifact-integrity checks, or Power BI Desktop UAT.\n
+
+## 8. Microsoft Fabric Skills alignment
+
+Microsoft's [skills-for-fabric](https://github.com/microsoft/skills-for-fabric) provides external guidance for PBIR authoring, semantic-model/TMDL authoring, version control, and rendered-output review. The eight references are `powerbi-report-cli/SKILL.md`, `authoring.md`, `authoring-part-03.md`, `authoring-part-04.md`, `version-control.md`, `screenshot-review.md`, `semantic-model-authoring/SKILL.md`, and `tmdl-guidelines.md`.
+
+Use them to guide valid visual roles, PBIR schema discipline, TMDL syntax, and validation/review decisions. They do not replace the repository's 28/28 visual gate, artifact-integrity checks, CI gates, or Power BI Desktop UAT.
